@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: Inter, Pretendard, 'Noto Sans KR', ui-sans-serif, system-ui, sans-serif;
+  --color-city-50: #f3f8f6;
+  --color-city-100: #dceee8;
+  --color-city-500: #2f806f;
+  --color-city-700: #1f5c51;
+  --color-rail-50: #eef4ff;
+  --color-rail-500: #326fd1;
+  --color-warning-50: #fff7e6;
+  --color-warning-600: #a15c06;
+}
+
+:root {
+  color: #17201d;
+  background: #f5f7f6;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  min-width: 320px;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+select,
+input {
+  font: inherit;
+}
+
+.leaflet-container {
+  min-height: 100%;
+  background:
+    linear-gradient(90deg, rgba(47, 128, 111, 0.1) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(47, 128, 111, 0.1) 1px, transparent 1px), #edf5f2;
+  background-size: 42px 42px;
+}
+
+.leaflet-control-attribution {
+  display: none;
+}
