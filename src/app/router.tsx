@@ -5,6 +5,7 @@ import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { OnboardingBusinessTypePage } from '@/pages/OnboardingBusinessTypePage'
+import { OnboardingInitialSetupPage } from '@/pages/OnboardingInitialSetupPage'
 import { OnboardingStationPage } from '@/pages/OnboardingStationPage'
 import { ReportPage } from '@/pages/ReportPage'
 import { ScenarioPage } from '@/pages/ScenarioPage'
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
   {
     path: '/signup',
     element: <SignupPage />,
+  },
+  {
+    path: '/onboarding',
+    element: <OnboardingInitialSetupPage />,
   },
   {
     path: '/onboarding/stations',

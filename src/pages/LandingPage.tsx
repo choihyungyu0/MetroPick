@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
 
-import { landingAssets } from '@/shared/assets/landingAssets'
+import { landingAssets, landingDashboardAssets } from '@/shared/assets/landingAssets'
 
 const navItems = [
   { label: '서비스 소개', href: '#service-intro' },
@@ -22,7 +22,7 @@ const summaryCards = [
     label: '매출 잠재력',
     value: '2,845억원',
     change: '+31.2%',
-    description: '개통 이후 시나리오',
+    description: '개통 이후 예측',
   },
   {
     label: '신규 창업 기회',
@@ -66,17 +66,20 @@ const featureCards = [
 
 const dataCards = [
   {
-    label: 'GJ',
+    image: landingDashboardAssets.gwangjuBigdataLogo,
+    imageAlt: '광주 빅데이터 통합플랫폼 로고',
     title: '광주 빅데이터 통합플랫폼',
     description: '행정·교통·상권 등 다양한 빅데이터 제공',
   },
   {
-    label: 'DATA',
+    image: landingDashboardAssets.dataPortalLogo,
+    imageAlt: '공공데이터포털 로고',
     title: '공공데이터포털 data.go.kr',
     description: '공공기관 보유 데이터를 표준화하여 개방',
   },
   {
-    label: 'M2',
+    image: landingDashboardAssets.transitIcon,
+    imageAlt: '도시철도와 버스 이용객 데이터 아이콘',
     title: '도시철도/버스 이용객 데이터',
     description: '교통 이용객 데이터를 기반으로 분석',
   },
@@ -151,9 +154,10 @@ function LandingHeader() {
           aria-label="MetroPick AI 홈"
         >
           <img
-            className="h-9 w-11 shrink-0 object-contain"
+            className="h-9 w-11 shrink-0 scale-[1.7] object-contain"
             src={landingAssets.logo}
             alt="MetroPick AI 로고"
+            draggable={false}
           />
           <span className="min-w-0">
             <span className="block text-xl font-black tracking-[-0.02em]">
@@ -223,86 +227,14 @@ function LandingHeader() {
 }
 
 function MapMockup() {
-  const stations = [
-    { name: '운천', x: 58, y: 12 },
-    { name: '신가', x: 53, y: 23 },
-    { name: '시청', x: 42, y: 37 },
-    { name: '금남로5가', x: 35, y: 50 },
-    { name: '백운', x: 46, y: 60 },
-    { name: '남광주', x: 55, y: 72 },
-    { name: '효천', x: 63, y: 84 },
-    { name: '월드컵', x: 70, y: 43 },
-    { name: '풍암', x: 67, y: 57 },
-  ] as const
-
   return (
-    <div className="relative min-h-[270px] overflow-hidden rounded-2xl border border-[#e4edf6] bg-[linear-gradient(30deg,rgba(214,231,218,0.7),rgba(246,249,244,0.85))] lg:row-span-2">
-      <div className="absolute inset-0 bg-[repeating-linear-gradient(35deg,transparent_0_34px,rgba(151,172,181,0.1)_35px_37px),repeating-linear-gradient(-35deg,transparent_0_42px,rgba(151,172,181,0.09)_43px_45px)]" />
-      <div className="absolute top-[31%] left-[23%] h-24 w-24 rounded-full bg-[#ffb14c]/70 blur-xl" />
-      <div className="absolute top-[29%] right-[12%] h-24 w-24 rounded-full bg-[#19b99f]/55 blur-xl" />
-      <div className="absolute bottom-[17%] left-[42%] h-24 w-24 rounded-full bg-[#066bff]/30 blur-xl" />
-
-      <svg
-        className="absolute inset-[18px_22px] z-10 h-[calc(100%-36px)] w-[calc(100%-44px)]"
-        viewBox="0 0 100 100"
-        role="img"
-        aria-label="광주 2호선 주요 역세권 모의 노선 지도"
-      >
-        <path
-          d="M58 12 C56 18, 53 19, 53 23 C52 30, 44 30, 42 37 C39 43, 35 44, 35 50 C36 56, 44 56, 46 60 C52 65, 55 67, 55 72 C56 79, 62 78, 63 84"
-          fill="none"
-          stroke="#19b99f"
-          strokeLinecap="round"
-          strokeWidth="3.2"
-        />
-        <path
-          d="M42 37 C50 40, 60 38, 70 43 C70 50, 68 54, 67 57"
-          fill="none"
-          stroke="#19b99f"
-          strokeLinecap="round"
-          strokeWidth="3.2"
-        />
-        {stations.map((station) => (
-          <circle
-            key={station.name}
-            cx={station.x}
-            cy={station.y}
-            fill="#fff"
-            r="2.7"
-            stroke="#13b79f"
-            strokeWidth="1.7"
-          />
-        ))}
-      </svg>
-
-      {stations.map((station) => (
-        <span
-          key={station.name}
-          className="absolute z-20 translate-x-2 -translate-y-3 rounded-md border border-[#13b79f]/55 bg-white px-2 py-1 text-[9px] font-extrabold text-[#31536b] shadow"
-          style={{ left: `${station.x}%`, top: `${station.y}%` }}
-        >
-          {station.name}
-        </span>
-      ))}
-
-      <div className="absolute bottom-4 left-4 z-20 w-32 rounded-xl border border-[#e7edf5] bg-white/95 p-3 shadow-lg">
-        <strong className="block text-[9px] text-[#25384f]">유동인구 증가율(모의)</strong>
-        {[
-          ['#18c6a8', '30% 이상'],
-          ['#83db8a', '15~30%'],
-          ['#f5d56b', '5~15%'],
-          ['#f6a95e', '0~5%'],
-          ['#ec5a5a', '감소'],
-        ].map(([color, label]) => (
-          <span
-            key={label}
-            className="mt-1 flex items-center gap-1.5 text-[8px] text-[#5a6573]"
-          >
-            <i className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
-            {label}
-          </span>
-        ))}
-      </div>
+    <div className="min-h-[270px] overflow-hidden rounded-2xl border border-[#e4edf6] bg-white shadow-sm">
+      <img
+        alt="광주 2호선 상권 변화 예측 지도"
+        className="h-full min-h-[270px] w-full object-cover"
+        draggable={false}
+        src={landingDashboardAssets.dashboardMapPreview}
+      />
     </div>
   )
 }
@@ -317,9 +249,10 @@ function DashboardPreview() {
       <aside className="hidden border-r border-[#e6edf5] bg-gradient-to-b from-white to-[#f8fbff] p-4 lg:block">
         <div className="mb-5 flex items-center gap-2 text-sm font-extrabold text-[#153151]">
           <img
-            className="h-5 w-6 object-contain"
+            className="h-5 w-6 scale-[1.7] object-contain"
             src={landingAssets.logo}
             alt="MetroPick AI 미니 로고"
+            draggable={false}
           />
           MetroPick AI
         </div>
@@ -360,101 +293,70 @@ function DashboardPreview() {
           </div>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[1.15fr_1fr] xl:grid-rows-[108px_1fr]">
-          <MapMockup />
+        <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr]">
+          <div className="grid gap-4">
+            <MapMockup />
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            {summaryCards.map((card) => (
-              <article
-                key={card.label}
-                className="rounded-xl border border-[#e5edf5] bg-white p-4 shadow-sm"
-              >
-                <p className="text-[11px] font-extrabold text-[#556475]">{card.label}</p>
-                <strong className="mt-2 block text-lg font-black tracking-[-0.03em] text-[#111d31]">
-                  {card.value}
-                </strong>
-                <span className="mt-1 block text-[11px] font-bold text-[#10b79a]">
-                  {card.change}
-                </span>
-                <span className="mt-1 block text-[9px] text-[#7d8898]">
-                  {card.description}
-                </span>
-              </article>
-            ))}
+            <article className="rounded-xl border border-[#e5edf5] bg-white p-4 shadow-sm">
+              <h3 className="text-sm font-black tracking-[-0.02em] text-[#142a48]">
+                창업 유망 지점 TOP 5
+              </h3>
+              <ol className="mt-2 grid gap-1">
+                {ranking.map((item) => (
+                  <li
+                    key={item.rank}
+                    className="grid min-h-7 grid-cols-[22px_1fr_auto] items-center gap-2 text-[10px]"
+                  >
+                    <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-[#0d68d9] to-[#35b8d9] font-black text-white">
+                      {item.rank}
+                    </span>
+                    <span className="font-extrabold text-[#24364c]">{item.name}</span>
+                    <span className="whitespace-nowrap text-[9px] text-[#758294]">
+                      종합 점수 {item.score}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </article>
           </div>
 
-          <article className="rounded-xl border border-[#e5edf5] bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-black tracking-[-0.02em] text-[#142a48]">
-              매출 잠재력 변화 예측
-            </h3>
-            <div className="mt-2 h-36">
-              <svg
-                className="h-full w-full"
-                viewBox="0 0 360 170"
-                role="img"
-                aria-label="매출 잠재력 모의 선형 차트"
-              >
-                <line x1="35" y1="135" x2="340" y2="135" stroke="#e4eaf3" />
-                <line x1="35" y1="100" x2="340" y2="100" stroke="#edf2f8" />
-                <line x1="35" y1="65" x2="340" y2="65" stroke="#edf2f8" />
-                <line x1="35" y1="30" x2="340" y2="30" stroke="#edf2f8" />
-                <polyline
-                  fill="none"
-                  points="40,118 80,113 120,108 160,92 200,90"
-                  stroke="#94a3b8"
-                  strokeLinecap="round"
-                  strokeWidth="5"
-                />
-                <polyline
-                  fill="none"
-                  points="205,84 245,70 285,56 320,35"
-                  stroke="#086bff"
-                  strokeLinecap="round"
-                  strokeWidth="5"
-                />
-                {[40, 80, 120, 160, 200].map((x, index) => (
-                  <circle
-                    key={x}
-                    cx={x}
-                    cy={[118, 113, 108, 92, 90][index]}
-                    fill="#94a3b8"
-                    r="5"
-                  />
-                ))}
-                {[205, 245, 285, 320].map((x, index) => (
-                  <circle
-                    key={x}
-                    cx={x}
-                    cy={[84, 70, 56, 35][index]}
-                    fill="#086bff"
-                    r="5"
-                  />
-                ))}
-              </svg>
-            </div>
-          </article>
-
-          <article className="rounded-xl border border-[#e5edf5] bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-black tracking-[-0.02em] text-[#142a48]">
-              창업 유망 지점 TOP 5
-            </h3>
-            <ol className="mt-2 grid gap-1">
-              {ranking.map((item) => (
-                <li
-                  key={item.rank}
-                  className="grid min-h-7 grid-cols-[22px_1fr_auto] items-center gap-2 text-[10px]"
+          <div className="grid gap-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {summaryCards.map((card) => (
+                <article
+                  key={card.label}
+                  className="rounded-xl border border-[#e5edf5] bg-white p-4 shadow-sm"
                 >
-                  <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-[#0d68d9] to-[#35b8d9] font-black text-white">
-                    {item.rank}
+                  <p className="text-[11px] font-extrabold text-[#556475]">
+                    {card.label}
+                  </p>
+                  <strong className="mt-2 block text-lg font-black tracking-[-0.03em] text-[#111d31]">
+                    {card.value}
+                  </strong>
+                  <span className="mt-1 block text-[11px] font-bold text-[#10b79a]">
+                    {card.change}
                   </span>
-                  <span className="font-extrabold text-[#24364c]">{item.name}</span>
-                  <span className="whitespace-nowrap text-[9px] text-[#758294]">
-                    종합 점수 {item.score}
+                  <span className="mt-1 block text-[9px] text-[#7d8898]">
+                    {card.description}
                   </span>
-                </li>
+                </article>
               ))}
-            </ol>
-          </article>
+            </div>
+
+            <article className="rounded-xl border border-[#e5edf5] bg-white p-4 shadow-sm">
+              <h3 className="text-sm font-black tracking-[-0.02em] text-[#142a48]">
+                매출 잠재력 변화 예측
+              </h3>
+              <div className="mt-3 min-h-52 overflow-hidden rounded-xl bg-white">
+                <img
+                  alt="매출 잠재력 변화 예측 차트"
+                  className="h-full min-h-52 w-full object-contain"
+                  draggable={false}
+                  src={landingDashboardAssets.dashboardSalesChart}
+                />
+              </div>
+            </article>
+          </div>
         </div>
       </div>
     </section>
@@ -541,6 +443,8 @@ function FeatureSection() {
               className="h-12 w-12 object-contain"
               src={card.image}
               alt={card.imageAlt}
+              draggable={false}
+              loading="lazy"
             />
             <div>
               <h2 className="text-lg font-black tracking-[-0.02em] text-[#102747]">
@@ -573,9 +477,13 @@ function FeatureSection() {
                 key={card.title}
                 className="flex min-h-24 gap-3 rounded-xl border border-[#dfe9f3] bg-white p-4 shadow-sm"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#edf6ff] text-xs font-black text-[#086bff]">
-                  {card.label}
-                </span>
+                <img
+                  alt={card.imageAlt}
+                  className="h-11 w-11 shrink-0 scale-[1.18] rounded-lg bg-[#edf6ff] object-contain p-1.5"
+                  draggable={false}
+                  loading="lazy"
+                  src={card.image}
+                />
                 <div>
                   <h3 className="text-sm font-black text-[#173656]">{card.title}</h3>
                   <p className="mt-2 text-xs leading-5 text-[#6b798b]">
@@ -630,6 +538,8 @@ function FeatureSection() {
           className="h-16 w-16 rounded-full border border-cyan-200/40 bg-cyan-300/10 p-3"
           src={landingAssets.growthChart}
           alt="성장 전략을 나타내는 차트 아이콘"
+          draggable={false}
+          loading="lazy"
         />
         <div>
           <h2 className="text-xl font-black tracking-[-0.02em] lg:text-2xl">
@@ -656,9 +566,10 @@ function LandingFooter() {
       <div className="mx-auto grid min-h-28 w-[min(1720px,calc(100%-32px))] items-center gap-6 py-6 text-center lg:grid-cols-[290px_1fr_390px] lg:text-left">
         <div className="flex items-center justify-center gap-3 lg:justify-start">
           <img
-            className="h-8 w-10 object-contain"
+            className="h-8 w-10 scale-[1.7] object-contain"
             src={landingAssets.logo}
             alt="MetroPick AI 푸터 로고"
+            draggable={false}
           />
           <div>
             <h2 className="text-lg font-black">MetroPick AI</h2>

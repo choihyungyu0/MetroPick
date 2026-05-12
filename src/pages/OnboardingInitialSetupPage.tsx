@@ -1,0 +1,665 @@
+import { useState, type ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  ArrowRight,
+  BarChart3,
+  Bell,
+  CalendarDays,
+  ChartColumnIncreasing,
+  Check,
+  ChevronDown,
+  CirclePlay,
+  CircleCheck,
+  Clock3,
+  Coffee,
+  GraduationCap,
+  MapPin,
+  MessageCircle,
+  Pill,
+  Scissors,
+  Share2,
+  Store,
+  TrainFront,
+  Utensils,
+} from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+
+import { landingAssets } from '@/shared/assets/landingAssets'
+import { onboardingAssets } from '@/shared/assets/onboardingAssets'
+
+type InitialSetupState = {
+  alertSettings: string[]
+  selectedIndustries: string[]
+  selectedRegion: string
+  selectedStations: string[]
+}
+
+type IndustryOption = {
+  icon: LucideIcon
+  label: string
+}
+
+type AlertOption = {
+  desc: string
+  icon: LucideIcon
+  title: string
+}
+
+const regions = ['광주광역시 전체', '북구', '서구', '동구', '남구', '광산구']
+const stations = ['시청역', '백운광장역', '광주역', '남광주역', '첨단역', '더보기']
+
+const industries: IndustryOption[] = [
+  { label: '카페', icon: Coffee },
+  { label: '편의점', icon: Store },
+  { label: '음식점', icon: Utensils },
+  { label: '약국', icon: Pill },
+  { label: '미용실', icon: Scissors },
+  { label: '학원', icon: GraduationCap },
+]
+
+const alerts: AlertOption[] = [
+  {
+    title: '개통 일정 변경 알림',
+    desc: '광주 2호선 개통 일정 및 관련 변경 사항을 알려드려요.',
+    icon: CalendarDays,
+  },
+  {
+    title: '예상 매출 변동 알림',
+    desc: '선택한 역세권의 예상 매출 변동을 정기적으로 알려드려요.',
+    icon: BarChart3,
+  },
+  {
+    title: '추천 입지 업데이트',
+    desc: '새로운 추천 입지나 분석 리포트가 등록되면 알려드려요.',
+    icon: Bell,
+  },
+]
+
+const initialSetupState: InitialSetupState = {
+  selectedRegion: '광주광역시 전체',
+  selectedStations: ['시청역', '백운광장역', '남광주역'],
+  selectedIndustries: ['카페', '음식점'],
+  alertSettings: alerts.map((alert) => alert.title),
+}
+
+function Logo({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link className="flex items-center gap-3" to="/" aria-label="MetroPick AI 홈">
+      <img
+        alt="MetroPick AI 로고"
+        className={[
+          'shrink-0 scale-[1.72] object-contain',
+          compact ? 'h-7 w-8' : 'h-8 w-10',
+        ].join(' ')}
+        draggable={false}
+        src={landingAssets.logo}
+      />
+      <span>
+        <span
+          className={[
+            'block leading-none font-black tracking-[-0.03em] text-white',
+            compact ? 'text-xl' : 'text-2xl',
+          ].join(' ')}
+        >
+          MetroPick AI
+        </span>
+        <span className="mt-2 block text-xs font-semibold text-white/75">
+          광주 2호선 개통의 미래, AI 상권 분석 예측 서비스
+        </span>
+      </span>
+    </Link>
+  )
+}
+
+function Header() {
+  const navItems = ['서비스 소개', '상권 분석', 'AI 예측', '입지 추천', '리포트']
+
+  return (
+    <header className="relative z-20 bg-gradient-to-r from-[#061a3d] via-[#071f4b] to-[#052b67] text-white shadow-[0_8px_24px_rgba(5,24,55,0.22)]">
+      <div className="mx-auto grid min-h-[82px] w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-5 py-5 lg:w-[calc(100%_-_64px)] xl:grid-cols-[360px_1fr_330px] xl:py-0">
+        <Logo />
+
+        <nav
+          aria-label="주요 메뉴"
+          className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-base font-extrabold tracking-[-0.02em] lg:gap-x-11 xl:gap-x-16 xl:text-lg"
+        >
+          {navItems.map((item) => (
+            <Link
+              className="rounded-sm transition hover:text-[#42e5df] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              key={item}
+              to="/"
+            >
+              {item}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex justify-center gap-3 xl:justify-end">
+          <Link
+            className="inline-flex h-12 items-center justify-center rounded-lg border border-white/55 bg-white/5 px-7 text-base font-extrabold transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+            to="/login"
+          >
+            로그인
+          </Link>
+          <Link
+            className="inline-flex h-12 items-center justify-center rounded-lg bg-gradient-to-r from-[#096bff] to-[#0058f5] px-7 text-base font-extrabold shadow-[0_14px_24px_rgba(0,100,255,0.23)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+            to="/signup"
+          >
+            무료로 시작하기
+          </Link>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+function StepProgress() {
+  const steps = ['관심 지역 설정', '관심 역세권 설정', '분석 업종 설정', '알림 설정']
+
+  return (
+    <ol className="relative flex min-w-[640px] items-start justify-center pt-1 md:min-w-0">
+      {steps.map((step, index) => (
+        <li className="relative flex w-40 flex-col items-center" key={step}>
+          <span
+            className={[
+              'relative z-10 grid h-10 w-10 place-items-center rounded-full border-2 bg-white text-lg font-black',
+              index === 0
+                ? 'border-[#096bff] bg-[#096bff] text-white shadow-[0_10px_24px_rgba(9,107,255,0.22)]'
+                : 'border-[#cad8e8] text-[#7b889c]',
+            ].join(' ')}
+            aria-current={index === 0 ? 'step' : undefined}
+          >
+            {index === 0 ? <Check size={20} strokeWidth={3} /> : index + 1}
+          </span>
+          <span className="mt-3 text-center text-sm font-black text-[#1e2e49]">
+            {step}
+          </span>
+          {index < steps.length - 1 ? (
+            <span
+              aria-hidden="true"
+              className="absolute top-5 left-[100px] h-px w-[120px] bg-[#cad8e8]"
+            />
+          ) : null}
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function ChoiceButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean
+  children: ReactNode
+  onClick: () => void
+}) {
+  return (
+    <button
+      aria-pressed={active}
+      className={[
+        'inline-flex h-12 min-w-0 items-center justify-center gap-2 rounded-[11px] border px-4 text-sm font-black transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none md:text-[15px]',
+        active
+          ? 'border-2 border-[#096bff] bg-[#f7fbff] text-[#096bff] shadow-[0_8px_20px_rgba(9,107,255,0.08)]'
+          : 'border-[#d5e0ec] bg-white text-[#526177] hover:bg-slate-50',
+      ].join(' ')}
+      onClick={onClick}
+      type="button"
+    >
+      {children}
+      {active ? (
+        <span className="grid h-5 w-5 place-items-center rounded-full bg-[#096bff] text-white">
+          <Check size={13} strokeWidth={3} />
+        </span>
+      ) : null}
+    </button>
+  )
+}
+
+function IndustryCard({
+  active,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean
+  icon: LucideIcon
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      aria-pressed={active}
+      className={[
+        'relative grid h-28 place-items-center content-center gap-2 rounded-[11px] border bg-white text-[#11284c] transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none',
+        active
+          ? 'border-2 border-[#096bff] bg-gradient-to-b from-white to-[#f5faff] shadow-[0_10px_24px_rgba(9,107,255,0.08)]'
+          : 'border-[#d5e0ec] hover:bg-slate-50',
+      ].join(' ')}
+      onClick={onClick}
+      type="button"
+    >
+      {active ? (
+        <span className="absolute top-3 right-3 grid h-5 w-5 place-items-center rounded-full bg-[#096bff] text-white">
+          <Check size={13} strokeWidth={3} />
+        </span>
+      ) : null}
+      <Icon className="text-[#0b4a99]" size={34} strokeWidth={1.8} />
+      <span className="text-sm font-black text-[#1a2e51] md:text-[15px]">{label}</span>
+    </button>
+  )
+}
+
+function ToggleRow({
+  active,
+  desc,
+  icon: Icon,
+  onClick,
+  title,
+}: {
+  active: boolean
+  desc: string
+  icon: LucideIcon
+  onClick: () => void
+  title: string
+}) {
+  return (
+    <div className="grid min-h-16 grid-cols-[42px_1fr] items-center gap-3 border-b border-[#edf2f7] bg-white px-5 py-3 last:border-b-0 sm:grid-cols-[42px_1fr_72px] sm:pr-7">
+      <div className="flex justify-center text-[#096bff]">
+        <Icon size={25} strokeWidth={2} />
+      </div>
+      <div>
+        <strong className="block text-base font-black tracking-[-0.02em] text-[#0c1e3c]">
+          {title}
+        </strong>
+        <p className="mt-1 text-xs font-semibold text-[#6f7c90] md:text-[13px]">{desc}</p>
+      </div>
+      <button
+        aria-label={`${title} 토글`}
+        aria-pressed={active}
+        className={[
+          'grid h-[26px] w-[50px] items-center rounded-full p-[3px] transition sm:justify-self-end',
+          active ? 'bg-[#096bff]' : 'bg-[#c8d4e2]',
+        ].join(' ')}
+        onClick={onClick}
+        type="button"
+      >
+        <span
+          className={[
+            'block h-5 w-5 rounded-full bg-white shadow-[0_3px_8px_rgba(0,0,0,0.18)] transition',
+            active ? 'translate-x-6' : 'translate-x-0',
+          ].join(' ')}
+        />
+      </button>
+    </div>
+  )
+}
+
+function SetupSection({
+  children,
+  desc,
+  number,
+  title,
+}: {
+  children: ReactNode
+  desc: string
+  number: string
+  title: string
+}) {
+  return (
+    <section className="grid gap-5 rounded-2xl border border-[#dce9f7] bg-white/95 px-5 py-6 shadow-[0_14px_38px_rgba(14,59,116,0.07)] lg:grid-cols-[320px_1fr] lg:items-center lg:px-8 lg:py-7">
+      <div className="grid min-h-16 grid-cols-[48px_1fr] gap-4 border-b border-[#dbe5f1] pb-5 lg:border-r lg:border-b-0 lg:pr-7 lg:pb-0">
+        <span className="text-2xl leading-none font-black text-[#096bff]">{number}</span>
+        <div>
+          <h2 className="text-xl font-black tracking-[-0.03em] text-[#0a1834]">
+            {title}
+          </h2>
+          <p className="mt-2 text-sm font-semibold text-[#6a7688]">{desc}</p>
+        </div>
+      </div>
+      <div className="min-w-0">{children}</div>
+    </section>
+  )
+}
+
+function SummaryItem({
+  children,
+  icon: Icon,
+  title,
+}: {
+  children: ReactNode
+  icon: LucideIcon
+  title: string
+}) {
+  return (
+    <article className="grid grid-cols-[42px_1fr_52px] gap-3 border-b border-[#edf2f7] px-4 py-4 last:border-b-0">
+      <div className="flex justify-center pt-1 text-[#096bff]">
+        <Icon size={27} strokeWidth={2.2} />
+      </div>
+      <div className="min-w-0">
+        <strong className="block text-base font-black text-[#0b1d3a]">{title}</strong>
+        <div className="mt-2">{children}</div>
+      </div>
+      <button
+        className="h-9 rounded-lg border border-[#d4dfec] bg-[#fbfdff] text-sm font-bold text-[#465872] transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none"
+        type="button"
+      >
+        수정
+      </button>
+    </article>
+  )
+}
+
+function TagList({ items }: { items: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((item) => (
+        <span
+          className="inline-flex min-h-6 items-center rounded-full border border-[#dce6f1] bg-[#f2f6fb] px-2.5 text-xs font-extrabold text-[#53637a]"
+          key={item}
+        >
+          {item}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function SummaryPanel({
+  alertSettings,
+  onComplete,
+  selectedIndustries,
+  selectedRegion,
+  selectedStations,
+}: InitialSetupState & { onComplete: () => void }) {
+  return (
+    <aside className="rounded-2xl border border-[#dce9f7] bg-white/95 px-5 py-6 shadow-[0_18px_52px_rgba(14,59,116,0.1)] lg:px-6">
+      <h2 className="text-[22px] font-black tracking-[-0.03em] text-[#07152f]">
+        나의 설정 요약
+      </h2>
+      <p className="mt-2 text-sm font-semibold text-[#67758a]">
+        설정한 정보를 확인해주세요.
+      </p>
+
+      <div className="mt-5 overflow-hidden rounded-xl border border-[#dce8f5] bg-white">
+        <SummaryItem icon={MapPin} title="관심 지역">
+          <p className="text-sm font-semibold text-[#5d6b80]">{selectedRegion}</p>
+        </SummaryItem>
+        <SummaryItem icon={TrainFront} title="관심 역세권">
+          <TagList items={selectedStations} />
+        </SummaryItem>
+        <SummaryItem icon={Store} title="분석 업종">
+          <TagList items={selectedIndustries} />
+        </SummaryItem>
+        <SummaryItem icon={Bell} title="알림 설정">
+          <div className="grid gap-1.5">
+            {alertSettings.map((item) => (
+              <p
+                className="flex items-center gap-1.5 text-xs font-bold text-[#58677d]"
+                key={item}
+              >
+                <CircleCheck className="text-[#11b3a3]" size={15} />
+                {item}
+              </p>
+            ))}
+          </div>
+        </SummaryItem>
+      </div>
+
+      <section className="mt-4 rounded-xl border border-[#cfe1f5] bg-gradient-to-b from-[#f3f9ff] to-[#eaf4ff] px-5 py-4">
+        <h3 className="flex items-center gap-2 text-base font-black tracking-[-0.02em] text-[#0a4ba3]">
+          <Clock3 size={18} />
+          잠깐! 이런 혜택을 받아보세요
+        </h3>
+        <ul className="mt-3 list-disc space-y-1 pl-6 text-sm leading-6 font-bold text-[#28405f]">
+          <li>맞춤형 AI 상권 분석 리포트 제공</li>
+          <li>선택한 지역의 개통 영향 예측</li>
+          <li>관심 업종 맞춤 입지 추천</li>
+        </ul>
+      </section>
+
+      <button
+        className="mt-5 flex h-16 w-full items-center justify-center gap-4 rounded-lg bg-gradient-to-r from-[#096bff] to-[#0058f5] text-lg font-black text-white shadow-[0_16px_28px_rgba(9,107,255,0.22)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none"
+        onClick={onComplete}
+        type="button"
+      >
+        설정 완료하고 시작하기
+        <ArrowRight size={24} />
+      </button>
+    </aside>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="relative z-20 bg-gradient-to-r from-[#061a3d] via-[#071f4b] to-[#052b67] text-white">
+      <div className="mx-auto grid min-h-28 w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-6 py-7 text-center lg:w-[calc(100%_-_64px)] xl:grid-cols-[1fr_440px_180px] xl:text-left">
+        <div className="flex flex-col items-center gap-5 xl:flex-row">
+          <div className="grid h-[78px] w-[78px] shrink-0 place-items-center rounded-full border border-[#00d6d5]/70 bg-[#00d9d8]/10 text-[#4ae8ff] shadow-[0_0_24px_rgba(0,217,216,0.14)]">
+            <ChartColumnIncreasing size={42} strokeWidth={2.2} />
+          </div>
+          <div>
+            <h2 className="text-xl font-black tracking-[-0.03em] md:text-[22px]">
+              AI가 분석한 광주 2호선 상권 변화, 지금 바로 확인해보세요!
+            </h2>
+            <p className="mt-2 text-base font-semibold text-white/75">
+              맞춤 설정 완료 후 다양한 인사이트와 리포트를 이용할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <address className="text-sm leading-6 text-white/75 not-italic">
+          <p>(주)메트로픽시 ㅣ 대표이사: 김주현</p>
+          <p>광주광역시 동구 금남로 193-22, 4층</p>
+          <p>고객센터: 062-123-4567 ㅣ 062-123-4567</p>
+        </address>
+
+        <div className="flex justify-center gap-3 xl:justify-end">
+          {[
+            { label: '공유하기', icon: Share2 },
+            { label: 'Naver Talk', icon: MessageCircle },
+            { label: '동영상 보기', icon: CirclePlay },
+          ].map(({ icon: Icon, label }) => (
+            <button
+              aria-label={label}
+              className="grid h-12 w-12 place-items-center rounded-full border border-white/25 bg-white/5 text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              key={label}
+              type="button"
+            >
+              <Icon size={20} />
+            </button>
+          ))}
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+export function OnboardingInitialSetupPage() {
+  const navigate = useNavigate()
+  const [selectedRegion, setSelectedRegion] = useState(initialSetupState.selectedRegion)
+  const [selectedStations, setSelectedStations] = useState(
+    initialSetupState.selectedStations,
+  )
+  const [selectedIndustries, setSelectedIndustries] = useState(
+    initialSetupState.selectedIndustries,
+  )
+  const [alertSettings, setAlertSettings] = useState(initialSetupState.alertSettings)
+
+  const toggleStation = (station: string) => {
+    if (station === '더보기') {
+      return
+    }
+
+    setSelectedStations((current) =>
+      current.includes(station)
+        ? current.filter((item) => item !== station)
+        : [...current, station],
+    )
+  }
+
+  const toggleIndustry = (industry: string) => {
+    setSelectedIndustries((current) =>
+      current.includes(industry)
+        ? current.filter((item) => item !== industry)
+        : [...current, industry],
+    )
+  }
+
+  const toggleAlert = (alertTitle: string) => {
+    setAlertSettings((current) =>
+      current.includes(alertTitle)
+        ? current.filter((item) => item !== alertTitle)
+        : [...current, alertTitle],
+    )
+  }
+
+  const handleComplete = () => {
+    window.localStorage.setItem(
+      'metropick-onboarding-initial',
+      JSON.stringify({
+        alertSettings,
+        selectedIndustries,
+        selectedRegion,
+        selectedStations,
+      }),
+    )
+    navigate('/onboarding/stations')
+  }
+
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-[#f6fbff] text-[#07152f]">
+      <Header />
+
+      <main className="relative overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-no-repeat"
+          style={{
+            backgroundImage: `linear-gradient(90deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.78) 30%, rgba(255,255,255,0.96) 60%, #ffffff 100%), url(${onboardingAssets.initialSetupTrainBg})`,
+            backgroundPosition: 'left bottom',
+            backgroundSize: 'auto 84%',
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,rgba(46,154,255,0.10),transparent_26%),radial-gradient(circle_at_78%_20%,rgba(0,210,214,0.08),transparent_24%)]" />
+
+        <div className="relative z-10 mx-auto w-[calc(100%_-_32px)] max-w-[1720px] py-9 lg:w-[calc(100%_-_80px)]">
+          <section className="grid gap-8 xl:grid-cols-[1fr_720px_420px] xl:items-start">
+            <div>
+              <h1 className="text-[clamp(2.5rem,3vw,3rem)] leading-none font-black tracking-[-0.05em] text-[#07152f]">
+                초기 설정
+              </h1>
+              <p className="mt-4 text-base font-semibold text-[#53637a] md:text-lg">
+                맞춤형 AI 분석과 예측을 위해 선호 정보를 설정해주세요.
+              </p>
+            </div>
+            <div className="overflow-x-auto pb-2 xl:col-span-2">
+              <StepProgress />
+            </div>
+          </section>
+
+          <section className="mt-8 grid gap-10 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-start xl:gap-14">
+            <div className="grid gap-4">
+              <SetupSection
+                desc="분석을 원하는 지역을 선택해주세요."
+                number="01"
+                title="관심 지역 선택"
+              >
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+                  {regions.map((region) => (
+                    <ChoiceButton
+                      active={selectedRegion === region}
+                      key={region}
+                      onClick={() => setSelectedRegion(region)}
+                    >
+                      {region}
+                    </ChoiceButton>
+                  ))}
+                </div>
+              </SetupSection>
+
+              <SetupSection
+                desc="분석을 원하는 역세권을 선택해주세요."
+                number="02"
+                title="관심 역세권 선택"
+              >
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+                  {stations.map((station) => {
+                    const isActive = selectedStations.includes(station)
+                    const isMore = station === '더보기'
+
+                    return (
+                      <ChoiceButton
+                        active={isActive}
+                        key={station}
+                        onClick={() => toggleStation(station)}
+                      >
+                        {station}
+                        {isMore ? <ChevronDown size={16} /> : null}
+                      </ChoiceButton>
+                    )
+                  })}
+                </div>
+              </SetupSection>
+
+              <SetupSection
+                desc="관심 있는 업종을 선택해주세요."
+                number="03"
+                title="분석 업종 선택"
+              >
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+                  {industries.map((industry) => (
+                    <IndustryCard
+                      active={selectedIndustries.includes(industry.label)}
+                      icon={industry.icon}
+                      key={industry.label}
+                      label={industry.label}
+                      onClick={() => toggleIndustry(industry.label)}
+                    />
+                  ))}
+                </div>
+                <button
+                  className="mt-3 inline-flex items-center gap-1 text-sm font-black text-[#096bff] focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none"
+                  type="button"
+                >
+                  더 많은 업종 보기
+                  <ChevronDown size={15} />
+                </button>
+              </SetupSection>
+
+              <SetupSection
+                desc="중요한 정보를 놓치지 않도록 알림을 설정하세요."
+                number="04"
+                title="알림 설정"
+              >
+                <div className="overflow-hidden rounded-xl border border-[#e2eaf3] bg-white">
+                  {alerts.map((alert) => (
+                    <ToggleRow
+                      active={alertSettings.includes(alert.title)}
+                      desc={alert.desc}
+                      icon={alert.icon}
+                      key={alert.title}
+                      onClick={() => toggleAlert(alert.title)}
+                      title={alert.title}
+                    />
+                  ))}
+                </div>
+              </SetupSection>
+            </div>
+
+            <SummaryPanel
+              alertSettings={alertSettings}
+              onComplete={handleComplete}
+              selectedIndustries={selectedIndustries}
+              selectedRegion={selectedRegion}
+              selectedStations={selectedStations}
+            />
+          </section>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  )
+}

@@ -25,6 +25,11 @@ describe('OnboardingStationPage', () => {
       screen.getByRole('heading', { level: 1, name: '관심 역세권 설정' }),
     ).toBeInTheDocument()
     expect(screen.getByText('4 / 5 선택')).toBeInTheDocument()
+    expect(screen.getByText('선택 역세권 미리보기')).toBeInTheDocument()
+    expect(
+      screen.getByAltText('선택한 광주 2호선 역세권 미리보기 지도'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('4개 역세권 / 반경 500m')).toBeInTheDocument()
   })
 
   it('updates selected station count when a station is selected', async () => {

@@ -94,7 +94,7 @@ function LoginCard() {
   const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     window.localStorage.setItem('metropick-authenticated', 'true')
-    navigate('/onboarding/stations')
+    navigate('/onboarding')
   }
 
   return (

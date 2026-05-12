@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { onboardingAssets } from '@/shared/assets/onboardingAssets'
 
 type RadiusOption = '300m' | '500m' | '1km'
 
@@ -31,17 +32,6 @@ const defaultSetup: OnboardingStationSetup = {
   route: '광주 2호선(예정)',
   selectedStations: ['시청역', '상무역', '백운광장역', '남광주역'],
   radius: '500m',
-}
-
-const stationPreviewPositions: Record<string, { x: number; y: number }> = {
-  시청역: { x: 34, y: 36 },
-  상무역: { x: 47, y: 29 },
-  백운광장역: { x: 55, y: 60 },
-  남광주역: { x: 68, y: 71 },
-  운천역: { x: 28, y: 50 },
-  금남로5가역: { x: 62, y: 45 },
-  광주역: { x: 74, y: 31 },
-  첨단지구역: { x: 42, y: 18 },
 }
 
 const stepItems = [
@@ -266,92 +256,20 @@ function RadiusButton({
   )
 }
 
-function SelectedStationMap({ selectedStations }: { selectedStations: string[] }) {
-  const visibleStations = selectedStations
-    .map((station) => ({ station, position: stationPreviewPositions[station] }))
-    .filter((item): item is { station: string; position: { x: number; y: number } } =>
-      Boolean(item.position),
-    )
-
+function SelectedStationMap() {
   return (
     <section className="rounded-2xl border border-[#dce9f7] bg-white p-5 shadow-[0_14px_38px_rgba(14,59,116,0.06)]">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-xl font-black tracking-[-0.03em] text-[#07152f]">
-          선택 역세권 미리보기
-        </h2>
-        <div className="flex flex-wrap gap-2 text-xs font-bold text-[#53637a]">
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#eaf7f5] px-3 py-1">
-            <i className="h-2.5 w-2.5 rounded-full bg-[#13bfae]" />
-            선택 역세권
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#edf4ff] px-3 py-1">
-            <i className="h-1 w-6 rounded-full bg-[#096bff]" />
-            2호선 예정 노선
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#fff8e8] px-3 py-1">
-            <i className="h-2.5 w-2.5 rounded-full border border-[#f4b343]" />
-            500m 반경
-          </span>
-        </div>
-      </div>
+      <h2 className="text-xl font-black tracking-[-0.03em] text-[#07152f]">
+        선택 역세권 미리보기
+      </h2>
 
-      <div className="relative mt-4 h-[300px] overflow-hidden rounded-2xl border border-[#dbe7f4] bg-[linear-gradient(30deg,rgba(214,231,218,0.78),rgba(246,249,244,0.9)),repeating-linear-gradient(35deg,transparent_0_34px,rgba(151,172,181,0.12)_35px_37px),repeating-linear-gradient(-35deg,transparent_0_42px,rgba(151,172,181,0.1)_43px_45px)]">
-        <div
-          className="absolute inset-0 bg-[radial-gradient(circle_at_34%_42%,rgba(255,178,78,0.35),transparent_20%),radial-gradient(circle_at_62%_54%,rgba(19,191,174,0.28),transparent_18%),radial-gradient(circle_at_73%_32%,rgba(9,107,255,0.2),transparent_18%)]"
-          aria-hidden="true"
+      <div className="mt-4 overflow-hidden rounded-2xl border border-[#dbe7f4] bg-white shadow-sm">
+        <img
+          alt="선택한 광주 2호선 역세권 미리보기 지도"
+          className="block h-auto w-full object-contain"
+          draggable={false}
+          src={onboardingAssets.stationPreviewMap}
         />
-        <svg
-          aria-label="선택한 역세권과 광주 2호선 예정 노선 미리보기"
-          className="absolute inset-0 h-full w-full"
-          role="img"
-          viewBox="0 0 100 100"
-        >
-          <path
-            d="M42 18 C50 25 45 34 34 36 C24 39 22 50 32 54 C45 61 52 54 62 45 C72 36 82 36 74 31"
-            fill="none"
-            stroke="#13bfae"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2.8"
-          />
-          <path
-            d="M34 36 C45 43 54 49 55 60 C57 70 64 75 68 71"
-            fill="none"
-            stroke="#13bfae"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2.8"
-          />
-          {visibleStations.map(({ position, station }) => (
-            <g key={station}>
-              <circle
-                cx={position.x}
-                cy={position.y}
-                fill="rgba(244,179,67,0.12)"
-                r="8"
-                stroke="rgba(244,179,67,0.55)"
-                strokeDasharray="2 2"
-              />
-              <circle
-                cx={position.x}
-                cy={position.y}
-                fill="#fff"
-                r="2.7"
-                stroke="#13bfae"
-                strokeWidth="1.5"
-              />
-            </g>
-          ))}
-        </svg>
-        {visibleStations.map(({ position, station }) => (
-          <span
-            className="absolute z-10 rounded-md border border-[#13bfae]/50 bg-white px-2 py-1 text-xs font-black text-[#31536b] shadow-[0_5px_14px_rgba(0,0,0,0.08)]"
-            key={station}
-            style={{ left: `${position.x}%`, top: `${position.y}%` }}
-          >
-            {station}
-          </span>
-        ))}
       </div>
     </section>
   )
@@ -674,7 +592,7 @@ export function OnboardingStationPage() {
               </div>
             </section>
 
-            <SelectedStationMap selectedStations={setup.selectedStations} />
+            <SelectedStationMap />
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
               <button

@@ -30,7 +30,7 @@ describe('SignupPage', () => {
     const router = createMemoryRouter(
       [
         { path: '/signup', element: <SignupPage /> },
-        { path: '/onboarding/stations', element: <h1>관심 역세권 설정</h1> },
+        { path: '/onboarding', element: <h1>초기 설정</h1> },
       ],
       { initialEntries: ['/signup'] },
     )
@@ -39,7 +39,7 @@ describe('SignupPage', () => {
 
     await user.click(screen.getByRole('button', { name: '회원가입 완료' }))
 
-    expect(await screen.findByText('관심 역세권 설정')).toBeInTheDocument()
+    expect(await screen.findByText('초기 설정')).toBeInTheDocument()
     expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
   })
 })
