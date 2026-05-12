@@ -5,6 +5,7 @@ import { CommercialAnalysisPage } from '@/pages/CommercialAnalysisPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
+import { MyPage } from '@/pages/MyPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { OnboardingBusinessTypePage } from '@/pages/OnboardingBusinessTypePage'
 import { OnboardingInitialSetupPage } from '@/pages/OnboardingInitialSetupPage'
@@ -64,6 +65,10 @@ export const router = createBrowserRouter([
   {
     path: '/report',
     element: <ReportPage />,
+  },
+  {
+    path: '/mypage',
+    element: <MyPage />,
   },
   {
     element: <AppShell />,
