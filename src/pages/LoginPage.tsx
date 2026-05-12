@@ -1,30 +1,20 @@
 import { Link } from 'react-router-dom'
 
+import { landingAssets } from '@/shared/assets/landingAssets'
 import { loginAssets } from '@/shared/assets/loginAssets'
 
 function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <Link className="flex items-center gap-3" to="/" aria-label="MetroPick AI 홈">
-      <span
+      <img
+        alt="MetroPick AI 로고"
         className={[
-          'relative inline-block shrink-0',
+          'shrink-0 scale-[1.75] object-contain',
           compact ? 'h-7 w-8' : 'h-8 w-10',
         ].join(' ')}
-        aria-hidden="true"
-      >
-        <span
-          className={[
-            'absolute top-1 left-0 rounded-[7px_7px_11px_11px] bg-gradient-to-br from-[#00d9d8] to-[#0a6dff] -skew-x-[14deg]',
-            compact ? 'h-[22px] w-[17px]' : 'h-6 w-[19px]',
-          ].join(' ')}
-        />
-        <span
-          className={[
-            'absolute top-1 right-0 rounded-[7px_7px_11px_11px] bg-gradient-to-br from-[#00d9d8] to-[#0a6dff] skew-x-[14deg]',
-            compact ? 'h-[22px] w-[17px]' : 'h-6 w-[19px]',
-          ].join(' ')}
-        />
-      </span>
+        draggable={false}
+        src={landingAssets.logo}
+      />
       <span>
         <span
           className={[
@@ -60,56 +50,35 @@ function PreviewImage({
 
 function HeroVisual() {
   return (
-    <div className="relative mt-10 min-h-[660px] overflow-visible md:min-h-[700px] xl:absolute xl:right-0 xl:bottom-0 xl:left-[-48px] xl:mt-0 xl:h-[520px] xl:min-h-0">
-      <div
-        className="absolute bottom-20 left-0 hidden h-[300px] w-[320px] opacity-15 md:block"
+    <div className="relative mt-10 min-h-[680px] overflow-visible md:min-h-[710px] xl:absolute xl:right-0 xl:bottom-[-6px] xl:left-[-80px] xl:mt-0 xl:h-[520px] xl:min-h-0">
+      <img
+        alt=""
         aria-hidden="true"
-      >
-        <div className="h-full w-full bg-[linear-gradient(to_top,rgba(72,158,238,0.5)_0_42%,transparent_42%)_0_160px/34px_160px_no-repeat,linear-gradient(to_top,rgba(72,158,238,0.42)_0_68%,transparent_68%)_46px_88px/48px_240px_no-repeat,linear-gradient(to_top,rgba(72,158,238,0.48)_0_52%,transparent_52%)_112px_138px/42px_190px_no-repeat,linear-gradient(to_top,rgba(72,158,238,0.4)_0_76%,transparent_76%)_180px_60px/54px_270px_no-repeat,linear-gradient(to_top,rgba(72,158,238,0.46)_0_58%,transparent_58%)_250px_128px/42px_200px_no-repeat]" />
-      </div>
+        className="absolute bottom-[-54px] left-[-210px] z-0 hidden h-[500px] w-[760px] max-w-none object-contain object-left-bottom opacity-75 [mask-image:linear-gradient(180deg,transparent_0%,transparent_20%,black_38%,black_82%,transparent_100%)] md:block xl:bottom-[-58px] xl:left-[-86px] xl:h-[520px] xl:w-[820px]"
+        draggable={false}
+        src={landingAssets.heroTrainBg}
+      />
       <div
-        className="absolute right-4 bottom-20 hidden h-[300px] w-[320px] scale-x-[-1] opacity-15 md:block"
+        className="absolute inset-x-0 bottom-0 z-0 h-48 bg-gradient-to-t from-white via-white/60 to-transparent"
         aria-hidden="true"
-      >
-        <div className="h-full w-full bg-[linear-gradient(to_top,rgba(72,158,238,0.5)_0_42%,transparent_42%)_0_160px/34px_160px_no-repeat,linear-gradient(to_top,rgba(72,158,238,0.42)_0_68%,transparent_68%)_46px_88px/48px_240px_no-repeat,linear-gradient(to_top,rgba(72,158,238,0.48)_0_52%,transparent_52%)_112px_138px/42px_190px_no-repeat,linear-gradient(to_top,rgba(72,158,238,0.4)_0_76%,transparent_76%)_180px_60px/54px_270px_no-repeat,linear-gradient(to_top,rgba(72,158,238,0.46)_0_58%,transparent_58%)_250px_128px/42px_200px_no-repeat]" />
-      </div>
+      />
 
-      <div
-        className="absolute bottom-10 left-[-130px] h-[180px] w-[660px] origin-left-bottom -rotate-[14deg] scale-75 md:left-[-72px] xl:left-[-62px] xl:bottom-9 xl:scale-100"
-        aria-hidden="true"
-      >
-        <div className="absolute bottom-[30px] left-[-20px] h-[34px] w-[760px] rounded-full border-y-4 border-t-[rgba(76,166,234,0.34)] border-b-[rgba(76,166,234,0.18)] bg-gradient-to-r from-[rgba(112,184,240,0.1)] to-[rgba(38,126,215,0.3)]" />
-        <div className="absolute bottom-[68px] left-10 flex h-[86px] w-[420px] drop-shadow-[0_24px_32px_rgba(0,91,184,0.18)]">
-          <div className="relative z-10 -mr-[22px] h-[86px] w-[86px] rounded-[22px_34px_34px_22px] border-[5px] border-[#a7d8f5] bg-gradient-to-br from-[#e8fbff] via-[#1bc6d6] to-[#0f6fe8]">
-            <span className="absolute right-3 bottom-3 h-2.5 w-8 rounded-full bg-[#ffd047]" />
-          </div>
-          <div className="flex h-20 w-[340px] items-center gap-4 rounded-[26px_10px_10px_26px] border-[5px] border-[#a7d8f5] bg-gradient-to-b from-white to-[#dff7ff] pl-6">
-            {[0, 1, 2].map((item) => (
-              <span
-                key={item}
-                className="h-10 w-[76px] rounded-xl bg-gradient-to-br from-[#0ad4d9] to-[#0875e9] shadow-[inset_0_0_0_4px_rgba(255,255,255,0.45)]"
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="relative z-10 grid gap-4 md:grid-cols-2 xl:block">
+      <div className="relative z-10 grid gap-4 md:grid-cols-2 xl:absolute xl:inset-0 xl:block">
         <PreviewImage
           alt="광주 2호선 예상 상권 변화 지도 미리보기"
-          className="mx-auto h-auto w-full max-w-[430px] rounded-[18px] border border-[#d3e3f5] bg-white/85 object-contain shadow-[0_20px_48px_rgba(0,42,103,0.12)] backdrop-blur md:mx-0 xl:absolute xl:bottom-[88px] xl:left-[280px] xl:w-[330px]"
+          className="mx-auto h-auto w-full max-w-[430px] rounded-[18px] border border-[#d3e3f5] bg-white/85 object-contain shadow-[0_20px_48px_rgba(0,42,103,0.12)] backdrop-blur md:mx-0 xl:absolute xl:bottom-[96px] xl:left-[210px] xl:w-[330px]"
           loading="eager"
           src={loginAssets.mapPreview}
         />
         <PreviewImage
           alt="상권 성장 지수 추이 차트 미리보기"
-          className="mx-auto h-auto w-full max-w-[390px] rounded-[18px] border border-[#d3e3f5] bg-white/85 object-contain shadow-[0_20px_48px_rgba(0,42,103,0.12)] backdrop-blur md:mx-0 xl:absolute xl:right-[14px] xl:bottom-[98px] xl:w-[344px]"
+          className="mx-auto h-auto w-full max-w-[390px] rounded-[18px] border border-[#d3e3f5] bg-white/85 object-contain shadow-[0_20px_48px_rgba(0,42,103,0.12)] backdrop-blur md:mx-0 xl:absolute xl:bottom-[108px] xl:left-[500px] xl:w-[344px]"
           loading="lazy"
           src={loginAssets.growthChart}
         />
         <PreviewImage
           alt="핵심 인사이트 목록 미리보기"
-          className="mx-auto h-auto w-full max-w-[300px] rounded-[18px] border border-[#d3e3f5] bg-white/85 object-contain shadow-[0_20px_48px_rgba(0,42,103,0.12)] backdrop-blur md:col-span-2 xl:absolute xl:bottom-[-10px] xl:left-[470px] xl:w-[250px]"
+          className="mx-auto h-auto w-full max-w-[300px] rounded-[18px] border border-[#d3e3f5] bg-white/85 object-contain shadow-[0_20px_48px_rgba(0,42,103,0.12)] backdrop-blur md:col-span-2 xl:absolute xl:bottom-[-34px] xl:left-[370px] xl:w-[250px]"
           loading="lazy"
           src={loginAssets.insightList}
         />
@@ -120,28 +89,30 @@ function HeroVisual() {
 
 function LoginCard() {
   return (
-    <section className="w-full rounded-[22px] border border-[#e3edf8] bg-white/95 px-6 py-9 shadow-[0_28px_70px_rgba(13,54,115,0.14)] sm:px-10 lg:px-14 xl:min-h-[655px] xl:px-[88px] xl:py-[58px]">
+    <section className="w-full rounded-[22px] border border-[#e3edf8] bg-white/95 px-6 py-9 shadow-[0_28px_70px_rgba(13,54,115,0.14)] sm:px-10 lg:px-14 xl:min-h-[580px] xl:px-[76px] xl:py-[30px]">
       <div className="flex items-center justify-center gap-3 text-2xl font-black text-[#071633]">
-        <span className="relative inline-block h-7 w-8" aria-hidden="true">
-          <span className="absolute top-1 left-0 h-[22px] w-[17px] rounded-[7px_7px_11px_11px] bg-gradient-to-br from-[#00d9d8] to-[#0a6dff] -skew-x-[14deg]" />
-          <span className="absolute top-1 right-0 h-[22px] w-[17px] rounded-[7px_7px_11px_11px] bg-gradient-to-br from-[#00d9d8] to-[#0a6dff] skew-x-[14deg]" />
-        </span>
+        <img
+          alt="MetroPick AI 로고"
+          className="h-7 w-8 scale-[1.75] object-contain"
+          draggable={false}
+          src={landingAssets.logo}
+        />
         <strong>MetroPick AI</strong>
       </div>
 
-      <h2 className="mt-7 text-center text-3xl font-black tracking-[-0.03em] text-[#071633] sm:text-4xl">
+      <h2 className="mt-4 text-center text-[32px] font-black tracking-[-0.03em] text-[#071633]">
         로그인
       </h2>
-      <p className="mt-3 text-center text-base text-[#69778c]">
+      <p className="mt-1 text-center text-[15px] text-[#69778c]">
         MetroPick AI에 오신 것을 환영합니다.
       </p>
 
-      <form className="mt-8 grid gap-3">
+      <form className="mt-6 grid gap-2">
         <label className="text-sm font-extrabold text-[#0e1f3f]" htmlFor="login-email">
           이메일
         </label>
         <input
-          className="h-14 rounded-lg border border-[#cfdbea] bg-white px-4 text-base text-[#0d1b35] outline-none transition placeholder:font-semibold placeholder:text-[#96a3b5] focus:border-[#0b6cff] focus:ring-4 focus:ring-[#0b6cff]/10"
+          className="h-12 rounded-lg border border-[#cfdbea] bg-white px-4 text-base text-[#0d1b35] outline-none transition placeholder:font-semibold placeholder:text-[#96a3b5] focus:border-[#0b6cff] focus:ring-4 focus:ring-[#0b6cff]/10"
           id="login-email"
           placeholder="이메일 주소를 입력하세요"
           type="email"
@@ -155,7 +126,7 @@ function LoginCard() {
         </label>
         <div className="relative">
           <input
-            className="h-14 w-full rounded-lg border border-[#cfdbea] bg-white px-4 pr-12 text-base text-[#0d1b35] outline-none transition placeholder:font-semibold placeholder:text-[#96a3b5] focus:border-[#0b6cff] focus:ring-4 focus:ring-[#0b6cff]/10"
+            className="h-12 w-full rounded-lg border border-[#cfdbea] bg-white px-4 pr-12 text-base text-[#0d1b35] outline-none transition placeholder:font-semibold placeholder:text-[#96a3b5] focus:border-[#0b6cff] focus:ring-4 focus:ring-[#0b6cff]/10"
             id="login-password"
             placeholder="비밀번호를 입력하세요"
             type="password"
@@ -169,7 +140,7 @@ function LoginCard() {
           </button>
         </div>
 
-        <div className="my-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="my-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <label className="inline-flex items-center gap-2 text-sm font-semibold text-[#6a7789]">
             <input className="h-5 w-5 accent-[#0b6cff]" type="checkbox" />
             <span>로그인 상태 유지</span>
@@ -180,21 +151,21 @@ function LoginCard() {
         </div>
 
         <button
-          className="h-[62px] rounded-lg bg-gradient-to-r from-[#096bff] to-[#0057f2] text-lg font-black text-white shadow-[0_14px_28px_rgba(0,101,255,0.2)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[#0b6cff] focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="h-[50px] rounded-lg bg-gradient-to-r from-[#096bff] to-[#0057f2] text-lg font-black text-white shadow-[0_14px_28px_rgba(0,101,255,0.2)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[#0b6cff] focus-visible:ring-offset-2 focus-visible:outline-none"
           type="button"
         >
           로그인
         </button>
         <button
-          className="mt-2 h-[62px] rounded-lg border border-[#d4deea] bg-white text-lg font-black text-[#111c31] transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b6cff] focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="mt-2 h-[50px] rounded-lg border border-[#d4deea] bg-white text-lg font-black text-[#111c31] transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#0b6cff] focus-visible:ring-offset-2 focus-visible:outline-none"
           type="button"
         >
           카카오로 계속하기
         </button>
 
-        <p className="mt-4 text-center text-base font-semibold text-[#738096]">
+        <p className="mt-2 text-center text-base font-semibold text-[#738096]">
           아직 계정이 없나요?{' '}
-          <a className="font-black text-[#0b6cff]" href="/login">
+          <a className="font-black text-[#0b6cff]" href="/signup">
             회원가입
           </a>
         </p>
@@ -230,7 +201,7 @@ function BenefitCard({
 function LoginFooter() {
   return (
     <footer className="bg-gradient-to-r from-[#061a3d] via-[#071d43] to-[#06265d] text-white">
-      <div className="mx-auto grid min-h-28 w-[min(1500px,calc(100%-32px))] items-center gap-6 py-7 text-center lg:w-[min(1500px,calc(100%-96px))] lg:grid-cols-[1.2fr_1.5fr_1.45fr_auto] lg:text-left">
+      <div className="mx-auto grid min-h-28 w-[calc(100%_-_32px)] max-w-[1720px] items-center gap-6 py-7 text-center lg:w-[calc(100%_-_96px)] lg:grid-cols-[1.2fr_1.5fr_1.45fr_auto] lg:text-left">
         <Logo compact />
         <nav
           className="flex flex-wrap justify-center gap-3 text-sm text-white/70 lg:gap-5"
@@ -271,30 +242,30 @@ export function LoginPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_18%_35%,rgba(0,141,255,0.13),transparent_28%),radial-gradient(circle_at_82%_25%,rgba(0,204,217,0.13),transparent_24%),linear-gradient(180deg,#eef7ff_0%,#ffffff_54%,#ffffff_100%)] text-[#071633]">
       <header className="bg-gradient-to-r from-[#061a3d] via-[#071d43] to-[#06265d] text-white">
-        <div className="mx-auto flex min-h-[88px] w-[min(1500px,calc(100%-32px))] items-center lg:w-[min(1500px,calc(100%-96px))]">
+        <div className="mx-auto flex min-h-[72px] w-[calc(100%_-_32px)] max-w-[1720px] items-center lg:w-[calc(100%_-_96px)]">
           <Logo />
         </div>
       </header>
 
-      <main className="mx-auto w-[min(1500px,calc(100%-32px))] lg:w-[min(1500px,calc(100%-96px))]">
-        <section className="grid items-center gap-9 py-10 xl:min-h-[900px] xl:grid-cols-[1.08fr_0.92fr] xl:gap-[88px] xl:py-12">
-          <div className="relative xl:min-h-[760px]">
+      <main className="mx-auto w-[calc(100%_-_32px)] max-w-[1720px] lg:w-[calc(100%_-_96px)]">
+        <section className="grid items-start gap-9 py-8 xl:min-h-[742px] xl:grid-cols-[830px_640px] xl:gap-[76px] xl:py-10">
+          <div className="relative xl:min-h-[700px]">
             <p className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#b9d9ff] bg-[#eef7ff]/85 px-5 text-sm font-extrabold text-[#0069ff] shadow-[0_8px_22px_rgba(21,98,211,0.08)] sm:text-lg">
               광주 2호선 개통 · 2026년 예정
             </p>
-            <h1 className="mt-8 text-[clamp(2.625rem,4.2vw,4.75rem)] leading-[1.16] font-black tracking-[-0.045em] text-[#071633]">
+            <h1 className="mt-4 text-[clamp(2.625rem,3.35vw,4rem)] leading-[1.12] font-black tracking-[-0.045em] text-[#071633]">
               데이터로 먼저 보는
               <br />
               <span className="text-[#096bff]">광주 상권의 미래</span>
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 tracking-[-0.02em] text-[#5e6d82] sm:text-xl">
+            <p className="mt-4 max-w-2xl text-base leading-8 tracking-[-0.02em] text-[#5e6d82] sm:text-xl">
               공공데이터와 AI 분석으로 변화하는 상권을 예측하고,
               <br className="hidden sm:block" />더 나은 의사결정을 앞서 준비하세요.
             </p>
             <HeroVisual />
           </div>
 
-          <div className="grid gap-6">
+          <div className="grid gap-6 xl:w-[640px]">
             <LoginCard />
             <section className="grid gap-4 md:grid-cols-3" aria-label="서비스 신뢰 요소">
               <BenefitCard

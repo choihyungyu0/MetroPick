@@ -6,6 +6,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ReportPage } from '@/pages/ReportPage'
 import { ScenarioPage } from '@/pages/ScenarioPage'
+import { SignupPage } from '@/pages/SignupPage'
 import { AppShell } from '@/shared/components/AppShell'
 
 export const router = createBrowserRouter([
@@ -16,6 +17,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/signup',
+    element: <SignupPage />,
   },
   {
     element: <AppShell />,
