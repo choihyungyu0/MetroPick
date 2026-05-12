@@ -5,9 +5,9 @@ import { landingAssets, landingDashboardAssets } from '@/shared/assets/landingAs
 
 const navItems = [
   { label: '서비스 소개', href: '#service-intro' },
-  { label: '상권 분석', href: '/scenario' },
-  { label: 'AI 예측', href: '/scenario' },
-  { label: '입지 추천', href: '/dashboard' },
+  { label: '상권 분석', href: '/commercial-analysis' },
+  { label: 'AI 예측', href: '/ai-prediction' },
+  { label: '입지 추천', href: '/recommendation' },
   { label: '리포트', href: '/report' },
 ] as const
 

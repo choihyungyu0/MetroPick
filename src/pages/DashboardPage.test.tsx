@@ -1,37 +1,24 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { DashboardPage } from './DashboardPage'
 
-vi.mock('@/features/map/CommercialMap', () => ({
-  CommercialMap: () => <div aria-label="지도 mock" />,
-}))
-
-function renderDashboardPage() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
+describe('DashboardPage', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
   })
 
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <DashboardPage />
-    </QueryClientProvider>,
-  )
-}
-
-describe('DashboardPage', () => {
-  it('renders the Korean service title', async () => {
-    renderDashboardPage()
+  it('renders the dashboard content and central map asset', () => {
+    render(<DashboardPage />)
 
     expect(
-      await screen.findByRole('heading', {
-        name: '광주 2호선 AI 상권 시뮬레이터',
+      screen.getByRole('heading', {
+        name: '광주 2호선 상권 변화 대시보드',
       }),
     ).toBeInTheDocument()
+    expect(screen.getByText('유동인구 예측')).toBeInTheDocument()
+    expect(screen.getByAltText('광주 2호선 상권 변화 지도')).toBeInTheDocument()
+    expect(screen.getByText('상무역')).toBeInTheDocument()
+    expect(screen.getByText('최근 저장한 리포트')).toBeInTheDocument()
   })
 })
