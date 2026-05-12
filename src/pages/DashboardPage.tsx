@@ -625,8 +625,8 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 text-slate-950">
-      <TopNavigation activeHref="/dashboard" sticky />
+    <div className="dashboard-page min-h-screen w-full bg-slate-50 text-slate-950">
+      <TopNavigation activeHref="/dashboard" />
 
       <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
         <AppSidebar activeHref="/dashboard" ariaLabel="대시보드 사이드 메뉴" />

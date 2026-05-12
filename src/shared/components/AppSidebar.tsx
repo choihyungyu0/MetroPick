@@ -1,11 +1,11 @@
 import {
   BarChart3,
+  BadgeHelp,
   ChartNoAxesCombined,
   FileText,
   Home,
   LineChart,
   MapPin,
-  TrendingUp,
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
@@ -32,6 +32,41 @@ const sidebarItems: readonly AppSidebarItem[] = [
   { label: '리포트', icon: FileText, href: '/report' },
   { label: '마이페이지', icon: UserRound, href: '/mypage' },
 ]
+
+const sidebarStatusCards: readonly AppSidebarItem[] = [
+  { label: '데이터 업데이트', icon: ChartNoAxesCombined, href: '/report' },
+  { label: '도움말 및 문의', icon: BadgeHelp, href: '/mypage#support' },
+]
+
+function SidebarInsights() {
+  return (
+    <div className="mt-auto grid gap-3">
+      {sidebarStatusCards.map((item) => {
+        const Icon = item.icon
+        const description =
+          item.label === '데이터 업데이트' ? '2024.05.18 기준' : 'FAQ · 고객센터'
+
+        return (
+          <Link
+            className="flex min-h-[62px] items-center gap-3 rounded-xl border border-blue-100 bg-white p-3 text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+            key={item.label}
+            to={item.href}
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-50 text-cyan-600">
+              <Icon aria-hidden="true" size={18} />
+            </span>
+            <span>
+              <strong className="block text-xs font-black">{item.label}</strong>
+              <span className="mt-1 block text-xs font-bold text-slate-500">
+                {description}
+              </span>
+            </span>
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
 
 export function AppSidebar({
   activeHref,
@@ -78,41 +113,7 @@ export function AppSidebar({
         </nav>
       </div>
 
-      <div className="grid gap-3">
-        <div className="flex gap-3 rounded-xl border border-blue-100 bg-white p-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-50 text-cyan-600">
-            <TrendingUp aria-hidden="true" size={18} />
-          </div>
-          <div>
-            <div className="text-xs font-black">
-              AI 예측 정확도
-              <span className="ml-2 rounded-md bg-blue-600 px-2 py-1 text-xs text-white">
-                Pro
-              </span>
-            </div>
-            <p className="my-2 text-xs font-bold text-slate-500">상위 5% 예측 정확도</p>
-            <button className="text-xs font-black text-blue-600" type="button">
-              상세 보기
-            </button>
-          </div>
-        </div>
-
-        <div className="flex gap-3 rounded-xl border border-blue-100 bg-white p-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-50 text-cyan-600">
-            <ChartNoAxesCombined aria-hidden="true" size={18} />
-          </div>
-          <div>
-            <div className="text-xs font-black">분석 크레딧</div>
-            <h4 className="my-2 text-sm font-black">잔여 1,250 크레딧</h4>
-            <div className="mb-3 h-2 w-32 overflow-hidden rounded-full bg-slate-200">
-              <span className="block h-full w-[58%] rounded-full bg-gradient-to-r from-teal-500 to-emerald-400" />
-            </div>
-            <button className="text-xs font-black text-blue-600" type="button">
-              충전하기
-            </button>
-          </div>
-        </div>
-      </div>
+      <SidebarInsights />
     </aside>
   )
 }

@@ -37,15 +37,24 @@ function NavigationLink({
   activeHref,
   className,
   item,
+  variant = 'desktop',
 }: {
   activeHref?: string
   className?: string
   item: TopNavigationItem
+  variant?: 'desktop' | 'menu'
 }) {
   const isActive = item.active ?? item.href === activeHref
   const linkClasses = cn(
-    'inline-flex h-11 items-center rounded-md px-3 text-base font-extrabold text-white/90 transition hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none',
-    isActive && 'bg-white/12 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]',
+    'inline-flex items-center px-3 text-base font-extrabold transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none',
+    variant === 'desktop' &&
+      'relative h-11 rounded-none text-white/90 hover:text-white',
+    variant === 'menu' &&
+      'h-10 rounded-md text-slate-800 hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-[#086bff]',
+    isActive &&
+      variant === 'desktop' &&
+      'text-white after:absolute after:right-3 after:-bottom-2 after:left-3 after:h-[3px] after:rounded-full after:bg-blue-500',
+    isActive && variant === 'menu' && 'bg-blue-50 text-blue-700',
     className,
   )
 
@@ -134,14 +143,14 @@ export function TopNavigation({
         className,
       )}
     >
-      <div className="flex h-[var(--app-topbar-height)] w-full items-center justify-between gap-5 px-8 max-md:px-4">
+      <div className="relative flex h-[var(--app-topbar-height)] w-full items-center justify-between gap-5 px-8 max-md:px-4">
         <div className="min-w-[280px] max-md:min-w-0">
           <BrandLink />
         </div>
 
         <nav
           aria-label="주요 메뉴"
-          className="hidden min-w-0 flex-1 items-center justify-center gap-5 overflow-x-auto xl:flex"
+          className="absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-9 xl:flex"
         >
           {navItems.map((item) => (
             <NavigationLink activeHref={activeHref} item={item} key={item.label} />
@@ -160,9 +169,10 @@ export function TopNavigation({
             {navItems.map((item) => (
               <NavigationLink
                 activeHref={activeHref}
-                className="w-full justify-start text-slate-800 hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-[#086bff]"
+                className="w-full justify-start"
                 item={item}
                 key={item.label}
+                variant="menu"
               />
             ))}
             <div className="mt-2 grid gap-2 border-t border-slate-100 pt-2">

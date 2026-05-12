@@ -30,4 +30,15 @@ describe('DashboardPage', () => {
     expect(screen.getByText('상무역')).toBeInTheDocument()
     expect(screen.getByText('최근 저장한 리포트')).toBeInTheDocument()
   })
+
+  it('uses the consolidated mypage sidebar link', () => {
+    renderDashboardPage()
+
+    expect(screen.getByRole('link', { name: '마이페이지' })).toHaveAttribute(
+      'href',
+      '/mypage',
+    )
+    expect(screen.queryByRole('link', { name: '관심 지역' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '설정' })).not.toBeInTheDocument()
+  })
 })

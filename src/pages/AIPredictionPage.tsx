@@ -166,11 +166,11 @@ function FilterSelect({
 }) {
   return (
     <label
-      className={`grid items-center gap-3 ${wide ? 'grid-cols-[120px_1fr]' : 'grid-cols-[92px_1fr]'} max-lg:grid-cols-1`}
+      className={`grid min-w-0 items-center gap-3 ${wide ? 'grid-cols-[120px_minmax(0,1fr)]' : 'grid-cols-[92px_minmax(0,1fr)]'} max-[1700px]:grid-cols-1`}
     >
       <span className="text-[15px] font-extrabold text-slate-900">{label}</span>
       <select
-        className="h-[46px] rounded-lg border border-blue-100 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"
+        className="h-[46px] w-full min-w-0 rounded-lg border border-blue-100 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
@@ -192,7 +192,7 @@ function FilterBar({
   onRun: () => void
 }) {
   return (
-    <section className="mb-4 grid min-h-20 grid-cols-[1.15fr_1fr_0.95fr_220px] items-center gap-8 rounded-xl border border-blue-100 bg-white px-7 py-4 shadow-[0_10px_24px_rgba(23,72,137,0.08)] max-xl:grid-cols-2 max-lg:grid-cols-1">
+    <section className="mb-5 grid min-h-20 grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.95fr)_minmax(190px,220px)] items-center gap-8 rounded-xl border border-blue-100 bg-white px-7 py-4 shadow-[0_10px_24px_rgba(23,72,137,0.08)] max-[1700px]:gap-5 max-[1500px]:grid-cols-2 max-lg:grid-cols-1">
       <FilterSelect
         label="개통 시나리오"
         onChange={(scenario) => onChange({ ...filters, scenario })}
@@ -217,7 +217,7 @@ function FilterBar({
         value={filters.stationArea}
       />
       <button
-        className="inline-flex h-[46px] items-center justify-center gap-2 rounded-lg bg-blue-600 text-base font-black text-white shadow-[0_8px_20px_rgba(0,101,255,0.25)]"
+        className="inline-flex h-[46px] w-full min-w-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-base font-black whitespace-nowrap text-white shadow-[0_8px_20px_rgba(0,101,255,0.25)]"
         onClick={onRun}
         type="button"
       >
@@ -420,7 +420,7 @@ function CommentSection() {
         <BrainCircuit aria-hidden="true" size={20} />
         AI 요약 코멘트
       </h3>
-      <p className="my-3 text-sm leading-6 font-bold text-slate-700">
+      <p className="my-3 text-sm leading-5 font-bold text-slate-700">
         상무역(2호선) 일대는 개통 이후 유동인구 증가와 20~30대 생활인구 비중 확대가
         예상되어 커피전문점의 매출 성장이 두드러질 것으로 보입니다. 특히 개통 후 6개월부터
         유의미한 상승 전환이 예상되며, 24개월 후에는 현재 대비 약 47.6%의 매출 상승이
@@ -436,7 +436,7 @@ function CommentSection() {
 
 function Footer() {
   return (
-    <footer className="grid min-h-[96px] grid-cols-[320px_1fr_420px_170px] items-center gap-7 bg-[linear-gradient(90deg,#001a3d,#001f4f)] px-16 py-4 text-white max-2xl:grid-cols-1 max-md:px-5">
+    <footer className="grid min-h-[var(--app-footer-height)] grid-cols-[320px_1fr_420px_170px] items-center gap-7 bg-[linear-gradient(90deg,#001a3d,#001f4f)] px-16 py-4 text-white max-2xl:grid-cols-1 max-md:px-5">
       <div className="flex items-center gap-3">
         <img
           alt="MetroPick AI 로고"
@@ -511,10 +511,10 @@ export function AIPredictionPage() {
     <div className="ai-prediction-page min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(14,100,255,0.08),transparent_28%),#f5f9ff] text-slate-900">
       <TopNavigation activeHref="/ai-prediction" />
 
-      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-96px)] max-lg:flex-col">
+      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] max-lg:flex-col">
         <AppSidebar activeHref="/ai-prediction" ariaLabel="AI 예측 사이드 메뉴" />
 
-        <main className="min-w-0 flex-1 overflow-hidden px-9 py-6 max-md:px-4">
+        <main className="min-w-0 flex-1 overflow-hidden pt-7 pr-[68px] pb-4 pl-20 max-2xl:px-9 max-md:px-4">
           <div className="mb-4 flex items-center justify-between gap-4 max-lg:flex-col max-lg:items-start">
             <div>
               <h1 className="m-0 flex items-center gap-2 text-3xl font-black tracking-[-0.8px] text-slate-950">

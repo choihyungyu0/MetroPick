@@ -190,7 +190,7 @@ function FilterPanel({ filters }: { filters: RecommendationFilters }) {
   ]
 
   return (
-    <section className="mb-4 grid min-h-[82px] grid-cols-4 overflow-hidden rounded-xl border border-blue-100 bg-white shadow-[0_10px_24px_rgba(18,65,120,0.07)] max-xl:grid-cols-2 max-md:grid-cols-1">
+    <section className="mb-3 grid min-h-[82px] grid-cols-4 overflow-hidden rounded-xl border border-blue-100 bg-white shadow-[0_10px_24px_rgba(18,65,120,0.07)] max-xl:grid-cols-2 max-md:grid-cols-1">
       {filtersConfig.map((item) => {
         const Icon = item.icon
 
@@ -222,12 +222,12 @@ function FilterPanel({ filters }: { filters: RecommendationFilters }) {
 function ScoreCircle({ score }: { score: number }) {
   return (
     <div
-      className="mx-auto h-[78px] w-[78px] rounded-full p-1"
+      className="mx-auto h-[70px] w-[70px] rounded-full p-1"
       style={{ background: `conic-gradient(#0065ff ${score * 3.6}deg, #e7eefb 0deg)` }}
     >
       <div className="grid h-full w-full place-items-center rounded-full bg-white">
         <div className="text-center leading-none">
-          <strong className="block text-[28px] font-black text-slate-900">{score}</strong>
+          <strong className="block text-2xl font-black text-slate-900">{score}</strong>
           <span className="mt-1 block text-[11px] font-extrabold text-slate-500">
             /100
           </span>
@@ -239,17 +239,19 @@ function ScoreCircle({ score }: { score: number }) {
 
 function MetricBars({ item }: { item: LocationRecommendationItem }) {
   return (
-    <div className="grid gap-2.5">
+    <div className="grid gap-2">
       {metricKeys.map((key) => (
-        <div className="grid grid-cols-[48px_1fr_30px] items-center gap-2.5" key={key}>
-          <p className="m-0 text-xs font-black text-slate-700">{metricLabels[key]}</p>
+        <div className="grid grid-cols-[42px_1fr_26px] items-center gap-2" key={key}>
+          <p className="m-0 text-[11px] font-black text-slate-700">
+            {metricLabels[key]}
+          </p>
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
             <div
               className="h-full rounded-full"
               style={{ background: metricColors[key], width: `${item[key]}%` }}
             />
           </div>
-          <strong className="text-xs font-black text-slate-700">{item[key]}</strong>
+          <strong className="text-[11px] font-black text-slate-700">{item[key]}</strong>
         </div>
       ))}
     </div>
@@ -281,27 +283,27 @@ function RecommendationCard({
       : 'bg-amber-50 text-amber-600'
 
   return (
-    <article className="grid min-h-[148px] grid-cols-[48px_170px_116px_190px_minmax(220px,1fr)_150px] items-center gap-4 rounded-[10px] border border-blue-100 bg-white p-3.5 max-xl:grid-cols-[42px_1fr_100px]">
+    <article className="grid min-h-[126px] grid-cols-[36px_150px_90px_150px_minmax(190px,1fr)_132px] items-center gap-3 rounded-[10px] border border-blue-100 bg-white p-3 max-xl:grid-cols-[42px_1fr_100px]">
       <div
-        className={`grid h-8 w-8 place-items-center rounded-lg text-xl font-black text-white ${rankClass}`}
+        className={`grid h-8 w-8 place-items-center rounded-lg text-lg font-black text-white ${rankClass}`}
       >
         {item.rank}
       </div>
 
-      <div className="min-h-[84px] border-r border-slate-100 pr-3.5 max-xl:border-r-0">
+      <div className="border-r border-slate-100 pr-3 max-xl:border-r-0">
         <div className="flex items-center gap-2">
-          <h3 className="m-0 text-[23px] font-black tracking-[-0.6px] text-slate-900">
+          <h3 className="m-0 whitespace-nowrap text-xl font-black tracking-normal text-slate-900">
             {item.station}
           </h3>
-          <span className="grid h-6 min-w-12 place-items-center rounded-lg bg-blue-50 text-xs font-black text-blue-600">
+          <span className="grid h-5 min-w-11 place-items-center rounded-md bg-blue-50 text-[11px] font-black text-blue-600">
             {item.line}
           </span>
         </div>
-        <p className="m-0 mt-3 text-base font-bold text-slate-600">{item.district}</p>
+        <p className="m-0 mt-1.5 text-sm font-bold text-slate-600">{item.district}</p>
       </div>
 
       <div className="text-center max-xl:col-start-3 max-md:col-span-full max-md:flex max-md:items-center max-md:gap-4 max-md:text-left">
-        <p className="m-0 mb-2 text-[11px] font-black text-slate-500">AI 종합 점수</p>
+        <p className="m-0 mb-1 text-[10px] font-black text-slate-500">AI 종합 점수</p>
         <ScoreCircle score={item.score} />
       </div>
 
@@ -309,30 +311,30 @@ function RecommendationCard({
         <MetricBars item={item} />
       </div>
 
-      <div className="min-h-[92px] max-xl:col-span-2 max-xl:col-start-2 max-md:col-span-full">
+      <div className="max-xl:col-span-2 max-xl:col-start-2 max-md:col-span-full">
         <span
-          className={`mb-2 inline-flex h-6 items-center rounded-lg px-3 text-xs font-black ${riskClass}`}
+          className={`mb-1.5 inline-flex h-5 items-center rounded-md px-2.5 text-[11px] font-black ${riskClass}`}
         >
           {item.riskLevel}
         </span>
-        <strong className="mb-1 block text-xs font-black text-slate-700">
+        <strong className="mb-0.5 block text-[11px] font-black text-slate-700">
           추천 사유
         </strong>
-        <p className="m-0 text-xs leading-relaxed font-bold text-slate-600">
+        <p className="m-0 text-[11px] leading-snug font-bold text-slate-600">
           {item.reason}
         </p>
       </div>
 
-      <div className="grid gap-2.5 max-xl:col-start-3 max-md:col-span-full">
+      <div className="grid gap-2 max-xl:col-start-3 max-md:col-span-full">
         <button
-          className="h-9 rounded-lg bg-blue-600 text-sm font-black text-white shadow-[0_8px_18px_rgba(0,101,255,0.24)]"
+          className="h-[34px] rounded-lg bg-blue-600 text-xs font-black text-white shadow-[0_8px_18px_rgba(0,101,255,0.24)]"
           onClick={() => onViewReport(item)}
           type="button"
         >
           리포트 보기
         </button>
         <button
-          className="h-9 rounded-lg border border-blue-200 bg-white text-sm font-black text-blue-600"
+          className="h-[34px] rounded-lg border border-blue-200 bg-white text-xs font-black text-blue-600"
           onClick={() => onSaveInterest(item)}
           type="button"
         >
@@ -355,13 +357,13 @@ function RecommendationList({
   onViewReport: (item: LocationRecommendationItem) => void
 }) {
   return (
-    <section className="rounded-xl border border-blue-100 bg-white px-3 py-5 shadow-[0_10px_24px_rgba(18,65,120,0.06)]">
-      <div className="flex items-center justify-between px-3.5 pb-3.5">
+    <section className="rounded-xl border border-blue-100 bg-white px-3 py-3.5 shadow-[0_10px_24px_rgba(18,65,120,0.06)]">
+      <div className="flex items-center justify-between px-3.5 pb-2.5">
         <h2 className="m-0 text-xl font-black text-slate-900">AI 추천 Top 5</h2>
         <span className="text-xs font-black text-slate-600">AI 종합 점수 기준</span>
       </div>
 
-      <div className="grid gap-2.5">
+      <div className="grid gap-2">
         {mockLocationRecommendations.map((item) => (
           <RecommendationCard
             filters={filters}
@@ -373,7 +375,7 @@ function RecommendationList({
         ))}
       </div>
 
-      <p className="m-0 mt-4 px-2 text-xs font-bold text-slate-600">
+      <p className="m-0 mt-2.5 px-2 text-xs font-bold text-slate-600">
         <Info aria-hidden="true" className="mr-1 inline text-teal-500" size={15} />
         AI 종합 점수는 성장성, 안정성, 경쟁도, 접근성 4가지 지표를 종합하여 산출됩니다.
       </p>
@@ -388,10 +390,10 @@ function MapCard() {
         <h2 className="m-0 text-[19px] font-black text-slate-900">추천 지역 위치</h2>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="h-[390px] overflow-hidden rounded-xl border border-slate-200 bg-white">
         <img
           alt="광주 2호선 창업 유망 지점 추천 지도"
-          className="h-auto w-full object-contain"
+          className="h-full w-full object-cover"
           draggable={false}
           src={recommendationAssets.recommendedLocationsMap}
         />
@@ -402,10 +404,10 @@ function MapCard() {
 
 function CompareChart() {
   return (
-    <section className="min-h-[390px] rounded-xl border border-blue-100 bg-white px-5 py-4 shadow-[0_10px_24px_rgba(18,65,120,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white px-5 py-4 shadow-[0_10px_24px_rgba(18,65,120,0.06)]">
       <h2 className="m-0 text-[19px] font-black text-slate-900">Top 5 지역 지표 비교</h2>
 
-      <div className="my-6 flex flex-wrap justify-center gap-5">
+      <div className="my-4 flex flex-wrap justify-center gap-5">
         {mockLocationRecommendations.map((item, index) => (
           <span
             className="flex items-center gap-1.5 text-xs font-black text-slate-700"
@@ -419,7 +421,7 @@ function CompareChart() {
         ))}
       </div>
 
-      <div className="relative grid h-[220px] grid-cols-4 items-end gap-8 pl-10">
+      <div className="relative grid h-[210px] grid-cols-4 items-end gap-8 pl-10">
         <div className="pointer-events-none absolute inset-y-0 left-0 right-0 bottom-8 flex flex-col justify-between">
           {[100, 75, 50, 25, 0].map((line) => (
             <div className="relative h-px bg-slate-100" key={line}>
@@ -434,7 +436,7 @@ function CompareChart() {
             className="relative z-10 flex h-full flex-col items-center justify-end"
             key={key}
           >
-            <div className="flex h-[168px] items-end gap-2">
+            <div className="flex h-[164px] items-end gap-2">
               {mockLocationRecommendations.map((item, index) => (
                 <div
                   className={`w-3.5 rounded-t ${stationColorClasses[index] ?? 'bg-slate-400'} shadow-sm`}
@@ -450,7 +452,7 @@ function CompareChart() {
         ))}
       </div>
 
-      <p className="m-0 mt-5 text-xs font-bold text-slate-600">
+      <p className="m-0 mt-3 text-xs font-bold text-slate-600">
         ※ 경쟁도는 낮을수록 유리합니다.
       </p>
     </section>
@@ -459,7 +461,7 @@ function CompareChart() {
 
 function Footer() {
   return (
-    <footer className="grid min-h-[104px] grid-cols-[320px_1fr_420px] items-center gap-8 bg-[linear-gradient(90deg,#001a3d,#001f4f)] px-16 py-5 text-white max-xl:grid-cols-1 max-xl:gap-4 max-md:px-5">
+    <footer className="grid min-h-[96px] grid-cols-[320px_1fr_420px] items-center gap-8 bg-[linear-gradient(90deg,#001a3d,#001f4f)] px-16 py-4 text-white max-xl:grid-cols-1 max-xl:gap-4 max-md:px-5">
       <div className="flex items-center gap-3">
         <img
           alt="MetroPick AI 로고"
@@ -530,14 +532,14 @@ export function RecommendationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,101,255,0.08),transparent_28%),linear-gradient(180deg,#f8fbff_0%,#f2f7ff_100%)] text-slate-900">
+    <div className="recommendation-page min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,101,255,0.08),transparent_28%),linear-gradient(180deg,#f8fbff_0%,#f2f7ff_100%)] text-slate-900">
       <TopNavigation activeHref="/recommendation" />
 
       <div className="flex min-h-[calc(100vh-var(--app-topbar-height))] max-lg:flex-col">
         <AppSidebar activeHref="/recommendation" ariaLabel="입지 추천 사이드 메뉴" />
 
-        <main className="min-w-0 flex-1 px-8 py-8 max-md:px-4">
-          <div className="mb-6 flex items-center justify-between gap-4 max-lg:flex-col max-lg:items-start">
+        <main className="min-w-0 flex-1 px-7 py-7 max-md:px-4">
+          <div className="mb-5 flex items-center justify-between gap-4 max-lg:flex-col max-lg:items-start">
             <div className="flex items-end gap-4 max-md:block">
               <h1 className="m-0 text-[32px] font-black tracking-[-1.1px] text-slate-950">
                 창업 유망 지점 추천
@@ -549,7 +551,7 @@ export function RecommendationPage() {
             <TopControls />
           </div>
 
-          <div className="grid grid-cols-[minmax(780px,1fr)_600px] gap-6 max-[1600px]:grid-cols-1">
+          <div className="grid grid-cols-[minmax(760px,1fr)_600px] gap-5 max-[1600px]:grid-cols-1">
             <div className="min-w-0">
               <FilterPanel filters={filters} />
               <RecommendationList
@@ -559,7 +561,7 @@ export function RecommendationPage() {
               />
             </div>
 
-            <div className="grid gap-5 max-[1600px]:grid-cols-2 max-lg:grid-cols-1">
+            <div className="grid gap-4 max-[1600px]:grid-cols-2 max-lg:grid-cols-1">
               <MapCard />
               <CompareChart />
             </div>

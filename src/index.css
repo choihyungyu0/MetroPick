@@ -36,6 +36,15 @@ body {
   font-family: var(--font-sans);
 }
 
+.ai-prediction-page {
+  --app-footer-height: 102px;
+  --app-topbar-height: 82px;
+}
+
+.commercial-analysis-page {
+  --app-topbar-height: 82px;
+}
+
 #root {
   min-height: calc(100vh / var(--app-density-scale));
 }
@@ -54,8 +63,40 @@ body {
     zoom: 1;
   }
 
+  #root:has(.commercial-analysis-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.dashboard-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.recommendation-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.login-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
   .ai-prediction-page .app-sidebar {
-    min-height: calc(100vh - var(--app-topbar-height) - 96px);
+    min-height: calc(100vh - var(--app-topbar-height) - var(--app-footer-height));
+  }
+
+  .commercial-analysis-page .app-sidebar {
+    min-height: calc(100vh - var(--app-topbar-height));
+  }
+
+  .dashboard-page .app-sidebar {
+    min-height: calc(100vh - var(--app-topbar-height));
+  }
+
+  .recommendation-page .app-sidebar {
+    min-height: calc(100vh - var(--app-topbar-height));
   }
 }
 

@@ -213,13 +213,13 @@ function SelectBox({
   value: string
 }) {
   return (
-    <div className="mb-4">
-      <label className="mb-2 flex items-center gap-2 text-sm font-black text-slate-800">
+    <div className="mb-3">
+      <label className="mb-1.5 flex items-center gap-2 text-sm font-black text-slate-800">
         <Icon aria-hidden="true" size={16} />
         {label}
       </label>
       <button
-        className="flex h-11 w-full items-center justify-between rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm font-bold text-slate-700"
+        className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm font-bold text-slate-700"
         type="button"
       >
         <span>{value}</span>
@@ -270,31 +270,31 @@ function FilterPanel({
       <SelectBox icon={MapPin} label="지역 선택" value={filters.region} />
       <SelectBox icon={Train} label="노선 선택" value={filters.route} />
 
-      <div className="mb-4">
-        <label className="mb-2 flex items-center gap-2 text-sm font-black text-slate-800">
+      <div className="mb-3">
+        <label className="mb-1.5 flex items-center gap-2 text-sm font-black text-slate-800">
           <Search aria-hidden="true" size={16} />역 선택{' '}
           <small className="font-bold text-slate-400">(복수 선택 가능)</small>
         </label>
-        <div className="mb-2 flex h-11 items-center rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm font-bold text-slate-400">
+        <div className="mb-2 flex h-10 items-center rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm font-bold text-slate-400">
           역명을 검색하세요
         </div>
         <div className="flex flex-wrap gap-1.5">
           {filters.selectedStations.slice(0, 5).map((station) => (
             <span
-              className="rounded-lg bg-blue-50 px-2.5 py-2 text-xs font-extrabold text-blue-700"
+              className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-extrabold text-blue-700"
               key={station}
             >
               {station} <b className="text-blue-400">×</b>
             </span>
           ))}
-          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-2 text-xs font-extrabold text-slate-500">
+          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-extrabold text-slate-500">
             +5
           </span>
         </div>
       </div>
 
-      <div className="mb-4">
-        <label className="mb-2 flex items-center gap-2 text-sm font-black text-slate-800">
+      <div className="mb-3">
+        <label className="mb-1.5 flex items-center gap-2 text-sm font-black text-slate-800">
           <Gauge aria-hidden="true" size={16} />
           분석 반경
         </label>
@@ -323,28 +323,28 @@ function FilterPanel({
       </div>
 
       <SelectBox icon={Store} label="업종 선택" value="업종 선택 (전체)" />
-      <div className="mb-4 mt-[-8px] flex flex-wrap gap-1.5">
+      <div className="mb-3 mt-[-6px] flex flex-wrap gap-1.5">
         {filters.selectedBusinessTypes.slice(0, 4).map((businessType) => (
           <span
-            className="rounded-lg bg-blue-50 px-2.5 py-2 text-xs font-extrabold text-blue-700"
+            className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-extrabold text-blue-700"
             key={businessType}
           >
             {businessType}
           </span>
         ))}
-        <span className="rounded-lg bg-blue-50 px-2.5 py-2 text-xs font-extrabold text-blue-700">
+        <span className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-extrabold text-blue-700">
           +3
         </span>
       </div>
 
       <SelectBox icon={CalendarDays} label="기간 설정" value={filters.dateRange} />
 
-      <div className="mb-4">
-        <label className="mb-2 flex items-center gap-2 text-sm font-black text-slate-800">
+      <div className="mb-3">
+        <label className="mb-1.5 flex items-center gap-2 text-sm font-black text-slate-800">
           <Layers aria-hidden="true" size={16} />
           인구/유동인구 레이어
         </label>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
           {(Object.keys(layerLabels) as PopulationLayerKey[]).map((key) => (
             <ToggleSwitch
               checked={filters.populationLayers[key]}
@@ -357,7 +357,7 @@ function FilterPanel({
       </div>
 
       <button
-        className="h-12 w-full rounded-lg bg-blue-600 text-base font-black text-white shadow-[0_8px_18px_rgba(7,93,245,0.24)]"
+        className="h-11 w-full rounded-lg bg-blue-600 text-base font-black text-white shadow-[0_8px_18px_rgba(7,93,245,0.24)]"
         type="button"
       >
         분석 적용
@@ -383,7 +383,7 @@ function MapCard() {
 
 function SummaryPanel({ radius }: { radius: RadiusOption }) {
   return (
-    <aside className="rounded-xl border border-slate-200 bg-white/95 p-[18px] shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
+    <aside className="rounded-xl border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="m-0 flex items-center gap-2 text-base font-black">
@@ -399,10 +399,10 @@ function SummaryPanel({ radius }: { radius: RadiusOption }) {
         </button>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 max-xl:grid-cols-4 max-md:grid-cols-2">
+      <div className="mb-4 grid grid-cols-2 gap-2.5 max-xl:grid-cols-4 max-md:grid-cols-2">
         {summaryCards.map((card) => (
           <div
-            className="min-h-[104px] rounded-[10px] border border-slate-200 bg-white p-3.5 shadow-sm"
+            className="min-h-[94px] rounded-[10px] border border-slate-200 bg-white p-3 shadow-sm"
             key={card.title}
           >
             <p className="m-0 mb-2 text-xs font-black text-slate-500">{card.title}</p>
@@ -423,8 +423,8 @@ function SummaryPanel({ radius }: { radius: RadiusOption }) {
         <h4 className="mb-3 text-sm font-black">
           업종 분포 <span className="text-slate-500">(상위 5개)</span>
         </h4>
-        <div className="mb-7 grid grid-cols-[120px_1fr] items-center gap-4 max-md:grid-cols-1 max-md:justify-items-center">
-          <div className="h-28 w-28 rounded-full bg-[radial-gradient(circle,#fff_0_37%,transparent_38%),conic-gradient(#2563eb_0_36%,#14b8a6_36%_54%,#8b5cf6_54%_69%,#ef4444_69%_81%,#fbbf24_81%_90%,#94a3b8_90%_100%)]" />
+        <div className="mb-5 grid grid-cols-[104px_1fr] items-center gap-4 max-md:grid-cols-1 max-md:justify-items-center">
+          <div className="h-24 w-24 rounded-full bg-[radial-gradient(circle,#fff_0_37%,transparent_38%),conic-gradient(#2563eb_0_36%,#14b8a6_36%_54%,#8b5cf6_54%_69%,#ef4444_69%_81%,#fbbf24_81%_90%,#94a3b8_90%_100%)]" />
           <div className="grid w-full gap-2">
             {distribution.map((item) => (
               <div
@@ -446,7 +446,7 @@ function SummaryPanel({ radius }: { radius: RadiusOption }) {
 
       <div className="border-t border-slate-100 pt-4">
         <h4 className="mb-3 text-sm font-black">인사이트 요약</h4>
-        <ul className="m-0 list-disc space-y-2 pl-5 text-xs font-extrabold leading-relaxed text-slate-700">
+        <ul className="m-0 list-disc space-y-1.5 pl-5 text-xs font-extrabold leading-relaxed text-slate-700">
           <li>상무역 반경 500m 내 음식점 밀집도가 가장 높습니다.</li>
           <li>월드컵경기장역은 유동인구 대비 점포 밀도가 낮아 성장 여지가 있습니다.</li>
           <li>효천역은 학원·교육 업종 비중이 타 역 대비 높게 나타납니다.</li>
@@ -464,11 +464,11 @@ function ComparisonTable() {
   } satisfies Record<StationComparisonRow['densityTone'], string>
 
   return (
-    <section className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
-      <div className="flex h-12 items-center gap-5 overflow-x-auto border-b border-slate-200 px-[18px]">
+    <section className="max-h-[246px] overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
+      <div className="flex h-10 items-center gap-5 overflow-x-auto border-b border-slate-200 px-[18px]">
         {tabs.map((tab, index) => (
           <button
-            className={`relative h-12 whitespace-nowrap text-sm font-black ${
+            className={`relative h-10 whitespace-nowrap text-sm font-black ${
               index === 0
                 ? 'text-blue-600 after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-t-full after:bg-blue-600'
                 : 'text-slate-600'
@@ -481,7 +481,7 @@ function ComparisonTable() {
         ))}
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="max-h-[206px] overflow-auto">
         <table className="w-full min-w-[1040px] border-collapse">
           <thead>
             <tr>
@@ -496,7 +496,7 @@ function ComparisonTable() {
                 '상세 분석',
               ].map((heading) => (
                 <th
-                  className="h-[50px] border-b border-slate-100 bg-slate-50 px-[18px] text-left text-xs font-black text-slate-700"
+                  className="h-9 border-b border-slate-100 bg-slate-50 px-4 text-left text-xs font-black text-slate-700"
                   key={heading}
                 >
                   {heading}
@@ -507,7 +507,7 @@ function ComparisonTable() {
           <tbody>
             {comparisonRows.map((row) => (
               <tr key={row.station}>
-                <td className="h-[50px] border-b border-slate-100 px-[18px] text-sm font-extrabold text-slate-700">
+                <td className="h-9 border-b border-slate-100 px-4 text-sm font-extrabold text-slate-700">
                   <MapPin
                     aria-hidden="true"
                     className="mr-2 inline text-blue-600"
@@ -515,29 +515,29 @@ function ComparisonTable() {
                   />
                   {row.station}
                 </td>
-                <td className="h-[50px] border-b border-slate-100 px-[18px] text-sm font-extrabold text-slate-700">
+                <td className="h-9 border-b border-slate-100 px-4 text-sm font-extrabold text-slate-700">
                   {row.storeCount.toLocaleString()}
                 </td>
-                <td className="h-[50px] border-b border-slate-100 px-[18px] text-sm font-extrabold text-slate-700">
+                <td className="h-9 border-b border-slate-100 px-4 text-sm font-extrabold text-slate-700">
                   <span
                     className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${densityClasses[row.densityTone]}`}
                   />
                   {row.densityLevel}
                 </td>
-                <td className="h-[50px] border-b border-slate-100 px-[18px] text-sm font-extrabold text-slate-700">
+                <td className="h-9 border-b border-slate-100 px-4 text-sm font-extrabold text-slate-700">
                   {row.averageFloatingPopulation}
                 </td>
-                <td className="h-[50px] border-b border-slate-100 px-[18px] text-sm font-extrabold text-slate-700">
+                <td className="h-9 border-b border-slate-100 px-4 text-sm font-extrabold text-slate-700">
                   {row.averageMonthlySales}
                 </td>
-                <td className="h-[50px] border-b border-slate-100 px-[18px] text-sm font-extrabold text-slate-700">
+                <td className="h-9 border-b border-slate-100 px-4 text-sm font-extrabold text-slate-700">
                   {row.competitionLevel}
                 </td>
-                <td className="h-[50px] border-b border-slate-100 px-[18px]">
+                <td className="h-9 border-b border-slate-100 px-4">
                   <div className="flex gap-1.5">
                     {row.promisingBusinessTypes.map((businessType) => (
                       <span
-                        className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-500"
+                        className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-500"
                         key={businessType}
                       >
                         {businessType}
@@ -545,9 +545,9 @@ function ComparisonTable() {
                     ))}
                   </div>
                 </td>
-                <td className="h-[50px] border-b border-slate-100 px-[18px]">
+                <td className="h-9 border-b border-slate-100 px-4">
                   <button
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-blue-100 bg-white px-4 text-xs font-black text-blue-600"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-md border border-blue-100 bg-white px-4 text-xs font-black text-blue-600"
                     type="button"
                   >
                     <BarChart3 aria-hidden="true" size={15} />
@@ -598,7 +598,7 @@ export function CommercialAnalysisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-[#eef4fb] text-slate-900">
+    <div className="commercial-analysis-page min-h-screen bg-gradient-to-b from-slate-50 to-[#eef4fb] text-slate-900">
       <TopNavigation activeHref="/commercial-analysis" />
 
       <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
@@ -607,7 +607,7 @@ export function CommercialAnalysisPage() {
           ariaLabel="상권 분석 사이드 메뉴"
         />
 
-        <main className="overflow-hidden px-6 py-7 pb-20 max-md:px-3.5">
+        <main className="overflow-hidden px-6 pt-7 pb-0 max-md:px-3.5">
           <section className="mb-5 flex items-end gap-3 max-md:block">
             <h1 className="m-0 text-[32px] font-black tracking-[-1px] text-slate-950">
               역세권 상권 분석
@@ -617,7 +617,7 @@ export function CommercialAnalysisPage() {
             </p>
           </section>
 
-          <section className="grid grid-cols-[335px_minmax(680px,1fr)_388px] items-start gap-4 max-[1500px]:grid-cols-[310px_minmax(620px,1fr)] max-lg:grid-cols-1">
+          <section className="grid grid-cols-[335px_minmax(0,1fr)] items-start gap-4 max-[1500px]:grid-cols-1">
             <FilterPanel
               filters={filters}
               onLayerToggle={handleLayerToggle}
@@ -625,13 +625,15 @@ export function CommercialAnalysisPage() {
                 setFilters((current) => ({ ...current, radius }))
               }
             />
-            <MapCard />
-            <div className="max-[1500px]:col-span-2 max-lg:col-span-1">
+
+            <div className="grid min-w-0 grid-cols-[minmax(680px,1fr)_388px] items-start gap-4 max-[1500px]:grid-cols-1">
+              <MapCard />
               <SummaryPanel radius={summaryRadius} />
+              <div className="col-span-2 min-w-0 max-[1500px]:col-span-1">
+                <ComparisonTable />
+              </div>
             </div>
           </section>
-
-          <ComparisonTable />
         </main>
       </div>
 
