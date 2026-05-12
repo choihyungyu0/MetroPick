@@ -193,7 +193,7 @@ function LandingHeader() {
           </Link>
           <Link
             className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#086bff] px-7 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(0,102,255,0.26)] transition hover:bg-[#0054dc] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            to="/scenario"
+            to="/onboarding"
           >
             무료로 시작하기
           </Link>
@@ -215,7 +215,7 @@ function LandingHeader() {
             ))}
             <Link
               className="rounded-md bg-[#086bff] px-3 py-2 text-center text-sm font-extrabold text-white"
-              to="/scenario"
+              to="/onboarding"
             >
               무료로 시작하기
             </Link>
@@ -393,7 +393,7 @@ function HeroSection() {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link
               className="inline-flex min-h-14 items-center justify-center rounded-xl bg-[#086bff] px-8 text-base font-black text-white shadow-[0_16px_32px_rgba(0,97,255,0.22)] transition hover:bg-[#0054e8] focus-visible:ring-2 focus-visible:ring-[#086bff] focus-visible:ring-offset-2 focus-visible:outline-none"
-              to="/scenario"
+              to="/onboarding"
             >
               지금 분석 시작
             </Link>
@@ -454,7 +454,7 @@ function FeatureSection() {
             </div>
             <Link
               className="grid h-9 w-9 place-items-center rounded-full bg-[#edf6ff] text-xl font-black text-[#006dff] focus-visible:ring-2 focus-visible:ring-[#086bff] focus-visible:outline-none"
-              to="/scenario"
+              to="/onboarding"
               aria-label={`${card.title} 화면으로 이동`}
             >
               ›
@@ -551,7 +551,7 @@ function FeatureSection() {
         </div>
         <Link
           className="inline-flex min-h-12 items-center justify-center rounded-lg bg-white px-8 text-base font-black text-[#0b2850] shadow-lg transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-          to="/scenario"
+          to="/onboarding"
         >
           지금 무료로 시작하기
         </Link>

@@ -13,9 +13,7 @@ import { OnboardingNotificationsPage } from '@/pages/OnboardingNotificationsPage
 import { OnboardingStationPage } from '@/pages/OnboardingStationPage'
 import { RecommendationPage } from '@/pages/RecommendationPage'
 import { ReportPage } from '@/pages/ReportPage'
-import { ScenarioPage } from '@/pages/ScenarioPage'
 import { SignupPage } from '@/pages/SignupPage'
-import { AppShell } from '@/shared/components/AppShell'
 
 export const router = createBrowserRouter([
   {
@@ -71,16 +69,7 @@ export const router = createBrowserRouter([
     element: <MyPage />,
   },
   {
-    element: <AppShell />,
-    children: [
-      {
-        path: '/scenario',
-        element: <ScenarioPage />,
-      },
-      {
-        path: '*',
-        element: <NotFoundPage />,
-      },
-    ],
+    path: '*',
+    element: <NotFoundPage />,
   },
 ])
