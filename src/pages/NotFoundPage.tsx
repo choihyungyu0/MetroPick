@@ -14,7 +14,7 @@ export function NotFoundPage() {
       </p>
       <Link
         className="mt-6 inline-flex min-h-10 items-center justify-center rounded-md bg-city-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-city-500 focus-visible:ring-2 focus-visible:ring-city-500 focus-visible:ring-offset-2 focus-visible:outline-none"
-        to="/"
+        to="/dashboard"
       >
         대시보드로 돌아가기
       </Link>

@@ -6,7 +6,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-        <Link className="min-w-0" to="/" aria-label="대시보드로 이동">
+        <Link className="min-w-0" to="/dashboard" aria-label="대시보드로 이동">
           <span className="block text-sm font-bold text-city-700">MetroPick</span>
           <span className="block truncate text-xs text-slate-500">
             광주 2호선 공공데이터 시나리오 MVP

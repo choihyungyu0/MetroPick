@@ -1,13 +1,15 @@
 import { expect, test } from '@playwright/test'
 
-test('opens the dashboard and navigates between MVP routes', async ({ page }) => {
+test('opens the landing page and navigates between MVP routes', async ({ page }) => {
   await page.goto('/')
 
   await expect(
-    page.getByRole('heading', { name: '광주 2호선 AI 상권 시뮬레이터' }),
+    page.getByRole('heading', {
+      name: /광주 2호선 개통 이후,\s*우리 상권은 어떻게 바뀔까요\?/,
+    }),
   ).toBeVisible()
 
-  await page.getByRole('link', { name: '시나리오' }).click()
+  await page.getByRole('link', { name: '상권 분석', exact: true }).click()
   await expect(page).toHaveURL(/\/scenario$/)
   await expect(page.getByRole('heading', { name: '개통 시나리오 분석' })).toBeVisible()
 
