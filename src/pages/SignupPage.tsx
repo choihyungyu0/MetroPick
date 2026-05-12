@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import type { FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
 import { signupAssets } from '@/shared/assets/signupAssets'
@@ -178,9 +179,17 @@ function AgreementRow({
 }
 
 function SignupForm() {
+  const navigate = useNavigate()
+
+  const handleSignupSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    window.localStorage.setItem('metropick-authenticated', 'true')
+    navigate('/onboarding/stations')
+  }
+
   return (
     <section className="min-w-0" aria-label="회원가입 입력 양식">
-      <form className="grid gap-[18px]">
+      <form className="grid gap-[18px]" onSubmit={handleSignupSubmit}>
         <div>
           <label
             className="mb-2.5 block text-base font-black tracking-[-0.02em] text-[#0f2446]"
@@ -294,7 +303,7 @@ function SignupForm() {
 
         <button
           className="h-[55px] rounded-lg bg-gradient-to-r from-[#096bff] to-[#0057f2] text-lg font-black text-white shadow-[0_14px_28px_rgba(0,101,255,0.2)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none"
-          type="button"
+          type="submit"
         >
           회원가입 완료
         </button>

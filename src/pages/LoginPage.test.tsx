@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import userEvent from '@testing-library/user-event'
+import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
 import { LoginPage } from './LoginPage'
@@ -22,5 +23,23 @@ describe('LoginPage', () => {
     expect(
       screen.getByAltText('광주 2호선 예상 상권 변화 지도 미리보기'),
     ).toBeInTheDocument()
+  })
+
+  it('navigates to onboarding after mock login success', async () => {
+    const user = userEvent.setup()
+    const router = createMemoryRouter(
+      [
+        { path: '/login', element: <LoginPage /> },
+        { path: '/onboarding/stations', element: <h1>관심 역세권 설정</h1> },
+      ],
+      { initialEntries: ['/login'] },
+    )
+
+    render(<RouterProvider router={router} />)
+
+    await user.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(await screen.findByText('관심 역세권 설정')).toBeInTheDocument()
+    expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
   })
 })

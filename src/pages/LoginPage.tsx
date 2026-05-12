@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import type { FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
 import { loginAssets } from '@/shared/assets/loginAssets'
@@ -88,6 +89,14 @@ function HeroVisual() {
 }
 
 function LoginCard() {
+  const navigate = useNavigate()
+
+  const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    window.localStorage.setItem('metropick-authenticated', 'true')
+    navigate('/onboarding/stations')
+  }
+
   return (
     <section className="w-full rounded-[22px] border border-[#e3edf8] bg-white/95 px-6 py-9 shadow-[0_28px_70px_rgba(13,54,115,0.14)] sm:px-10 lg:px-14 xl:min-h-[580px] xl:px-[76px] xl:py-[30px]">
       <div className="flex items-center justify-center gap-3 text-2xl font-black text-[#071633]">
@@ -107,7 +116,7 @@ function LoginCard() {
         MetroPick AI에 오신 것을 환영합니다.
       </p>
 
-      <form className="mt-6 grid gap-2">
+      <form className="mt-6 grid gap-2" onSubmit={handleLoginSubmit}>
         <label className="text-sm font-extrabold text-[#0e1f3f]" htmlFor="login-email">
           이메일
         </label>
@@ -152,7 +161,7 @@ function LoginCard() {
 
         <button
           className="h-[50px] rounded-lg bg-gradient-to-r from-[#096bff] to-[#0057f2] text-lg font-black text-white shadow-[0_14px_28px_rgba(0,101,255,0.2)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[#0b6cff] focus-visible:ring-offset-2 focus-visible:outline-none"
-          type="button"
+          type="submit"
         >
           로그인
         </button>

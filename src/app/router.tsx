@@ -4,6 +4,8 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { OnboardingBusinessTypePage } from '@/pages/OnboardingBusinessTypePage'
+import { OnboardingStationPage } from '@/pages/OnboardingStationPage'
 import { ReportPage } from '@/pages/ReportPage'
 import { ScenarioPage } from '@/pages/ScenarioPage'
 import { SignupPage } from '@/pages/SignupPage'
@@ -21,6 +23,14 @@ export const router = createBrowserRouter([
   {
     path: '/signup',
     element: <SignupPage />,
+  },
+  {
+    path: '/onboarding/stations',
+    element: <OnboardingStationPage />,
+  },
+  {
+    path: '/onboarding/business-type',
+    element: <OnboardingBusinessTypePage />,
   },
   {
     element: <AppShell />,
