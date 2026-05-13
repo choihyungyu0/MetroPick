@@ -31,6 +31,7 @@ import {
 import { Link } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 import { reportAssets } from '@/shared/assets/reportAssets'
 
 type ReportMetric = {
@@ -86,14 +87,6 @@ const reportSummary = {
   scenario: '2027 개통 시나리오',
   stationArea: '백운광장역 500m 상권',
 } as const
-
-const topNavItems: Array<{ active?: boolean; href: string; label: string }> = [
-  { label: '서비스 소개', href: '/' },
-  { label: '상권 분석', href: '/commercial-analysis' },
-  { label: 'AI 예측', href: '/ai-prediction' },
-  { label: '입지 추천', href: '/recommendation' },
-  { label: '리포트', href: '/report', active: true },
-]
 
 const sideMenuItems: Array<{
   active?: boolean
@@ -295,71 +288,9 @@ function saveCurrentReport() {
   )
 }
 
-function Logo() {
-  return (
-    <Link aria-label="MetroPick AI 홈" className="flex items-center gap-3.5" to="/">
-      <img
-        alt="MetroPick AI 로고"
-        className="h-10 w-12 shrink-0 object-contain"
-        draggable={false}
-        src={landingAssets.logo}
-      />
-      <span>
-        <span className="block text-[27px] font-black leading-tight tracking-[-0.7px]">
-          MetroPick AI
-        </span>
-        <span className="mt-1 block text-sm font-semibold text-white/80">
-          광주 2호선 개통에 따른 AI 상권 분석 예측 서비스
-        </span>
-      </span>
-    </Link>
-  )
-}
-
-function Topbar() {
-  return (
-    <header className="sticky top-0 z-30 flex min-h-[98px] items-center justify-between gap-6 bg-[linear-gradient(90deg,#071d45_0%,#03142f_52%,#061f4b_100%)] px-9 text-white shadow-[0_8px_28px_rgba(3,20,47,0.25)] max-xl:flex-wrap max-md:px-5">
-      <Logo />
-
-      <nav
-        aria-label="상단 메뉴"
-        className="flex flex-1 items-center justify-center gap-14 overflow-x-auto max-xl:order-3 max-xl:w-full max-xl:justify-start"
-      >
-        {topNavItems.map((item) => (
-          <Link
-            aria-current={item.active ? 'page' : undefined}
-            className={`whitespace-nowrap text-xl font-extrabold text-white ${
-              item.active ? 'border-b-2 border-blue-400 pb-1' : ''
-            }`}
-            key={item.label}
-            to={item.href}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="flex items-center gap-4 max-md:w-full">
-        <Link
-          className="inline-flex h-14 w-[130px] items-center justify-center rounded-xl border border-white/45 bg-slate-950/40 text-lg font-extrabold max-md:flex-1"
-          to="/login"
-        >
-          로그인
-        </Link>
-        <Link
-          className="inline-flex h-14 w-[190px] items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-lg font-black shadow-[0_12px_24px_rgba(0,100,245,0.32)] max-md:flex-1"
-          to="/signup"
-        >
-          무료로 시작하기
-        </Link>
-      </div>
-    </header>
-  )
-}
-
 function Sidebar() {
   return (
-    <aside className="flex min-h-[calc(100vh-98px)] flex-col justify-between border-r border-blue-100 bg-white/90 px-[18px] py-10 max-lg:hidden">
+    <aside className="flex min-h-[calc(100vh-var(--app-topbar-height))] flex-col justify-between border-r border-blue-100 bg-white/90 px-[18px] py-10 max-lg:hidden">
       <div>
         <div className="flex items-center gap-3.5 px-4 pb-9">
           <img
@@ -816,7 +747,7 @@ export function ReportPage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(0,117,255,0.08),transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f6f9fe_100%)] text-slate-900">
-      <Topbar />
+      <TopNavigation activeHref="/report" sticky />
 
       <div className="grid grid-cols-[335px_1fr] max-lg:grid-cols-1">
         <Sidebar />

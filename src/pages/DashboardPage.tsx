@@ -188,7 +188,7 @@ function Topbar({
   stationCount: number
 }) {
   return (
-    <header className="flex min-h-[82px] items-center justify-between bg-[radial-gradient(circle_at_50%_0%,rgba(0,107,255,0.22),transparent_40%),linear-gradient(90deg,#061f44,#04142e)] px-8 text-white shadow-[0_1px_0_rgba(255,255,255,0.08)] max-lg:px-4">
+    <header className="flex min-h-[var(--app-topbar-height)] items-center justify-between bg-[radial-gradient(circle_at_50%_0%,rgba(0,107,255,0.22),transparent_40%),linear-gradient(90deg,#061f44,#04142e)] px-8 text-white shadow-[0_1px_0_rgba(255,255,255,0.08)] max-lg:px-4">
       <div />
 
       <div className="flex flex-wrap items-center justify-end gap-4">

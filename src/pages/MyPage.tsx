@@ -30,6 +30,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 import { myPageAssets } from '@/shared/assets/myPageAssets'
 import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
@@ -148,14 +149,6 @@ type StoredPredictionResult = {
   id?: string
   stationArea?: string
 }
-
-const navItems: Array<{ href: string; label: string }> = [
-  { label: '서비스 소개', href: '/' },
-  { label: '상권 분석', href: '/commercial-analysis' },
-  { label: 'AI 예측', href: '/ai-prediction' },
-  { label: '입지 추천', href: '/recommendation' },
-  { label: '리포트', href: '/report' },
-]
 
 const sidebarMenus: Array<{ href: string; icon: LucideIcon; label: string }> = [
   { icon: Home, label: '대시보드', href: '/dashboard' },
@@ -652,45 +645,6 @@ function Logo({ small = false }: { small?: boolean }) {
         ) : null}
       </span>
     </Link>
-  )
-}
-
-function TopHeader({ profileName }: { profileName: string }) {
-  return (
-    <header className="sticky top-0 z-50 flex min-h-[88px] items-center justify-between gap-6 bg-[linear-gradient(90deg,#071e45_0%,#03152f_52%,#06204a_100%)] px-10 text-white shadow-[0_8px_28px_rgba(3,20,47,0.22)] max-xl:flex-wrap max-md:px-5">
-      <Logo />
-
-      <nav
-        aria-label="상단 메뉴"
-        className="flex flex-1 items-center justify-center gap-[60px] overflow-x-auto max-xl:order-3 max-xl:w-full max-xl:justify-start"
-      >
-        {navItems.map((item) => (
-          <Link
-            className="whitespace-nowrap text-xl font-extrabold text-white"
-            key={item.label}
-            to={item.href}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="flex items-center gap-4 max-md:w-full">
-        <Link
-          className="inline-flex h-[50px] min-w-[132px] items-center justify-center gap-2 rounded-[10px] border border-white/45 bg-slate-950/45 px-5 text-[17px] font-black text-white max-md:flex-1"
-          to="/mypage"
-        >
-          {profileName}님
-          <ChevronDown aria-hidden="true" size={17} />
-        </Link>
-        <Link
-          className="inline-flex h-[50px] min-w-[186px] items-center justify-center rounded-[10px] bg-blue-600 px-5 text-[17px] font-black text-white shadow-[0_12px_25px_rgba(0,109,255,0.28)] max-md:flex-1"
-          to="/signup"
-        >
-          무료로 시작하기
-        </Link>
-      </div>
-    </header>
   )
 }
 
@@ -1460,9 +1414,28 @@ export function MyPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <TopHeader profileName={profile.name} />
+      <TopNavigation
+        renderActions={() => (
+          <>
+            <Link
+              className="inline-flex h-12 min-w-[132px] items-center justify-center gap-2 rounded-lg border border-white/45 bg-slate-950/35 px-5 text-sm font-black text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              to="/mypage"
+            >
+              {profile.name}님
+              <ChevronDown aria-hidden="true" size={17} />
+            </Link>
+            <Link
+              className="inline-flex h-12 min-w-[170px] items-center justify-center rounded-lg bg-[#086bff] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(0,102,255,0.26)] transition hover:bg-[#0054dc] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              to="/signup"
+            >
+              무료로 시작하기
+            </Link>
+          </>
+        )}
+        sticky
+      />
 
-      <div className="grid min-h-[calc(100vh-88px)] grid-cols-[275px_1fr] max-lg:grid-cols-1">
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[275px_1fr] max-lg:grid-cols-1">
         <Sidebar />
 
         <main className="min-w-0 px-[68px] py-9 max-xl:px-8 max-md:px-4">

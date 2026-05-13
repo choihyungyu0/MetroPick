@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import type { ReactNode } from 'react'
 
 import { landingAssets, landingDashboardAssets } from '@/shared/assets/landingAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 
 const navItems = [
   { label: '서비스 소개', href: '#service-intro' },
@@ -117,114 +117,6 @@ const sidebarItems = [
   '관심 지역',
   '설정',
 ]
-
-function LandingLink({
-  children,
-  className,
-  href,
-}: {
-  children: ReactNode
-  className?: string
-  href: string
-}) {
-  const isInternalRoute = href.startsWith('/')
-
-  if (isInternalRoute) {
-    return (
-      <Link className={className} to={href}>
-        {children}
-      </Link>
-    )
-  }
-
-  return (
-    <a className={className} href={href}>
-      {children}
-    </a>
-  )
-}
-
-function LandingHeader() {
-  return (
-    <header className="sticky top-0 z-50 bg-[#06162d] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)]">
-      <div className="mx-auto flex min-h-20 w-[min(1720px,calc(100%-32px))] items-center justify-between gap-5 py-3">
-        <Link
-          className="flex min-w-0 items-center gap-3"
-          to="/"
-          aria-label="MetroPick AI 홈"
-        >
-          <img
-            className="h-9 w-11 shrink-0 scale-[1.7] object-contain"
-            src={landingAssets.logo}
-            alt="MetroPick AI 로고"
-            draggable={false}
-          />
-          <span className="min-w-0">
-            <span className="block text-xl font-black tracking-[-0.02em]">
-              MetroPick AI
-            </span>
-            <span className="mt-1 hidden text-xs text-white/75 sm:block">
-              광주 2호선 개통에 따른 AI 상권 변화 예측 서비스
-            </span>
-          </span>
-        </Link>
-
-        <nav
-          className="hidden items-center gap-10 text-base font-bold xl:flex"
-          aria-label="랜딩 주요 메뉴"
-        >
-          {navItems.map((item) => (
-            <LandingLink
-              key={item.label}
-              href={item.href}
-              className="text-white/90 transition hover:text-[#43e8df] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            >
-              {item.label}
-            </LandingLink>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-3 lg:flex">
-          <Link
-            className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/45 px-7 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            to="/login"
-          >
-            로그인
-          </Link>
-          <Link
-            className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#086bff] px-7 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(0,102,255,0.26)] transition hover:bg-[#0054dc] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            to="/onboarding"
-          >
-            무료로 시작하기
-          </Link>
-        </div>
-
-        <details className="relative lg:hidden">
-          <summary className="list-none rounded-lg border border-white/35 px-4 py-2 text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none">
-            메뉴
-          </summary>
-          <div className="absolute right-0 mt-3 grid w-52 gap-1 rounded-lg border border-slate-200 bg-white p-2 text-slate-900 shadow-xl">
-            {navItems.map((item) => (
-              <LandingLink
-                key={item.label}
-                href={item.href}
-                className="rounded-md px-3 py-2 text-sm font-bold hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-[#086bff] focus-visible:outline-none"
-              >
-                {item.label}
-              </LandingLink>
-            ))}
-            <Link
-              className="rounded-md bg-[#086bff] px-3 py-2 text-center text-sm font-extrabold text-white"
-              to="/onboarding"
-            >
-              무료로 시작하기
-            </Link>
-          </div>
-        </details>
-      </div>
-    </header>
-  )
-}
 
 function MapMockup() {
   return (
@@ -609,7 +501,7 @@ function LandingFooter() {
 export function LandingPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-[#f7fcff] via-white to-[#f7fbff] text-[#071936]">
-      <LandingHeader />
+      <TopNavigation ctaHref="/onboarding" navItems={navItems} sticky />
       <main>
         <HeroSection />
         <FeatureSection />

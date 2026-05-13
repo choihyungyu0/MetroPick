@@ -26,6 +26,7 @@ import { Link } from 'react-router-dom'
 
 import { commercialAnalysisAssets } from '@/shared/assets/commercialAnalysisAssets'
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 
 type RadiusOption = '300m' | '500m' | '1km'
 
@@ -87,18 +88,6 @@ const defaultFilters: CommercialAnalysisFilters = {
     floatingNight: false,
   },
 }
-
-const topNavItems: Array<{
-  active?: boolean
-  href: string
-  label: string
-}> = [
-  { label: '서비스 소개', href: '/' },
-  { label: '상권 분석', href: '/commercial-analysis', active: true },
-  { label: 'AI 예측', href: '/ai-prediction' },
-  { label: '입지 추천', href: '/recommendation' },
-  { label: '리포트', href: '/report' },
-] as const
 
 const sideMenuItems: Array<{
   active?: boolean
@@ -238,67 +227,9 @@ function appendSavedReport(report: SavedCommercialAnalysisReport) {
   window.localStorage.setItem(key, JSON.stringify([...existing, report]))
 }
 
-function TopHeader() {
-  return (
-    <header className="flex min-h-[88px] items-center justify-between gap-5 bg-[radial-gradient(circle_at_15%_0%,rgba(19,156,255,0.28),transparent_26%),linear-gradient(90deg,#04182f_0%,#06152b_45%,#061a36_100%)] px-8 text-white shadow-[0_10px_28px_rgba(15,23,42,0.18)] max-xl:flex-wrap max-md:px-4">
-      <Link
-        aria-label="MetroPick AI 홈"
-        className="flex min-w-[360px] items-center gap-3.5 max-md:min-w-0"
-        to="/"
-      >
-        <img
-          alt="MetroPick AI 로고"
-          className="h-9 w-11 shrink-0 scale-[1.45] object-contain"
-          draggable={false}
-          src={landingAssets.logo}
-        />
-        <span>
-          <span className="block text-[27px] font-black tracking-[-0.5px]">
-            MetroPick AI
-          </span>
-          <span className="mt-1 block text-xs font-semibold text-slate-300">
-            광주 2호선 개통에 따른 AI 상권 분석 예측 서비스
-          </span>
-        </span>
-      </Link>
-
-      <nav aria-label="주요 메뉴" className="flex items-center gap-4 overflow-x-auto">
-        {topNavItems.map((item) => (
-          <Link
-            className={`rounded-lg px-5 py-3 text-lg font-extrabold whitespace-nowrap ${
-              item.active
-                ? 'bg-white/12 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
-                : ''
-            }`}
-            key={item.label}
-            to={item.href}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="flex items-center gap-3.5">
-        <Link
-          className="inline-flex h-12 w-[118px] items-center justify-center rounded-lg border border-white/70 text-[17px] font-extrabold"
-          to="/login"
-        >
-          로그인
-        </Link>
-        <Link
-          className="inline-flex h-12 w-[196px] items-center justify-center rounded-lg bg-[#075df5] text-[17px] font-black shadow-[0_8px_20px_rgba(0,91,255,0.35)]"
-          to="/signup"
-        >
-          무료로 시작하기
-        </Link>
-      </div>
-    </header>
-  )
-}
-
 function Sidebar() {
   return (
-    <aside className="flex min-h-[calc(100vh-88px)] flex-col justify-between border-r border-slate-200 bg-white px-[18px] py-7 max-lg:hidden">
+    <aside className="flex min-h-[calc(100vh-var(--app-topbar-height))] flex-col justify-between border-r border-slate-200 bg-white px-[18px] py-7 max-lg:hidden">
       <div>
         <div className="flex items-center gap-2.5 border-b border-slate-100 px-2 pb-7">
           <img
@@ -750,9 +681,9 @@ export function CommercialAnalysisPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-[#eef4fb] text-slate-900">
-      <TopHeader />
+      <TopNavigation activeHref="/commercial-analysis" />
 
-      <div className="grid min-h-[calc(100vh-88px)] grid-cols-[276px_1fr] max-lg:grid-cols-1">
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[276px_1fr] max-lg:grid-cols-1">
         <Sidebar />
 
         <main className="overflow-hidden px-6 py-7 pb-20 max-md:px-3.5">

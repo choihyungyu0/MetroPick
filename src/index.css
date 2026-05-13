@@ -13,6 +13,8 @@
 }
 
 :root {
+  --app-topbar-height: 64px;
+  --app-density-scale: 1;
   color: #17201d;
   background: #f5f7f6;
   font-synthesis: none;
@@ -33,7 +35,24 @@ body {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: calc(100vh / var(--app-density-scale));
+}
+
+@media (min-width: 1280px) and (min-height: 760px) {
+  :root {
+    --app-density-scale: 0.9;
+  }
+
+  #root {
+    width: calc(100% / var(--app-density-scale));
+    zoom: var(--app-density-scale);
+  }
+}
+
+@media (min-width: 1600px) and (min-height: 850px) {
+  :root {
+    --app-density-scale: 0.82;
+  }
 }
 
 button,

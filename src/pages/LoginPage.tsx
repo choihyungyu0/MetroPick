@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 import { loginAssets } from '@/shared/assets/loginAssets'
 
 function Logo({ compact = false }: { compact?: boolean }) {
@@ -250,11 +251,7 @@ function LoginFooter() {
 export function LoginPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_18%_35%,rgba(0,141,255,0.13),transparent_28%),radial-gradient(circle_at_82%_25%,rgba(0,204,217,0.13),transparent_24%),linear-gradient(180deg,#eef7ff_0%,#ffffff_54%,#ffffff_100%)] text-[#071633]">
-      <header className="bg-gradient-to-r from-[#061a3d] via-[#071d43] to-[#06265d] text-white">
-        <div className="mx-auto flex min-h-[72px] w-[calc(100%_-_32px)] max-w-[1720px] items-center lg:w-[calc(100%_-_96px)]">
-          <Logo />
-        </div>
-      </header>
+      <TopNavigation />
 
       <main className="mx-auto w-[calc(100%_-_32px)] max-w-[1720px] lg:w-[calc(100%_-_96px)]">
         <section className="grid items-start gap-9 py-8 xl:min-h-[742px] xl:grid-cols-[830px_640px] xl:gap-[76px] xl:py-10">

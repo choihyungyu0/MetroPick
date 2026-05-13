@@ -25,6 +25,7 @@ import { Link } from 'react-router-dom'
 
 import { aiPredictionAssets } from '@/shared/assets/aiPredictionAssets'
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 
 type PredictionFilters = {
   businessType: string
@@ -73,18 +74,6 @@ const defaultFilters: PredictionFilters = {
   region: '광주광역시 전체',
   date: '2026년 4월 18일',
 }
-
-const topNavItems: Array<{
-  active?: boolean
-  href: string
-  label: string
-}> = [
-  { label: '서비스 소개', href: '/' },
-  { label: '상권 분석', href: '/commercial-analysis' },
-  { label: 'AI 예측', href: '/ai-prediction', active: true },
-  { label: '입지 추천', href: '/recommendation' },
-  { label: '리포트', href: '/report' },
-]
 
 const sideMenuItems: Array<{
   active?: boolean
@@ -182,67 +171,6 @@ function appendPredictionResult(result: PredictionResult) {
   const key = 'metropick-ai-prediction-results'
   const existing = safeParseStorage<PredictionResult[]>(key) ?? []
   window.localStorage.setItem(key, JSON.stringify([...existing, result]))
-}
-
-function TopHeader() {
-  return (
-    <header className="flex min-h-[82px] items-center gap-5 border-b border-white/20 bg-[linear-gradient(90deg,#001a3d_0%,#001f4f_48%,#002b72_100%)] px-8 text-white max-xl:flex-wrap max-md:px-4">
-      <Link
-        aria-label="MetroPick AI 홈"
-        className="flex w-[380px] items-center gap-3 max-md:w-auto"
-        to="/"
-      >
-        <img
-          alt="MetroPick AI 로고"
-          className="h-9 w-11 shrink-0 scale-[1.45] object-contain"
-          draggable={false}
-          src={landingAssets.logo}
-        />
-        <span>
-          <span className="block text-2xl font-extrabold leading-tight">
-            MetroPick AI
-          </span>
-          <span className="mt-1 block text-xs text-white/75">
-            광주 2호선 개통에 따른 AI 상권 변화 예측 서비스
-          </span>
-        </span>
-      </Link>
-
-      <nav
-        aria-label="주요 메뉴"
-        className="flex flex-1 items-center justify-center gap-12 overflow-x-auto max-xl:order-3 max-xl:w-full max-xl:justify-start"
-      >
-        {topNavItems.map((item) => (
-          <Link
-            className={`relative py-[29px] text-[17px] font-bold whitespace-nowrap text-white/90 ${
-              item.active
-                ? 'after:absolute after:bottom-0 after:left-1/2 after:h-[3px] after:w-[84px] after:-translate-x-1/2 after:rounded-full after:bg-blue-500'
-                : ''
-            }`}
-            key={item.label}
-            to={item.href}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="ml-auto flex w-[330px] justify-end gap-3 max-md:w-full">
-        <Link
-          className="inline-flex h-[46px] items-center justify-center rounded-lg border border-white/55 px-7 text-base font-extrabold"
-          to="/login"
-        >
-          로그인
-        </Link>
-        <Link
-          className="inline-flex h-[46px] items-center justify-center rounded-lg bg-blue-600 px-7 text-base font-extrabold shadow-[0_10px_24px_rgba(5,103,255,0.35)]"
-          to="/signup"
-        >
-          무료로 시작하기
-        </Link>
-      </div>
-    </header>
-  )
 }
 
 function Sidebar() {
@@ -660,9 +588,9 @@ export function AIPredictionPage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(14,100,255,0.08),transparent_28%),#f5f9ff] text-slate-900">
-      <TopHeader />
+      <TopNavigation activeHref="/ai-prediction" />
 
-      <div className="flex min-h-[calc(100vh-82px-104px)] max-lg:flex-col">
+      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-104px)] max-lg:flex-col">
         <Sidebar />
 
         <main className="min-w-0 flex-1 overflow-hidden px-9 py-7 max-md:px-4">

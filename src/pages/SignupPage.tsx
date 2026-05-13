@@ -2,9 +2,8 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 import { signupAssets } from '@/shared/assets/signupAssets'
-
-const navItems = ['서비스 소개', '상권 분석', 'AI 예측', '입지 추천', '리포트']
 
 const userTypes = [
   { icon: '♙', label: '예비 창업자', active: true },
@@ -53,46 +52,6 @@ function Logo({ compact = false, dark = false }: { compact?: boolean; dark?: boo
         </span>
       </span>
     </Link>
-  )
-}
-
-function Header() {
-  return (
-    <header className="bg-gradient-to-r from-[#061b3f] via-[#061f4c] to-[#052a64] text-white">
-      <div className="mx-auto grid min-h-[88px] w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-5 py-5 lg:w-[calc(100%_-_88px)] xl:grid-cols-[340px_1fr_320px] xl:py-0">
-        <Logo />
-
-        <nav
-          className="flex flex-wrap justify-center gap-x-7 gap-y-3 text-base font-extrabold tracking-[-0.02em] lg:gap-x-12 xl:gap-x-[70px] xl:text-lg"
-          aria-label="주요 메뉴"
-        >
-          {navItems.map((item) => (
-            <a
-              className="rounded-sm text-white transition hover:text-[#42e5df] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              href="/"
-              key={item}
-            >
-              {item}
-            </a>
-          ))}
-        </nav>
-
-        <div className="flex justify-center gap-3 xl:justify-end">
-          <Link
-            className="inline-flex h-12 items-center justify-center rounded-lg border border-white/55 bg-white/5 px-6 text-base font-extrabold transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            to="/login"
-          >
-            로그인
-          </Link>
-          <Link
-            className="inline-flex h-12 items-center justify-center rounded-lg bg-gradient-to-r from-[#096bff] to-[#0057f2] px-6 text-base font-extrabold shadow-[0_14px_28px_rgba(0,100,255,0.22)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            to="/signup"
-          >
-            무료로 시작하기
-          </Link>
-        </div>
-      </div>
-    </header>
   )
 }
 
@@ -468,7 +427,7 @@ function Footer() {
 export function SignupPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_20%_25%,rgba(33,145,255,0.12),transparent_28%),radial-gradient(circle_at_85%_26%,rgba(0,213,210,0.1),transparent_26%),linear-gradient(180deg,#eef7ff_0%,#ffffff_58%,#ffffff_100%)] text-[#07152f]">
-      <Header />
+      <TopNavigation />
 
       <main className="mx-auto grid min-h-[calc(100vh-198px)] w-[calc(100%_-_32px)] max-w-[1700px] items-center gap-8 py-8 lg:w-[calc(100%_-_80px)] xl:grid-cols-[430px_minmax(0,1fr)] xl:gap-[70px] 2xl:gap-[90px]">
         <LeftIntro />

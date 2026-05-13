@@ -22,9 +22,9 @@ import {
   TrainFront,
   Utensils,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
-import { landingAssets } from '@/shared/assets/landingAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
 
 type InitialSetupState = {
@@ -80,77 +80,6 @@ const initialSetupState: InitialSetupState = {
   selectedStations: ['시청역', '백운광장역', '남광주역'],
   selectedIndustries: ['카페', '음식점'],
   alertSettings: alerts.map((alert) => alert.title),
-}
-
-function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <Link className="flex items-center gap-3" to="/" aria-label="MetroPick AI 홈">
-      <img
-        alt="MetroPick AI 로고"
-        className={[
-          'shrink-0 scale-[1.72] object-contain',
-          compact ? 'h-7 w-8' : 'h-8 w-10',
-        ].join(' ')}
-        draggable={false}
-        src={landingAssets.logo}
-      />
-      <span>
-        <span
-          className={[
-            'block leading-none font-black tracking-[-0.03em] text-white',
-            compact ? 'text-xl' : 'text-2xl',
-          ].join(' ')}
-        >
-          MetroPick AI
-        </span>
-        <span className="mt-2 block text-xs font-semibold text-white/75">
-          광주 2호선 개통의 미래, AI 상권 분석 예측 서비스
-        </span>
-      </span>
-    </Link>
-  )
-}
-
-function Header() {
-  const navItems = ['서비스 소개', '상권 분석', 'AI 예측', '입지 추천', '리포트']
-
-  return (
-    <header className="relative z-20 bg-gradient-to-r from-[#061a3d] via-[#071f4b] to-[#052b67] text-white shadow-[0_8px_24px_rgba(5,24,55,0.22)]">
-      <div className="mx-auto grid min-h-[82px] w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-5 py-5 lg:w-[calc(100%_-_64px)] xl:grid-cols-[360px_1fr_330px] xl:py-0">
-        <Logo />
-
-        <nav
-          aria-label="주요 메뉴"
-          className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-base font-extrabold tracking-[-0.02em] lg:gap-x-11 xl:gap-x-16 xl:text-lg"
-        >
-          {navItems.map((item) => (
-            <Link
-              className="rounded-sm transition hover:text-[#42e5df] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              key={item}
-              to="/"
-            >
-              {item}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex justify-center gap-3 xl:justify-end">
-          <Link
-            className="inline-flex h-12 items-center justify-center rounded-lg border border-white/55 bg-white/5 px-7 text-base font-extrabold transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            to="/login"
-          >
-            로그인
-          </Link>
-          <Link
-            className="inline-flex h-12 items-center justify-center rounded-lg bg-gradient-to-r from-[#096bff] to-[#0058f5] px-7 text-base font-extrabold shadow-[0_14px_24px_rgba(0,100,255,0.23)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            to="/signup"
-          >
-            무료로 시작하기
-          </Link>
-        </div>
-      </div>
-    </header>
-  )
 }
 
 function StepProgress() {
@@ -530,7 +459,7 @@ export function OnboardingInitialSetupPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f6fbff] text-[#07152f]">
-      <Header />
+      <TopNavigation />
 
       <main className="relative overflow-hidden">
         <div

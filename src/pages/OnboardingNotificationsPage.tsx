@@ -24,6 +24,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 
 type NotificationId =
   | 'opening-schedule'
@@ -266,46 +267,6 @@ function Logo({ compact = false }: { compact?: boolean }) {
         </span>
       </span>
     </Link>
-  )
-}
-
-function Header() {
-  const navItems = ['서비스 소개', '상권 분석', 'AI 예측', '입지 추천', '리포트']
-
-  return (
-    <header className="relative z-20 bg-gradient-to-r from-[#061b42] via-[#082c62] to-[#03183b] text-white shadow-[0_8px_24px_rgba(1,20,58,0.22)]">
-      <div className="mx-auto grid min-h-[88px] w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-5 py-5 lg:w-[calc(100%_-_96px)] xl:grid-cols-[430px_1fr_348px] xl:py-0">
-        <Logo />
-        <nav
-          aria-label="주요 메뉴"
-          className="flex flex-wrap justify-center gap-x-7 gap-y-3 text-base font-black lg:gap-x-12 2xl:gap-x-[82px]"
-        >
-          {navItems.map((item) => (
-            <Link
-              className="rounded-sm text-white transition hover:text-[#3fd4ff] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              key={item}
-              to="/"
-            >
-              {item}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex justify-center gap-3 xl:justify-end">
-          <Link
-            className="inline-flex h-12 items-center justify-center rounded-xl border border-white/80 bg-white/5 px-8 text-base font-black text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            to="/login"
-          >
-            로그인
-          </Link>
-          <Link
-            className="inline-flex h-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#0774ff] to-[#0066ef] px-8 text-base font-black text-white shadow-[0_10px_22px_rgba(0,105,255,0.3)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            to="/signup"
-          >
-            무료로 시작하기
-          </Link>
-        </div>
-      </div>
-    </header>
   )
 }
 
@@ -814,7 +775,7 @@ export function OnboardingNotificationsPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-[#f7fbff] to-[#eef6ff] text-[#061b42]">
-      <Header />
+      <TopNavigation />
 
       <main className="relative overflow-hidden px-4 py-7 md:px-8 lg:px-[53px]">
         <div
