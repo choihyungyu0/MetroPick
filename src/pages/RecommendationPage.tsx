@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { recommendationAssets } from '@/shared/assets/recommendationAssets'
@@ -459,43 +459,6 @@ function CompareChart() {
   )
 }
 
-function Footer() {
-  return (
-    <footer className="grid min-h-[96px] grid-cols-[320px_1fr_420px] items-center gap-8 bg-[linear-gradient(90deg,#001a3d,#001f4f)] px-16 py-4 text-white max-xl:grid-cols-1 max-xl:gap-4 max-md:px-5">
-      <div className="flex items-center gap-3">
-        <img
-          alt="MetroPick AI 로고"
-          className="h-9 w-11 shrink-0 object-contain"
-          draggable={false}
-          src={landingAssets.logo}
-        />
-        <div>
-          <strong className="text-xl font-black">MetroPick AI</strong>
-          <p className="m-0 mt-1 text-xs text-white/70">
-            광주 2호선 개통에 따른 AI 상권 분석 예측 서비스
-          </p>
-        </div>
-      </div>
-
-      <nav aria-label="푸터 링크" className="flex flex-wrap items-center gap-4">
-        {['서비스 소개', '이용약관', '개인정보처리방침', '데이터 출처', '문의하기'].map(
-          (item) => (
-            <a className="text-sm font-bold text-white/80" href="/" key={item}>
-              {item}
-            </a>
-          ),
-        )}
-      </nav>
-
-      <div className="text-xs leading-6 text-white/70">
-        <p className="m-0">(주)메트로픽AI ㅣ 대표이사: 김지훈</p>
-        <p className="m-0">광주광역시 동구 금남로 193-22, 4층</p>
-        <p className="m-0">사업자 등록번호: 123-45-67890 ㅣ 062-123-4567</p>
-      </div>
-    </footer>
-  )
-}
-
 export function RecommendationPage() {
   const navigate = useNavigate()
   const [filters] = useState<RecommendationFilters>(() => buildInitialFilters())
@@ -535,7 +498,7 @@ export function RecommendationPage() {
     <div className="recommendation-page min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,101,255,0.08),transparent_28%),linear-gradient(180deg,#f8fbff_0%,#f2f7ff_100%)] text-slate-900">
       <TopNavigation activeHref="/recommendation" />
 
-      <div className="flex min-h-[calc(100vh-var(--app-topbar-height))] max-lg:flex-col">
+      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] max-lg:flex-col">
         <AppSidebar activeHref="/recommendation" ariaLabel="입지 추천 사이드 메뉴" />
 
         <main className="min-w-0 flex-1 px-7 py-7 max-md:px-4">
@@ -571,7 +534,7 @@ export function RecommendationPage() {
         </main>
       </div>
 
-      <Footer />
+      <AppFooter />
 
       {message ? (
         <div

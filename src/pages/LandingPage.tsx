@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 
 import { landingAssets, landingDashboardAssets } from '@/shared/assets/landingAssets'
+import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 
 const navItems = [
@@ -452,52 +453,6 @@ function FeatureSection() {
   )
 }
 
-function LandingFooter() {
-  return (
-    <footer className="mt-4 bg-[#06162d] text-white">
-      <div className="mx-auto grid min-h-28 w-[min(1720px,calc(100%-32px))] items-center gap-6 py-6 text-center lg:grid-cols-[290px_1fr_390px] lg:text-left">
-        <div className="flex items-center justify-center gap-3 lg:justify-start">
-          <img
-            className="h-8 w-10 scale-[1.7] object-contain"
-            src={landingAssets.logo}
-            alt="MetroPick AI 푸터 로고"
-            draggable={false}
-          />
-          <div>
-            <h2 className="text-lg font-black">MetroPick AI</h2>
-            <p className="mt-1 text-xs text-white/65">
-              광주 2호선 개통에 따른 AI 상권 변화 예측 서비스
-            </p>
-          </div>
-        </div>
-
-        <nav
-          className="flex flex-wrap justify-center gap-4 text-sm text-white/75"
-          aria-label="푸터 링크"
-        >
-          {['서비스 소개', '이용약관', '개인정보처리방침', '데이터 출처', '문의하기'].map(
-            (item) => (
-              <a
-                key={item}
-                className="hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-                href="#service-intro"
-              >
-                {item}
-              </a>
-            ),
-          )}
-        </nav>
-
-        <address className="not-italic text-sm leading-6 text-white/72">
-          <p>(주)메트로픽시 ㅣ 대표이사: 김지현</p>
-          <p>광주광역시 동구 금남로 193-22, 4층</p>
-          <p>이메일: contact@metropick.ai ㅣ 062-123-4567</p>
-        </address>
-      </div>
-    </footer>
-  )
-}
-
 export function LandingPage() {
   return (
     <div className="landing-page min-h-screen overflow-x-clip bg-gradient-to-b from-[#f7fcff] via-white to-[#f7fbff] text-[#071936]">
@@ -506,7 +461,7 @@ export function LandingPage() {
         <HeroSection />
         <FeatureSection />
       </main>
-      <LandingFooter />
+      <AppFooter />
     </div>
   )
 }

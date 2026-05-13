@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 
 import { commercialAnalysisAssets } from '@/shared/assets/commercialAnalysisAssets'
+import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 
@@ -601,7 +602,7 @@ export function CommercialAnalysisPage() {
     <div className="commercial-analysis-page min-h-screen bg-gradient-to-b from-slate-50 to-[#eef4fb] text-slate-900">
       <TopNavigation activeHref="/commercial-analysis" />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
         <AppSidebar
           activeHref="/commercial-analysis"
           ariaLabel="상권 분석 사이드 메뉴"
@@ -636,6 +637,8 @@ export function CommercialAnalysisPage() {
           </section>
         </main>
       </div>
+
+      <AppFooter />
 
       <div className="fixed right-5 bottom-5 z-50 flex flex-col items-end gap-2">
         {saveMessage ? (

@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { myPageAssets } from '@/shared/assets/myPageAssets'
@@ -1199,56 +1199,6 @@ function UpgradeBanner() {
   )
 }
 
-function Footer() {
-  return (
-    <footer className="grid min-h-[104px] grid-cols-[290px_1fr_420px_170px] items-center gap-10 bg-[linear-gradient(90deg,#071e45_0%,#03152f_52%,#06204a_100%)] px-16 py-4 text-white max-2xl:grid-cols-2 max-lg:grid-cols-1 max-lg:text-center max-md:px-5">
-      <div>
-        <div className="flex items-center gap-3 max-lg:justify-center">
-          <img
-            alt="MetroPick AI 로고"
-            className="h-8 w-9 object-contain"
-            draggable={false}
-            src={landingAssets.logo}
-          />
-          <strong className="text-xl font-black">MetroPick AI</strong>
-        </div>
-        <p className="m-0 mt-2 text-xs font-semibold text-white/70">
-          광주 2호선 개통에 따른 AI 상권 변화 예측 서비스
-        </p>
-      </div>
-
-      <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-bold text-white/70">
-        {['서비스 소개', '이용약관', '개인정보처리방침', '데이터 출처', '문의하기'].map(
-          (item) => (
-            <a href="/" key={item}>
-              {item}
-            </a>
-          ),
-        )}
-      </nav>
-
-      <div className="text-sm font-bold leading-6 text-white/70 max-lg:justify-self-center">
-        <p className="m-0">(주)메트로픽스 ㅣ 대표이사: 김지훈</p>
-        <p className="m-0">광주광역시 동구 금남로 193-22, 4층</p>
-        <p className="m-0">사업자 등록번호: 123-45-67890 ㅣ 062-123-4567</p>
-      </div>
-
-      <div className="flex justify-end gap-4 max-lg:justify-center">
-        {['f', 'N', '▶'].map((label) => (
-          <button
-            aria-label={`${label} 소셜 링크`}
-            className="h-[42px] w-[42px] rounded-full border border-white/30 bg-white/5 font-black"
-            key={label}
-            type="button"
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </footer>
-  )
-}
-
 export function MyPage() {
   const navigate = useNavigate()
   const [profile] = useState<UserProfile>(() => buildProfile())
@@ -1367,7 +1317,7 @@ export function MyPage() {
         sticky
       />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-[1121px]:grid-cols-1">
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] grid-cols-[252px_minmax(0,1fr)] max-[1121px]:grid-cols-1">
         <AppSidebar activeHref="/mypage" ariaLabel="마이페이지 사이드 메뉴" />
 
         <main className="min-w-0 px-[58px] pt-7 pb-4 max-2xl:px-8 max-md:px-4">
@@ -1412,7 +1362,7 @@ export function MyPage() {
         </main>
       </div>
 
-      <Footer />
+      <AppFooter />
 
       {message ? (
         <div

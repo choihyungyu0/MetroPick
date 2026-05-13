@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { signupAssets } from '@/shared/assets/signupAssets'
 
@@ -19,14 +20,6 @@ const userTypes = [
   { Icon: Store, label: '소상공인', active: false },
   { Icon: Landmark, label: '정책 담당자', active: false },
   { Icon: BarChart3, label: '분석가', active: false },
-]
-
-const footerLinks = [
-  '서비스 소개',
-  '이용약관',
-  '개인정보처리방침',
-  '데이터 출처',
-  '문의하기',
 ]
 
 function Logo({ compact = false, dark = false }: { compact?: boolean; dark?: boolean }) {
@@ -401,49 +394,6 @@ function SignupCard() {
   )
 }
 
-function Footer() {
-  return (
-    <footer className="bg-gradient-to-r from-[#061b3f] via-[#061f4c] to-[#052a64] text-white">
-      <div className="mx-auto grid min-h-[110px] w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-6 py-7 text-center lg:w-[calc(100%_-_88px)] xl:grid-cols-[350px_1fr_420px_180px] xl:text-left">
-        <Logo compact />
-
-        <nav
-          className="flex flex-wrap justify-center gap-3 text-sm font-semibold text-white/70 xl:gap-5"
-          aria-label="푸터 링크"
-        >
-          {footerLinks.map((item) => (
-            <a
-              className="rounded-sm transition hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              href="/"
-              key={item}
-            >
-              {item}
-            </a>
-          ))}
-        </nav>
-
-        <address className="text-sm leading-6 text-white/75 not-italic">
-          <p>(주)메트로픽시 ㅣ 대표이사: 김규현</p>
-          <p>광주광역시 동구 금남로 193-22, 4층</p>
-          <p>사업자등록번호: 123-45-67890 ㅣ 062-123-4567</p>
-        </address>
-
-        <div className="flex justify-center gap-3 xl:justify-end">
-          {['f', 'N', '▶'].map((item) => (
-            <button
-              className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-white/5 font-black text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              key={item}
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      </div>
-    </footer>
-  )
-}
-
 export function SignupPage() {
   return (
     <div className="signup-page min-h-screen overflow-x-clip bg-[radial-gradient(circle_at_20%_25%,rgba(33,145,255,0.12),transparent_28%),radial-gradient(circle_at_85%_26%,rgba(0,213,210,0.1),transparent_26%),linear-gradient(180deg,#eef7ff_0%,#ffffff_58%,#ffffff_100%)] text-[#07152f]">
@@ -454,7 +404,7 @@ export function SignupPage() {
         <SignupCard />
       </main>
 
-      <Footer />
+      <AppFooter />
     </div>
   )
 }

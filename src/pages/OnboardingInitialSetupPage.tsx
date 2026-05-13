@@ -5,25 +5,22 @@ import {
   BarChart3,
   Bell,
   CalendarDays,
-  ChartColumnIncreasing,
   Check,
   ChevronDown,
-  CirclePlay,
   CircleCheck,
   Clock3,
   Coffee,
   GraduationCap,
   MapPin,
-  MessageCircle,
   Pill,
   Scissors,
-  Share2,
   Store,
   TrainFront,
   Utensils,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
 
@@ -364,51 +361,6 @@ function SummaryPanel({
   )
 }
 
-function Footer() {
-  return (
-    <footer className="relative z-20 bg-gradient-to-r from-[#061a3d] via-[#071f4b] to-[#052b67] text-white">
-      <div className="mx-auto grid min-h-28 w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-6 py-7 text-center lg:w-[calc(100%_-_64px)] xl:grid-cols-[1fr_440px_180px] xl:text-left">
-        <div className="flex flex-col items-center gap-5 xl:flex-row">
-          <div className="grid h-[76px] w-[76px] shrink-0 place-items-center rounded-full border border-[#00d6d5]/70 bg-[#00d9d8]/10 text-[#4ae8ff] shadow-[0_0_24px_rgba(0,217,216,0.14)]">
-            <ChartColumnIncreasing size={42} strokeWidth={2.2} />
-          </div>
-          <div>
-            <h2 className="text-xl font-black tracking-[-0.03em] md:text-[22px]">
-              AI가 분석한 광주 2호선 상권 변화, 지금 바로 확인해보세요!
-            </h2>
-            <p className="mt-2 text-base font-semibold text-white/75">
-              맞춤 설정 완료 후 다양한 인사이트와 리포트를 이용할 수 있습니다.
-            </p>
-          </div>
-        </div>
-
-        <address className="text-sm leading-6 text-white/75 not-italic">
-          <p>(주)메트로픽시 ㅣ 대표이사: 김주현</p>
-          <p>광주광역시 동구 금남로 193-22, 4층</p>
-          <p>고객센터: 062-123-4567 ㅣ 062-123-4567</p>
-        </address>
-
-        <div className="flex justify-center gap-3 xl:justify-end">
-          {[
-            { label: '공유하기', icon: Share2 },
-            { label: 'Naver Talk', icon: MessageCircle },
-            { label: '동영상 보기', icon: CirclePlay },
-          ].map(({ icon: Icon, label }) => (
-            <button
-              aria-label={label}
-              className="grid h-12 w-12 place-items-center rounded-full border border-white/25 bg-white/5 text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              key={label}
-              type="button"
-            >
-              <Icon size={20} />
-            </button>
-          ))}
-        </div>
-      </div>
-    </footer>
-  )
-}
-
 function OnboardingNavigationActions() {
   const actionClasses =
     'inline-flex h-11 items-center justify-center rounded-lg px-6 text-sm font-black transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none'
@@ -618,7 +570,7 @@ export function OnboardingInitialSetupPage() {
         </div>
       </main>
 
-      <Footer />
+      <AppFooter />
     </div>
   )
 }

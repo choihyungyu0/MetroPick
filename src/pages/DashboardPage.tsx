@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 
 import { dashboardAssets } from '@/shared/assets/dashboardAssets'
+import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import {
@@ -630,7 +631,7 @@ export function DashboardPage() {
     <div className="dashboard-page min-h-screen w-full bg-slate-50 text-slate-950">
       <TopNavigation activeHref="/dashboard" />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-[1121px]:grid-cols-1">
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] grid-cols-[252px_minmax(0,1fr)] max-[1121px]:grid-cols-1">
         <AppSidebar activeHref="/dashboard" ariaLabel="대시보드 사이드 메뉴" />
 
         <main className="min-w-0">
@@ -684,6 +685,7 @@ export function DashboardPage() {
         </section>
       </main>
       </div>
+      <AppFooter />
     </div>
   )
 }

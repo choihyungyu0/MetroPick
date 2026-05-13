@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
 
@@ -322,34 +322,6 @@ function SummaryRow({
   )
 }
 
-function Footer() {
-  return (
-    <footer className="relative z-10 bg-gradient-to-r from-[#061a3d] via-[#071f4b] to-[#052b67] text-white">
-      <div className="mx-auto flex min-h-[78px] w-[calc(100%_-_32px)] max-w-[1820px] flex-wrap items-center gap-x-9 gap-y-3 py-3 text-sm font-semibold text-white/70 lg:w-[calc(100%_-_80px)]">
-        <div className="flex items-center gap-3 text-white">
-          <img
-            alt=""
-            aria-hidden="true"
-            className="h-9 w-11 shrink-0 scale-[1.35] object-contain"
-            draggable={false}
-            src={landingAssets.logo}
-          />
-          <strong className="text-xl font-black">
-            MetroPick <span className="text-[#16c8ff]">AI</span>
-          </strong>
-        </div>
-        <span>(주)메트로픽</span>
-        <span>대표이사: 김지현</span>
-        <span>사업자등록번호: 123-45-67890</span>
-        <span>통신판매업신고: 2024-광주동구-0123</span>
-        <span className="ml-auto max-lg:ml-0">062-123-4567</span>
-        <span>contact@metropick.ai</span>
-        <span>© 2024 MetroPick Inc. All rights reserved.</span>
-      </div>
-    </footer>
-  )
-}
-
 export function OnboardingStationPage() {
   const navigate = useNavigate()
   const [setup, setSetup] = useState<OnboardingStationSetup>(loadInitialSetup)
@@ -585,7 +557,7 @@ export function OnboardingStationPage() {
         </div>
       </main>
 
-      <Footer />
+      <AppFooter />
     </div>
   )
 }

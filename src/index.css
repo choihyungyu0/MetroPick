@@ -14,6 +14,7 @@
 
 :root {
   --app-topbar-height: 82px;
+  --app-footer-height: 128px;
   --app-density-scale: 1;
   color: #17201d;
   background: #f5f7f6;
@@ -34,10 +35,6 @@ body {
   min-height: 100vh;
   overflow-x: clip;
   font-family: var(--font-sans);
-}
-
-.ai-prediction-page {
-  --app-footer-height: 102px;
 }
 
 #root {
@@ -123,15 +120,15 @@ body {
   }
 
   .commercial-analysis-page .app-sidebar {
-    min-height: calc(100vh - var(--app-topbar-height));
+    min-height: calc(100vh - var(--app-topbar-height) - var(--app-footer-height));
   }
 
   .dashboard-page .app-sidebar {
-    min-height: calc(100vh - var(--app-topbar-height));
+    min-height: calc(100vh - var(--app-topbar-height) - var(--app-footer-height));
   }
 
   .recommendation-page .app-sidebar {
-    min-height: calc(100vh - var(--app-topbar-height));
+    min-height: calc(100vh - var(--app-topbar-height) - var(--app-footer-height));
   }
 }
 

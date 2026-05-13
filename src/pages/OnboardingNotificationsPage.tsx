@@ -15,15 +15,14 @@ import {
   Monitor,
   Moon,
   PartyPopper,
-  Phone,
   TrendingUp,
   UsersRound,
   Zap,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
-import { landingAssets } from '@/shared/assets/landingAssets'
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
+import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 
 type NotificationId =
@@ -239,35 +238,6 @@ function readStorageValue(key: string): unknown | null {
 
 function loadInitialSetup(): NotificationSetup {
   return sanitizeSavedSetup(readStorageValue(NOTIFICATION_STORAGE_KEY))
-}
-
-function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <Link className="flex items-center gap-3" to="/" aria-label="MetroPick AI 홈">
-      <img
-        alt="MetroPick AI 로고"
-        className={[
-          'shrink-0 scale-[1.72] object-contain',
-          compact ? 'h-7 w-8' : 'h-8 w-10',
-        ].join(' ')}
-        draggable={false}
-        src={landingAssets.logo}
-      />
-      <span>
-        <span
-          className={[
-            'block leading-none font-black tracking-[-0.03em] text-white',
-            compact ? 'text-xl' : 'text-2xl',
-          ].join(' ')}
-        >
-          MetroPick AI
-        </span>
-        <span className="mt-2 block text-xs font-semibold text-white/75">
-          광주 2호선 개통에 따른 AI 상권 변화 예측 서비스
-        </span>
-      </span>
-    </Link>
-  )
 }
 
 function Stepper() {
@@ -666,33 +636,6 @@ function SummaryPanel({
   )
 }
 
-function Footer() {
-  return (
-    <footer className="bg-gradient-to-r from-[#061b42] via-[#08295a] to-[#041936] text-[#d8e4f5]">
-      <div className="mx-auto grid min-h-[78px] w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-5 py-5 text-sm font-semibold lg:w-[calc(100%_-_110px)] xl:grid-cols-[225px_1fr_650px]">
-        <Logo compact />
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-[#b9c8dc]">
-          <span>(주)메트로픽</span>
-          <span>대표이사: 김지현</span>
-          <span>사업자등록번호: 123-45-67890</span>
-          <span>통신판매업신고: 2024-광주동구-0123</span>
-        </div>
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-[#b9c8dc] xl:justify-end">
-          <span className="flex items-center gap-2">
-            <Phone size={15} />
-            062-123-4567
-          </span>
-          <span className="flex items-center gap-2">
-            <Mail size={15} />
-            contact@metropick.ai
-          </span>
-          <span>© 2024 MetroPick Inc. All rights reserved.</span>
-        </div>
-      </div>
-    </footer>
-  )
-}
-
 function HeroTrainBackdrop() {
   return (
     <div
@@ -831,7 +774,7 @@ export function OnboardingNotificationsPage() {
         </section>
       </main>
 
-      <Footer />
+      <AppFooter />
     </div>
   )
 }

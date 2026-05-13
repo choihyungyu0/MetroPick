@@ -6,40 +6,12 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { loginAssets } from '@/shared/assets/loginAssets'
-
-function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <Link className="flex items-center gap-3" to="/" aria-label="MetroPick AI 홈">
-      <img
-        alt="MetroPick AI 로고"
-        className={[
-          'shrink-0 scale-[1.75] object-contain',
-          compact ? 'h-7 w-8' : 'h-8 w-10',
-        ].join(' ')}
-        draggable={false}
-        src={landingAssets.logo}
-      />
-      <span>
-        <span
-          className={[
-            'block leading-none font-black tracking-[-0.03em] text-white',
-            compact ? 'text-xl' : 'text-2xl',
-          ].join(' ')}
-        >
-          MetroPick AI
-        </span>
-        <span className="mt-2 block text-xs text-white/75">
-          광주 2호선 상권 예측 AI 분석·예측 서비스
-        </span>
-      </span>
-    </Link>
-  )
-}
 
 function PreviewImage({
   alt,
@@ -215,46 +187,6 @@ function BenefitCard({
   )
 }
 
-function LoginFooter() {
-  return (
-    <footer className="relative z-20 bg-gradient-to-r from-[#061a3d] via-[#071d43] to-[#06265d] text-white">
-      <div className="mx-auto grid min-h-28 w-[calc(100%_-_32px)] max-w-[1720px] items-center gap-6 py-7 text-center lg:w-[calc(100%_-_96px)] lg:grid-cols-[1.2fr_1.5fr_1.45fr_auto] lg:text-left">
-        <Logo compact />
-        <nav
-          className="flex flex-wrap justify-center gap-3 text-sm text-white/70 lg:gap-5"
-          aria-label="로그인 푸터 링크"
-        >
-          {['이용약관', '개인정보처리방침', '데이터 출처', '문의하기'].map((item) => (
-            <a
-              className="hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              href="/login"
-              key={item}
-            >
-              {item}
-            </a>
-          ))}
-        </nav>
-        <address className="text-sm leading-6 text-white/70 not-italic">
-          <p>(주)메트로픽시 ㅣ 대표이사: 김지훈</p>
-          <p>광주광역시 동구 금남로 193-22, 4층</p>
-          <p>고객센터: 062-123-4567 ㅣ 062-123-4567</p>
-        </address>
-        <div className="flex justify-center gap-3">
-          {['f', 'N', '▶'].map((item) => (
-            <button
-              className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-white/5 font-black text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              key={item}
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      </div>
-    </footer>
-  )
-}
-
 export function LoginPage() {
   return (
     <div className="login-page flex min-h-screen flex-col overflow-x-clip bg-[radial-gradient(circle_at_18%_35%,rgba(0,141,255,0.13),transparent_28%),radial-gradient(circle_at_82%_25%,rgba(0,204,217,0.13),transparent_24%),linear-gradient(180deg,#eef7ff_0%,#ffffff_54%,#ffffff_100%)] text-[#071633]">
@@ -301,7 +233,7 @@ export function LoginPage() {
         </section>
       </main>
 
-      <LoginFooter />
+      <AppFooter />
     </div>
   )
 }
