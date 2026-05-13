@@ -59,18 +59,18 @@ function PreviewImage({
 
 function HeroVisual() {
   return (
-    <div className="relative mt-8 min-h-[640px] overflow-visible md:min-h-[520px] xl:mt-[-14px] xl:h-[380px] xl:min-h-0 min-[1700px]:!mt-8 min-[1700px]:!h-[460px]">
-      <img
-        alt=""
-        aria-hidden="true"
-        className="absolute bottom-[-24px] left-[-210px] z-0 hidden h-[500px] w-[760px] max-w-none object-contain object-left-bottom opacity-75 [mask-image:linear-gradient(180deg,transparent_0%,transparent_20%,black_38%,black_82%,transparent_100%)] md:block xl:bottom-[-18px] xl:left-[-150px] xl:h-[360px] xl:w-[610px] min-[1700px]:!bottom-[-10px] min-[1700px]:!h-[430px] min-[1700px]:!w-[700px]"
-        draggable={false}
-        src={landingAssets.heroTrainBg}
-      />
+    <div className="relative mt-8 min-h-[640px] overflow-visible md:min-h-[520px] xl:mt-[-14px] xl:h-[430px] xl:min-h-0 min-[1700px]:!mt-8 min-[1700px]:!h-[540px]">
       <div
-        className="absolute inset-x-0 bottom-0 z-0 h-48 bg-gradient-to-t from-white via-white/60 to-transparent"
         aria-hidden="true"
-      />
+        className="pointer-events-none absolute right-0 bottom-[-160px] left-[-300px] z-0 hidden h-[630px] overflow-hidden [mask-image:linear-gradient(90deg,black_0%,black_72%,transparent_100%)] md:block xl:bottom-[-180px] xl:left-[-250px] xl:h-[720px] min-[1700px]:!bottom-[-210px] min-[1700px]:!left-[-320px] min-[1700px]:!h-[844px]"
+      >
+        <img
+          alt=""
+          className="h-full w-full object-cover object-left-bottom opacity-90 mix-blend-multiply [mask-image:linear-gradient(180deg,transparent_0%,black_18%,black_78%,transparent_100%)]"
+          draggable={false}
+          src={landingAssets.heroTrainBg}
+        />
+      </div>
 
       <div className="relative z-10 grid gap-4 md:grid-cols-2 xl:absolute xl:inset-0 xl:block">
         <PreviewImage
@@ -217,7 +217,7 @@ function BenefitCard({
 
 function LoginFooter() {
   return (
-    <footer className="bg-gradient-to-r from-[#061a3d] via-[#071d43] to-[#06265d] text-white">
+    <footer className="relative z-20 bg-gradient-to-r from-[#061a3d] via-[#071d43] to-[#06265d] text-white">
       <div className="mx-auto grid min-h-28 w-[calc(100%_-_32px)] max-w-[1720px] items-center gap-6 py-7 text-center lg:w-[calc(100%_-_96px)] lg:grid-cols-[1.2fr_1.5fr_1.45fr_auto] lg:text-left">
         <Logo compact />
         <nav
@@ -257,21 +257,21 @@ function LoginFooter() {
 
 export function LoginPage() {
   return (
-    <div className="login-page min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_18%_35%,rgba(0,141,255,0.13),transparent_28%),radial-gradient(circle_at_82%_25%,rgba(0,204,217,0.13),transparent_24%),linear-gradient(180deg,#eef7ff_0%,#ffffff_54%,#ffffff_100%)] text-[#071633]">
+    <div className="login-page flex min-h-screen flex-col overflow-x-hidden bg-[radial-gradient(circle_at_18%_35%,rgba(0,141,255,0.13),transparent_28%),radial-gradient(circle_at_82%_25%,rgba(0,204,217,0.13),transparent_24%),linear-gradient(180deg,#eef7ff_0%,#ffffff_54%,#ffffff_100%)] text-[#071633]">
       <TopNavigation />
 
-      <main className="mx-auto w-[calc(100%_-_32px)] max-w-[1300px] lg:w-[calc(100%_-_96px)] min-[1700px]:max-w-[1640px]">
+      <main className="mx-auto w-[calc(100%_-_32px)] max-w-[1300px] flex-1 lg:w-[calc(100%_-_96px)] min-[1700px]:max-w-[1640px]">
         <section className="grid items-start gap-9 py-8 xl:min-h-[700px] xl:grid-cols-[626px_586px] xl:gap-16 xl:py-11 min-[1700px]:!min-h-[888px] min-[1700px]:!grid-cols-[790px_730px] min-[1700px]:!gap-[80px] min-[1700px]:!pt-[68px] min-[1700px]:!pb-[55px]">
           <div className="relative xl:min-h-[612px] min-[1700px]:!min-h-[750px]">
-            <p className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#b9d9ff] bg-[#eef7ff]/85 px-5 text-sm font-extrabold text-[#0069ff] shadow-[0_8px_22px_rgba(21,98,211,0.08)] sm:text-lg xl:min-h-9 min-[1700px]:!min-h-10">
+            <p className="relative z-10 inline-flex min-h-10 items-center gap-2 rounded-full border border-[#b9d9ff] bg-[#eef7ff]/85 px-5 text-sm font-extrabold text-[#0069ff] shadow-[0_8px_22px_rgba(21,98,211,0.08)] sm:text-lg xl:min-h-9 min-[1700px]:!min-h-10">
               광주 2호선 개통 · 2026년 예정
             </p>
-            <h1 className="mt-3 text-[clamp(2.625rem,3.35vw,4rem)] leading-[1.12] font-black tracking-[-0.045em] text-[#071633] min-[1700px]:!mt-4">
+            <h1 className="relative z-10 mt-3 text-[clamp(2.625rem,3.35vw,4rem)] leading-[1.12] font-black tracking-[-0.045em] text-[#071633] min-[1700px]:!mt-4">
               데이터로 먼저 보는
               <br />
               <span className="text-[#096bff]">광주 상권의 미래</span>
             </h1>
-            <p className="mt-3 max-w-2xl text-base leading-8 tracking-[-0.02em] text-[#5e6d82] sm:text-xl min-[1700px]:!mt-4">
+            <p className="relative z-10 mt-3 max-w-2xl text-base leading-8 tracking-[-0.02em] text-[#5e6d82] sm:text-xl min-[1700px]:!mt-4">
               공공데이터와 AI 분석으로 변화하는 상권을 예측하고,
               <br className="hidden sm:block" />더 나은 의사결정을 앞서 준비하세요.
             </p>
