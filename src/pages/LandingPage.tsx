@@ -121,10 +121,10 @@ const sidebarItems = [
 
 function MapMockup() {
   return (
-    <div className="min-h-[270px] overflow-hidden rounded-2xl border border-[#e4edf6] bg-white shadow-sm">
+    <div className="h-full min-h-[246px] overflow-hidden rounded-xl border border-[#e4edf6] bg-white shadow-sm">
       <img
         alt="광주 2호선 상권 변화 예측 지도"
-        className="h-full min-h-[270px] w-full object-cover"
+        className="h-full min-h-[246px] w-full object-cover"
         draggable={false}
         src={landingDashboardAssets.dashboardMapPreview}
       />
@@ -136,25 +136,25 @@ function DashboardPreview() {
   return (
     <section
       id="dashboard-preview"
-      className="grid min-h-[444px] overflow-hidden rounded-[22px] border border-[#cad9eb] bg-white/90 shadow-[0_22px_60px_rgba(15,44,82,0.15)] lg:grid-cols-[150px_1fr]"
+      className="grid overflow-hidden rounded-[22px] border border-[#cad9eb] bg-white/95 shadow-[0_22px_60px_rgba(15,44,82,0.15)] lg:grid-cols-[138px_minmax(0,1fr)]"
       aria-label="MetroPick AI 대시보드 미리보기"
     >
-      <aside className="hidden border-r border-[#e6edf5] bg-gradient-to-b from-white to-[#f8fbff] p-4 lg:block">
-        <div className="mb-5 flex items-center gap-2 text-sm font-extrabold text-[#153151]">
+      <aside className="hidden border-r border-[#e6edf5] bg-gradient-to-b from-white to-[#f8fbff] p-3.5 lg:block">
+        <div className="mb-5 flex items-center gap-2 text-[12px] font-extrabold text-[#153151]">
           <img
-            className="h-5 w-6 scale-[1.7] object-contain"
+            className="h-5 w-6 scale-[1.55] object-contain"
             src={landingAssets.logo}
             alt="MetroPick AI 미니 로고"
             draggable={false}
           />
-          MetroPick AI
+          <span className="whitespace-nowrap">MetroPick AI</span>
         </div>
         <nav className="grid gap-2" aria-label="대시보드 미리보기 메뉴">
           {sidebarItems.map((item, index) => (
             <span
               key={item}
               className={[
-                'rounded-lg px-3 py-2 text-xs font-bold',
+                'rounded-lg px-3 py-2 text-[11px] font-bold',
                 index === 0 ? 'bg-[#edf6ff] text-[#086bff]' : 'text-[#556274]',
               ].join(' ')}
             >
@@ -164,91 +164,108 @@ function DashboardPreview() {
         </nav>
       </aside>
 
-      <div className="min-w-0 bg-[#f9fcff] p-4 sm:p-5">
-        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="text-base font-black tracking-[-0.02em] text-[#142a48]">
-              광주 2호선 상권 변화 대시보드
-            </h2>
-            <p className="mt-1 text-xs text-[#8a98aa]">데이터 업데이트: 2026.05.12</p>
+      <div className="min-w-0 bg-[#f9fcff]">
+        <div className="flex min-h-12 items-center justify-between gap-3 border-b border-[#e6edf5] bg-white px-4">
+          <div className="flex items-center gap-2 text-xs font-black text-[#153151]">
+            <img
+              alt=""
+              aria-hidden="true"
+              className="h-4 w-5 scale-[1.45] object-contain"
+              draggable={false}
+              src={landingAssets.logo}
+            />
+            MetroPick AI
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button className="rounded-md border border-[#d8e2ee] bg-white px-3 py-2 text-[10px] font-bold text-[#6b7788]">
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            <button className="hidden h-8 rounded-md border border-[#d8e2ee] bg-white px-3 text-[10px] font-bold text-[#6b7788] sm:inline-flex sm:items-center">
               광주광역시 전체
             </button>
-            <button className="rounded-md border border-[#d8e2ee] bg-white px-3 py-2 text-[10px] font-bold text-[#6b7788]">
+            <button className="hidden h-8 rounded-md border border-[#d8e2ee] bg-white px-3 text-[10px] font-bold text-[#6b7788] md:inline-flex md:items-center">
               2026년 개통 이후
             </button>
             <span
-              className="h-6 w-6 rounded-full bg-[#8aa0bd]"
+              className="h-7 w-7 rounded-full bg-[#8aa0bd]"
               aria-label="사용자 프로필 표시"
             />
           </div>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr]">
-          <div className="grid gap-4">
-            <MapMockup />
-
-            <article className="rounded-xl border border-[#e5edf5] bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-black tracking-[-0.02em] text-[#142a48]">
-                창업 유망 지점 TOP 5
-              </h3>
-              <ol className="mt-2 grid gap-1">
-                {ranking.map((item) => (
-                  <li
-                    key={item.rank}
-                    className="grid min-h-7 grid-cols-[22px_1fr_auto] items-center gap-2 text-[10px]"
-                  >
-                    <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-[#0d68d9] to-[#35b8d9] font-black text-white">
-                      {item.rank}
-                    </span>
-                    <span className="font-extrabold text-[#24364c]">{item.name}</span>
-                    <span className="whitespace-nowrap text-[9px] text-[#758294]">
-                      종합 점수 {item.score}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </article>
+        <div className="p-4">
+          <div className="mb-3 flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+            <h2 className="text-base font-black tracking-[-0.02em] text-[#142a48]">
+              광주 2호선 상권 변화 대시보드
+            </h2>
+            <p className="text-[10px] font-semibold text-[#8a98aa]">
+              데이터 업데이트: 2024.05.20
+            </p>
           </div>
 
-          <div className="grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-3">
-              {summaryCards.map((card) => (
-                <article
-                  key={card.label}
-                  className="rounded-xl border border-[#e5edf5] bg-white p-4 shadow-sm"
-                >
-                  <p className="text-[11px] font-extrabold text-[#556475]">
-                    {card.label}
-                  </p>
-                  <strong className="mt-2 block text-lg font-black tracking-[-0.03em] text-[#111d31]">
-                    {card.value}
-                  </strong>
-                  <span className="mt-1 block text-[11px] font-bold text-[#10b79a]">
-                    {card.change}
-                  </span>
-                  <span className="mt-1 block text-[9px] text-[#7d8898]">
-                    {card.description}
-                  </span>
-                </article>
-              ))}
-            </div>
+          <div className="grid gap-3 xl:grid-cols-[minmax(260px,1.08fr)_minmax(360px,1.55fr)]">
+            <MapMockup />
 
-            <article className="rounded-xl border border-[#e5edf5] bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-black tracking-[-0.02em] text-[#142a48]">
-                매출 잠재력 변화 예측
-              </h3>
-              <div className="mt-3 min-h-52 overflow-hidden rounded-xl bg-white">
-                <img
-                  alt="매출 잠재력 변화 예측 차트"
-                  className="h-full min-h-52 w-full object-contain"
-                  draggable={false}
-                  src={landingDashboardAssets.dashboardSalesChart}
-                />
+            <div className="grid min-w-0 gap-3">
+              <div className="grid gap-2 sm:grid-cols-3">
+                {summaryCards.map((card) => (
+                  <article
+                    key={card.label}
+                    className="min-w-0 rounded-xl border border-[#e5edf5] bg-white p-3 shadow-sm"
+                  >
+                    <p className="text-[10px] font-extrabold text-[#556475]">
+                      {card.label}
+                    </p>
+                    <strong className="mt-2 block whitespace-nowrap text-[17px] font-black tracking-[-0.03em] text-[#111d31]">
+                      {card.value}
+                    </strong>
+                    <span className="mt-1 block text-[10px] font-bold text-[#10b79a]">
+                      {card.change}
+                    </span>
+                    <span className="mt-1 block text-[9px] text-[#7d8898]">
+                      {card.description}
+                    </span>
+                  </article>
+                ))}
               </div>
-            </article>
+
+              <div className="grid gap-3 min-[1500px]:grid-cols-[minmax(0,1.28fr)_minmax(210px,0.78fr)]">
+                <article className="rounded-xl border border-[#e5edf5] bg-white p-3 shadow-sm">
+                  <h3 className="text-[13px] font-black tracking-[-0.02em] text-[#142a48]">
+                    매출 잠재력 변화 예측
+                  </h3>
+                  <div className="mt-2 h-[164px] overflow-hidden rounded-xl bg-white">
+                    <img
+                      alt="매출 잠재력 변화 예측 차트"
+                      className="h-full w-full object-contain"
+                      draggable={false}
+                      src={landingDashboardAssets.dashboardSalesChart}
+                    />
+                  </div>
+                </article>
+
+                <article className="rounded-xl border border-[#e5edf5] bg-white p-3 shadow-sm">
+                  <h3 className="text-[13px] font-black tracking-[-0.02em] text-[#142a48]">
+                    창업 유망 지점 TOP 5
+                  </h3>
+                  <ol className="mt-2 grid gap-1">
+                    {ranking.map((item) => (
+                      <li
+                        key={item.rank}
+                        className="grid min-h-6 grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 text-[9px]"
+                      >
+                        <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-[#0d68d9] to-[#35b8d9] font-black text-white">
+                          {item.rank}
+                        </span>
+                        <span className="truncate font-extrabold text-[#24364c]">
+                          {item.name}
+                        </span>
+                        <span className="whitespace-nowrap text-[8px] text-[#758294]">
+                          종합 {item.score}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </article>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -269,12 +286,12 @@ function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-white" />
       </div>
 
-      <div className="relative z-10 mx-auto grid w-[min(1720px,calc(100%-32px))] items-center gap-10 xl:grid-cols-[620px_1fr] xl:gap-16">
+      <div className="relative z-10 mx-auto grid w-[min(1720px,calc(100%-32px))] items-center gap-10 xl:grid-cols-[540px_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[590px_minmax(760px,1fr)] 2xl:gap-16">
         <div className="pt-4">
           <p className="inline-flex min-h-9 items-center rounded-full border border-[#0c71ff]/25 bg-[#eff8ff]/95 px-5 text-sm font-extrabold text-[#046bff] shadow-sm">
             광주 2호선 개통 · 2026년 예정
           </p>
-          <h1 className="mt-5 text-[clamp(2.35rem,5vw,3.75rem)] leading-[1.14] font-black tracking-[-0.04em] text-[#091a36]">
+          <h1 className="mt-5 text-[clamp(2.25rem,3.4vw,2.85rem)] leading-[1.18] font-black tracking-[-0.02em] text-[#091a36]">
             광주 2호선 개통 이후,
             <br />
             우리 상권은 <span className="text-[#066dff]">어떻게 바뀔까요?</span>
