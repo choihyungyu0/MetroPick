@@ -27,5 +27,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["vite.config.ts", "playwright.config.ts"]
+  "include": ["vercel.ts", "vite.config.ts", "playwright.config.ts"]
 }

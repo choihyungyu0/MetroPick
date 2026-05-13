@@ -50,6 +50,33 @@ npm run build
 npm run preview
 ```
 
+## Vercel API Rewrite
+
+When the frontend is deployed over HTTPS on Vercel, browser requests directly to an
+HTTP backend are blocked by mixed content rules. Use the same-origin `/api/*`
+rewrite instead.
+
+Set this Vercel environment variable:
+
+```text
+METROPICK_BACKEND_ORIGIN=http://YOUR_BACKEND_HOST:8000
+```
+
+Then call backend endpoints through the Vercel deployment origin:
+
+```ts
+await fetch('/api/v1/auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ email, password }),
+})
+```
+
+The browser sends `https://<frontend-domain>/api/v1/auth/login`, and the Vercel
+rewrite forwards it to `http://YOUR_BACKEND_HOST:8000/api/v1/auth/login`.
+
 ## Quality Commands
 
 ```bash
