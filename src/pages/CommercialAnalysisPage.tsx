@@ -368,11 +368,11 @@ function FilterPanel({
 
 function MapCard() {
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
-      <div className="overflow-x-auto">
+    <section className="h-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
+      <div className="h-full overflow-x-auto">
         <img
           alt="광주 2호선 역세권 상권 밀집도 지도"
-          className="h-auto min-h-[560px] w-full min-w-[760px] object-cover"
+          className="h-full min-h-[560px] w-full min-w-[760px] object-cover"
           draggable={false}
           src={commercialAnalysisAssets.commercialDensityMap}
         />
@@ -383,10 +383,10 @@ function MapCard() {
 
 function SummaryPanel({ radius }: { radius: RadiusOption }) {
   return (
-    <aside className="rounded-xl border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
+    <aside className="min-w-0 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="m-0 flex items-center gap-2 text-base font-black">
+        <div className="min-w-0">
+          <h3 className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-base font-black">
             <PieChart aria-hidden="true" className="text-blue-600" size={18} />
             선택 영역 요약 <span className="text-slate-500">(8개 역, 반경 {radius})</span>
           </h3>
@@ -428,14 +428,14 @@ function SummaryPanel({ radius }: { radius: RadiusOption }) {
           <div className="grid w-full gap-2">
             {distribution.map((item) => (
               <div
-                className="grid grid-cols-[10px_1fr_45px_54px] items-center gap-1.5 text-xs font-extrabold text-slate-600"
+                className="grid grid-cols-[10px_minmax(0,1fr)_42px_48px] items-center gap-1.5 text-xs font-extrabold text-slate-600"
                 key={item.name}
               >
                 <i
                   className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
-                <span>{item.name}</span>
+                <span className="truncate">{item.name}</span>
                 <b className="text-right text-slate-700">{item.percent}</b>
                 <small className="text-slate-500">({item.count})</small>
               </div>
@@ -607,7 +607,7 @@ export function CommercialAnalysisPage() {
           ariaLabel="상권 분석 사이드 메뉴"
         />
 
-        <main className="overflow-hidden px-6 pt-7 pb-0 max-md:px-3.5">
+        <main className="min-w-0 overflow-x-hidden px-6 pt-7 pb-20 max-md:px-3.5">
           <section className="mb-5 flex items-end gap-3 max-md:block">
             <h1 className="m-0 text-[32px] font-black tracking-[-1px] text-slate-950">
               역세권 상권 분석
@@ -617,7 +617,7 @@ export function CommercialAnalysisPage() {
             </p>
           </section>
 
-          <section className="grid grid-cols-[335px_minmax(0,1fr)] items-start gap-4 max-[1500px]:grid-cols-1">
+          <section className="grid grid-cols-[minmax(300px,335px)_minmax(0,1fr)] items-start gap-4 max-[1760px]:grid-cols-1">
             <FilterPanel
               filters={filters}
               onLayerToggle={handleLayerToggle}
@@ -626,10 +626,10 @@ export function CommercialAnalysisPage() {
               }
             />
 
-            <div className="grid min-w-0 grid-cols-[minmax(680px,1fr)_388px] items-start gap-4 max-[1500px]:grid-cols-1">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(280px,320px)] items-stretch gap-4 max-[1380px]:grid-cols-1">
               <MapCard />
               <SummaryPanel radius={summaryRadius} />
-              <div className="col-span-2 min-w-0 max-[1500px]:col-span-1">
+              <div className="col-span-2 min-w-0 max-[1380px]:col-span-1">
                 <ComparisonTable />
               </div>
             </div>
