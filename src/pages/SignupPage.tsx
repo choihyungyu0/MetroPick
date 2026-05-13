@@ -446,7 +446,7 @@ function Footer() {
 
 export function SignupPage() {
   return (
-    <div className="signup-page min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_20%_25%,rgba(33,145,255,0.12),transparent_28%),radial-gradient(circle_at_85%_26%,rgba(0,213,210,0.1),transparent_26%),linear-gradient(180deg,#eef7ff_0%,#ffffff_58%,#ffffff_100%)] text-[#07152f]">
+    <div className="signup-page min-h-screen overflow-x-clip bg-[radial-gradient(circle_at_20%_25%,rgba(33,145,255,0.12),transparent_28%),radial-gradient(circle_at_85%_26%,rgba(0,213,210,0.1),transparent_26%),linear-gradient(180deg,#eef7ff_0%,#ffffff_58%,#ffffff_100%)] text-[#07152f]">
       <TopNavigation />
 
       <main className="mx-auto grid min-h-[calc(100vh-208px)] w-[calc(100%_-_32px)] max-w-[1700px] items-center gap-8 py-7 lg:w-[calc(100%_-_80px)] xl:grid-cols-[385px_minmax(0,1fr)] xl:gap-[45px]">

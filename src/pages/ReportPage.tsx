@@ -647,7 +647,7 @@ export function ReportPage() {
   }
 
   return (
-    <div className="report-page-compact min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_right,rgba(0,117,255,0.08),transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f6f9fe_100%)] text-slate-900">
+    <div className="report-page-compact min-h-screen overflow-x-clip bg-[radial-gradient(circle_at_top_right,rgba(0,117,255,0.08),transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f6f9fe_100%)] text-slate-900">
       <TopNavigation activeHref="/report" sticky />
 
       <div className="grid min-w-0 grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">

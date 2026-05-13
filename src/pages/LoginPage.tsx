@@ -257,7 +257,7 @@ function LoginFooter() {
 
 export function LoginPage() {
   return (
-    <div className="login-page flex min-h-screen flex-col overflow-x-hidden bg-[radial-gradient(circle_at_18%_35%,rgba(0,141,255,0.13),transparent_28%),radial-gradient(circle_at_82%_25%,rgba(0,204,217,0.13),transparent_24%),linear-gradient(180deg,#eef7ff_0%,#ffffff_54%,#ffffff_100%)] text-[#071633]">
+    <div className="login-page flex min-h-screen flex-col overflow-x-clip bg-[radial-gradient(circle_at_18%_35%,rgba(0,141,255,0.13),transparent_28%),radial-gradient(circle_at_82%_25%,rgba(0,204,217,0.13),transparent_24%),linear-gradient(180deg,#eef7ff_0%,#ffffff_54%,#ffffff_100%)] text-[#071633]">
       <TopNavigation />
 
       <main className="mx-auto w-[calc(100%_-_32px)] max-w-[1300px] flex-1 lg:w-[calc(100%_-_96px)] min-[1700px]:max-w-[1640px]">

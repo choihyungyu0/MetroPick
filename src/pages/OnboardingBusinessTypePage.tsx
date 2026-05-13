@@ -690,7 +690,7 @@ export function OnboardingBusinessTypePage() {
   }
 
   return (
-    <div className="onboarding-business-type-page flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-b from-[#f7fbff] to-[#eef6ff] text-[#071a3d]">
+    <div className="onboarding-business-type-page flex min-h-screen flex-col overflow-x-clip bg-gradient-to-b from-[#f7fbff] to-[#eef6ff] text-[#071a3d]">
       <TopNavigation />
 
       <main className="relative flex-1 overflow-hidden px-4 py-6 md:px-8 lg:px-10 xl:py-7">

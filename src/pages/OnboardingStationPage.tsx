@@ -409,7 +409,7 @@ export function OnboardingStationPage() {
   }
 
   return (
-    <div className="onboarding-station-page flex min-h-screen flex-col overflow-x-hidden bg-[#f6fbff] text-[#07152f]">
+    <div className="onboarding-station-page flex min-h-screen flex-col overflow-x-clip bg-[#f6fbff] text-[#07152f]">
       <TopNavigation />
 
       <main className="relative flex-1 overflow-hidden">

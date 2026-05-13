@@ -607,7 +607,7 @@ export function CommercialAnalysisPage() {
           ariaLabel="상권 분석 사이드 메뉴"
         />
 
-        <main className="min-w-0 overflow-x-hidden px-6 pt-7 pb-20 max-md:px-3.5">
+        <main className="min-w-0 overflow-x-clip px-6 pt-7 pb-20 max-md:px-3.5">
           <section className="mb-5 flex items-end gap-3 max-md:block">
             <h1 className="m-0 text-[32px] font-black tracking-[-1px] text-slate-950">
               역세권 상권 분석

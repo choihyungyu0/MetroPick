@@ -484,7 +484,7 @@ export function OnboardingInitialSetupPage() {
   }
 
   return (
-    <div className="onboarding-initial-page flex min-h-screen flex-col overflow-x-hidden bg-[#f6fbff] text-[#07152f]">
+    <div className="onboarding-initial-page flex min-h-screen flex-col overflow-x-clip bg-[#f6fbff] text-[#07152f]">
       <TopNavigation renderActions={OnboardingNavigationActions} />
 
       <main className="relative flex-1 overflow-hidden">

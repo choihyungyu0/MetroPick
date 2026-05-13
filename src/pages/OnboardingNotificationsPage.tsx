@@ -781,7 +781,7 @@ export function OnboardingNotificationsPage() {
   }
 
   return (
-    <div className="onboarding-notifications-page min-h-screen overflow-x-hidden bg-gradient-to-b from-[#f7fbff] to-[#eef6ff] text-[#061b42]">
+    <div className="onboarding-notifications-page min-h-screen overflow-x-clip bg-gradient-to-b from-[#f7fbff] to-[#eef6ff] text-[#061b42]">
       <TopNavigation />
 
       <main className="relative overflow-hidden px-4 pt-6 pb-5 md:px-8 lg:px-[53px]">
