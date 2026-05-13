@@ -134,7 +134,7 @@ export function TopNavigation({
         className,
       )}
     >
-      <div className="mx-auto flex h-[var(--app-topbar-height)] w-[min(1840px,calc(100%-32px))] items-center justify-between gap-5">
+      <div className="flex h-[var(--app-topbar-height)] w-full items-center justify-between gap-5 px-8 max-md:px-4">
         <div className="min-w-[280px] max-md:min-w-0">
           <BrandLink />
         </div>

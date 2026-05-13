@@ -32,6 +32,7 @@ import { Link } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
 import { reportAssets } from '@/shared/assets/reportAssets'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 
 type ReportMetric = {
   caption: string
@@ -86,14 +87,6 @@ const reportSummary = {
   scenario: '2027 개통 시나리오',
   stationArea: '백운광장역 500m 상권',
 } as const
-
-const topNavItems: Array<{ active?: boolean; href: string; label: string }> = [
-  { label: '서비스 소개', href: '/' },
-  { label: '상권 분석', href: '/commercial-analysis' },
-  { label: 'AI 예측', href: '/ai-prediction' },
-  { label: '입지 추천', href: '/recommendation' },
-  { label: '리포트', href: '/report', active: true },
-]
 
 const sideMenuItems: Array<{
   active?: boolean
@@ -295,90 +288,28 @@ function saveCurrentReport() {
   )
 }
 
-function Logo() {
-  return (
-    <Link aria-label="MetroPick AI 홈" className="flex items-center gap-3.5" to="/">
-      <img
-        alt="MetroPick AI 로고"
-        className="h-10 w-12 shrink-0 object-contain"
-        draggable={false}
-        src={landingAssets.logo}
-      />
-      <span>
-        <span className="block text-[27px] font-black leading-tight tracking-[-0.7px]">
-          MetroPick AI
-        </span>
-        <span className="mt-1 block text-sm font-semibold text-white/80">
-          광주 2호선 개통에 따른 AI 상권 분석 예측 서비스
-        </span>
-      </span>
-    </Link>
-  )
-}
-
-function Topbar() {
-  return (
-    <header className="sticky top-0 z-30 flex min-h-[98px] items-center justify-between gap-6 bg-[linear-gradient(90deg,#071d45_0%,#03142f_52%,#061f4b_100%)] px-9 text-white shadow-[0_8px_28px_rgba(3,20,47,0.25)] max-xl:flex-wrap max-md:px-5">
-      <Logo />
-
-      <nav
-        aria-label="상단 메뉴"
-        className="flex flex-1 items-center justify-center gap-14 overflow-x-auto max-xl:order-3 max-xl:w-full max-xl:justify-start"
-      >
-        {topNavItems.map((item) => (
-          <Link
-            aria-current={item.active ? 'page' : undefined}
-            className={`whitespace-nowrap text-xl font-extrabold text-white ${
-              item.active ? 'border-b-2 border-blue-400 pb-1' : ''
-            }`}
-            key={item.label}
-            to={item.href}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="flex items-center gap-4 max-md:w-full">
-        <Link
-          className="inline-flex h-14 w-[130px] items-center justify-center rounded-xl border border-white/45 bg-slate-950/40 text-lg font-extrabold max-md:flex-1"
-          to="/login"
-        >
-          로그인
-        </Link>
-        <Link
-          className="inline-flex h-14 w-[190px] items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-lg font-black shadow-[0_12px_24px_rgba(0,100,245,0.32)] max-md:flex-1"
-          to="/signup"
-        >
-          무료로 시작하기
-        </Link>
-      </div>
-    </header>
-  )
-}
-
 function Sidebar() {
   return (
-    <aside className="flex min-h-[calc(100vh-98px)] flex-col justify-between border-r border-blue-100 bg-white/90 px-[18px] py-10 max-lg:hidden">
+    <aside className="flex min-h-[calc(100vh-var(--app-topbar-height))] w-[252px] shrink-0 flex-col justify-between border-r border-blue-100 bg-white/90 px-3 py-6 max-lg:hidden">
       <div>
-        <div className="flex items-center gap-3.5 px-4 pb-9">
+        <div className="flex items-center gap-2.5 px-3 pb-6">
           <img
             alt="MetroPick AI 로고"
-            className="h-8 w-9 object-contain"
+            className="h-7 w-8 object-contain"
             draggable={false}
             src={landingAssets.logo}
           />
-          <strong className="text-[22px] font-black text-slate-900">MetroPick AI</strong>
+          <strong className="text-lg font-black text-slate-900">MetroPick AI</strong>
         </div>
 
-        <nav aria-label="리포트 사이드 메뉴" className="grid gap-2.5">
+        <nav aria-label="리포트 사이드 메뉴" className="grid gap-1.5">
           {sideMenuItems.map((item) => {
             const Icon = item.icon
 
             return (
               <Link
                 aria-current={item.active ? 'page' : undefined}
-                className={`flex h-[54px] items-center gap-4 rounded-[10px] px-5 text-[17px] font-bold ${
+                className={`flex h-10 items-center gap-3 rounded-lg px-4 text-sm font-bold ${
                   item.active
                     ? 'bg-blue-50 text-blue-600'
                     : 'text-slate-700 hover:bg-slate-50'
@@ -386,7 +317,7 @@ function Sidebar() {
                 key={item.label}
                 to={item.href}
               >
-                <Icon aria-hidden="true" size={21} />
+                <Icon aria-hidden="true" size={17} />
                 {item.label}
               </Link>
             )
@@ -394,36 +325,36 @@ function Sidebar() {
         </nav>
       </div>
 
-      <div className="grid gap-5">
-        <div className="flex gap-3.5 rounded-[14px] border border-blue-100 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-50 text-cyan-600">
-            <TrendingUp aria-hidden="true" size={21} />
+      <div className="grid gap-3">
+        <div className="flex gap-3 rounded-xl border border-blue-100 bg-white p-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-50 text-cyan-600">
+            <TrendingUp aria-hidden="true" size={18} />
           </div>
           <div>
-            <div className="text-sm font-black">
+            <div className="text-xs font-black">
               AI 예측 정확도
               <span className="ml-2 rounded-md bg-blue-600 px-2 py-1 text-xs text-white">
                 Pro
               </span>
             </div>
-            <p className="my-2 text-sm font-bold text-slate-500">상위 5% 예측 정확도</p>
-            <button className="text-sm font-black text-blue-600" type="button">
+            <p className="my-2 text-xs font-bold text-slate-500">상위 5% 예측 정확도</p>
+            <button className="text-xs font-black text-blue-600" type="button">
               상세 보기
             </button>
           </div>
         </div>
 
-        <div className="flex gap-3.5 rounded-[14px] border border-blue-100 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-50 text-cyan-600">
-            <ChartNoAxesCombined aria-hidden="true" size={21} />
+        <div className="flex gap-3 rounded-xl border border-blue-100 bg-white p-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-50 text-cyan-600">
+            <ChartNoAxesCombined aria-hidden="true" size={18} />
           </div>
           <div>
-            <div className="text-sm font-black">분석 크레딧</div>
-            <h4 className="my-2 text-lg font-black">잔여 1,250 크레딧</h4>
-            <div className="mb-3 h-2 w-36 overflow-hidden rounded-full bg-slate-200">
+            <div className="text-xs font-black">분석 크레딧</div>
+            <h4 className="my-2 text-sm font-black">잔여 1,250 크레딧</h4>
+            <div className="mb-3 h-2 w-32 overflow-hidden rounded-full bg-slate-200">
               <span className="block h-full w-[58%] rounded-full bg-gradient-to-r from-teal-500 to-emerald-400" />
             </div>
-            <button className="text-sm font-black text-blue-600" type="button">
+            <button className="text-xs font-black text-blue-600" type="button">
               충전하기
             </button>
           </div>
@@ -435,9 +366,9 @@ function Sidebar() {
 
 function CardTitle({ children, icon: Icon }: { children: ReactNode; icon?: LucideIcon }) {
   return (
-    <div className="mb-4 flex items-center gap-2">
-      {Icon ? <Icon aria-hidden="true" className="text-blue-600" size={20} /> : null}
-      <h3 className="m-0 text-xl font-black tracking-[-0.4px] text-slate-900">
+    <div className="mb-3 flex items-center gap-2">
+      {Icon ? <Icon aria-hidden="true" className="text-blue-600" size={17} /> : null}
+      <h3 className="m-0 text-base font-black tracking-normal text-slate-900">
         {children}
       </h3>
     </div>
@@ -454,8 +385,8 @@ function InfoRow({
   value: string
 }) {
   return (
-    <div className="grid grid-cols-[28px_120px_1fr] items-center gap-2.5 text-base max-xl:grid-cols-[24px_1fr]">
-      <Icon aria-hidden="true" className="text-slate-500" size={18} />
+    <div className="grid grid-cols-[22px_92px_1fr] items-center gap-2 text-sm max-xl:grid-cols-[22px_1fr]">
+      <Icon aria-hidden="true" className="text-slate-500" size={16} />
       <p className="m-0 font-extrabold text-slate-500">{label}</p>
       <strong className="font-black text-slate-900 max-xl:col-start-2">{value}</strong>
     </div>
@@ -464,26 +395,26 @@ function InfoRow({
 
 function MetricCard({ item }: { item: ReportMetric }) {
   return (
-    <article className="flex min-h-[152px] flex-col items-center rounded-[13px] border border-blue-100 bg-gradient-to-b from-white to-slate-50 px-3.5 py-5 text-center">
-      <p className="m-0 mb-4 text-sm font-black text-slate-500">{item.label}</p>
+    <article className="flex min-h-[118px] flex-col items-center rounded-xl border border-blue-100 bg-gradient-to-b from-white to-slate-50 px-3 py-4 text-center">
+      <p className="m-0 mb-2 text-xs font-black text-slate-500">{item.label}</p>
       <h3
-        className={`m-0 mb-3 text-[28px] font-black tracking-[-0.8px] ${
+        className={`m-0 mb-2 text-xl font-black tracking-normal ${
           item.variant === 'stars' ? 'text-emerald-600' : 'text-slate-900'
         }`}
       >
         {item.value}
       </h3>
       {item.point ? (
-        <strong className="mb-1 text-xl font-black text-emerald-600">{item.point}</strong>
+        <strong className="mb-1 text-base font-black text-emerald-600">{item.point}</strong>
       ) : null}
       {item.variant === 'stars' ? (
         <span aria-label="투자 적합도 별점 5점" className="flex gap-1 text-emerald-600">
           {[1, 2, 3, 4, 5].map((star) => (
-            <Star aria-hidden="true" fill="currentColor" key={star} size={20} />
+            <Star aria-hidden="true" fill="currentColor" key={star} size={16} />
           ))}
         </span>
       ) : (
-        <small className="text-[15px] font-bold text-slate-500">{item.caption}</small>
+        <small className="text-xs font-bold text-slate-500">{item.caption}</small>
       )}
     </article>
   )
@@ -491,8 +422,8 @@ function MetricCard({ item }: { item: ReportMetric }) {
 
 function HeroCard() {
   return (
-    <section className="mb-4 grid min-h-[226px] grid-cols-[330px_1fr_420px] items-center gap-8 rounded-2xl border border-blue-100 bg-white/95 p-5 shadow-[0_10px_30px_rgba(25,55,90,0.06)] max-2xl:grid-cols-[280px_1fr] max-lg:grid-cols-1">
-      <div className="h-[180px] overflow-hidden rounded-[13px] bg-slate-200 max-lg:h-[210px]">
+    <section className="mb-3 grid min-h-[166px] min-w-0 grid-cols-[250px_minmax(0,1fr)_410px] items-center gap-5 rounded-xl border border-blue-100 bg-white/95 p-4 shadow-[0_10px_30px_rgba(25,55,90,0.06)] max-2xl:grid-cols-[250px_minmax(0,1fr)] max-lg:grid-cols-1">
+      <div className="h-[136px] overflow-hidden rounded-xl bg-slate-200 max-lg:h-[210px]">
         <img
           alt="백운광장역 개통 예정 상권 대표 이미지"
           className="h-full w-full object-cover"
@@ -502,29 +433,29 @@ function HeroCard() {
       </div>
 
       <div>
-        <div className="flex flex-wrap items-center gap-3.5">
-          <h2 className="m-0 text-[31px] font-black tracking-[-1px] text-slate-950 max-lg:text-2xl">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="m-0 text-2xl font-black tracking-normal text-slate-950 max-lg:text-2xl">
             {reportSummary.stationArea}
           </h2>
-          <span className="inline-flex h-10 items-center rounded-full border-2 border-orange-300 bg-orange-50 px-4 font-black text-orange-500">
+          <span className="inline-flex h-8 items-center rounded-full border border-orange-300 bg-orange-50 px-3 text-sm font-black text-orange-500">
             카페
           </span>
-          <span className="inline-flex h-10 items-center rounded-full border-2 border-emerald-300 bg-emerald-50 px-4 font-black text-emerald-600">
+          <span className="inline-flex h-8 items-center rounded-full border border-emerald-300 bg-emerald-50 px-3 text-sm font-black text-emerald-600">
             백운광장역 500m
           </span>
-          <span className="inline-flex h-10 items-center rounded-full border-2 border-blue-300 bg-blue-50 px-4 font-black text-blue-600">
+          <span className="inline-flex h-8 items-center rounded-full border border-blue-300 bg-blue-50 px-3 text-sm font-black text-blue-600">
             {reportSummary.scenario}
           </span>
         </div>
 
-        <p className="mt-8 text-lg leading-8 font-semibold text-slate-600">
+        <p className="mt-4 text-sm leading-6 font-semibold text-slate-600">
           광주 2호선 백운광장역 개통(2027년 예정) 시점을 기준으로 예측한{' '}
           <strong className="font-black text-slate-900">카페 업종</strong>의 미래 매출
           전망 리포트입니다.
         </p>
       </div>
 
-      <div className="grid gap-3.5 max-2xl:col-span-2 max-2xl:grid-cols-5 max-lg:col-span-1 max-lg:grid-cols-1">
+      <div className="grid gap-2.5 max-2xl:col-span-2 max-2xl:grid-cols-5 max-lg:col-span-1 max-lg:grid-cols-1">
         <InfoRow
           icon={CalendarDays}
           label="분석 기준일"
@@ -545,21 +476,21 @@ function HeroCard() {
 
 function SummaryInsightCard() {
   return (
-    <section className="rounded-2xl border border-blue-100 bg-white/95 px-7 py-6 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle icon={Gauge}>
         요약 인사이트 <span className="text-sm text-slate-500">(AI 요약)</span>
       </CardTitle>
-      <p className="m-0 text-[17px] leading-8 font-semibold text-slate-700">
+      <p className="m-0 text-sm leading-6 font-semibold text-slate-700">
         백운광장역 500m 상권의 카페 업종은 2027년 개통 이후 꾸준한 성장세가 예상되며, 특히
         2028~2030년에 매출 성장이 가속화될 것으로 전망됩니다. 유동인구 증가와 주변 개발
         호재, 젊은 세대 유입이 주요 성장 요인으로 작용하며, 프리미엄 커피·디저트 특화
         전략이 높은 성과를 기대할 수 있습니다.
       </p>
-      <div className="mt-5 flex h-12 items-center gap-3 rounded-[10px] bg-gradient-to-r from-emerald-50 to-blue-50 px-4 text-lg font-black text-emerald-700">
+      <div className="mt-3 flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-50 to-blue-50 px-3 text-sm font-black text-emerald-700">
         <TrendingUp
           aria-hidden="true"
           className="rounded-lg border border-emerald-200 bg-white p-1"
-          size={34}
+          size={26}
         />
         종합 결론: 매우 유망 (투자 적합도 상)
       </div>
@@ -569,9 +500,9 @@ function SummaryInsightCard() {
 
 function MetricSection() {
   return (
-    <section className="rounded-2xl border border-blue-100 bg-white/95 px-7 py-6 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle icon={BarChart3}>핵심 지표 요약</CardTitle>
-      <div className="grid grid-cols-5 gap-5 max-2xl:grid-cols-2 max-md:grid-cols-1">
+      <div className="grid grid-cols-5 gap-3 max-2xl:grid-cols-2 max-md:grid-cols-1">
         {metricCards.map((item) => (
           <MetricCard item={item} key={item.id} />
         ))}
@@ -582,12 +513,12 @@ function MetricSection() {
 
 function SalesTrendCard() {
   return (
-    <section className="rounded-2xl border border-blue-100 bg-white/95 px-6 py-5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle>연도별 예상 매출 추이</CardTitle>
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="h-[190px] overflow-hidden rounded-xl border border-slate-200 bg-white">
         <img
           alt="연도별 예상 매출 추이 차트"
-          className="h-auto w-full object-contain"
+          className="h-full w-full object-contain"
           draggable={false}
           src={reportAssets.salesTrendChart}
         />
@@ -601,24 +532,24 @@ function SalesTrendCard() {
 
 function MapSnapshotCard() {
   return (
-    <section className="rounded-2xl border border-blue-100 bg-white/95 px-6 py-5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle>상권 지도 스냅샷</CardTitle>
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="h-[190px] overflow-hidden rounded-xl border border-slate-200 bg-white">
         <img
           alt="백운광장역 500m 상권 지도 스냅샷"
-          className="h-auto w-full object-contain"
+          className="h-full w-full object-contain"
           draggable={false}
           src={reportAssets.areaMap}
         />
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-2 max-md:grid-cols-1">
+      <div className="mt-2 grid grid-cols-4 gap-1.5 max-md:grid-cols-1">
         {mapStats.map((item) => (
           <div
-            className="grid h-[70px] place-items-center rounded-[10px] border border-blue-100 bg-slate-50 text-center"
+            className="grid h-[52px] place-items-center rounded-lg border border-blue-100 bg-slate-50 text-center"
             key={item.label}
           >
             <p className="m-0 text-xs font-black text-slate-500">{item.label}</p>
-            <strong className="text-lg font-black text-slate-900">{item.value}</strong>
+            <strong className="text-sm font-black text-slate-900">{item.value}</strong>
           </div>
         ))}
       </div>
@@ -639,28 +570,28 @@ function FactorList({
 
   return (
     <div
-      className={`min-h-[250px] rounded-[13px] px-6 py-5 ${isGood ? 'bg-emerald-50' : 'bg-rose-50'}`}
+      className={`rounded-xl px-4 py-3.5 ${isGood ? 'bg-emerald-50' : 'bg-rose-50'}`}
     >
       <h4
-        className={`m-0 mb-5 text-lg font-black ${isGood ? 'text-emerald-600' : 'text-rose-600'}`}
+        className={`m-0 mb-3 text-sm font-black ${isGood ? 'text-emerald-600' : 'text-rose-600'}`}
       >
         {title}
       </h4>
-      <div className="grid gap-3.5">
+      <div className="grid gap-2">
         {items.map((item) => (
-          <div className="flex items-start gap-3" key={item.id}>
+          <div className="flex items-start gap-2" key={item.id}>
             <span
-              className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-white ${
+              className={`grid h-4 w-4 shrink-0 place-items-center rounded-full text-white ${
                 isGood ? 'bg-emerald-600' : 'bg-rose-500'
               }`}
             >
               {isGood ? (
-                <ShieldCheck aria-hidden="true" size={13} />
+                <ShieldCheck aria-hidden="true" size={11} />
               ) : (
-                <AlertTriangle aria-hidden="true" size={13} />
+                <AlertTriangle aria-hidden="true" size={11} />
               )}
             </span>
-            <p className="m-0 text-[15px] leading-normal font-bold text-slate-700">
+            <p className="m-0 text-[11px] leading-snug font-bold text-slate-700">
               {item.label}
             </p>
           </div>
@@ -672,9 +603,9 @@ function FactorList({
 
 function FactorSection() {
   return (
-    <section className="rounded-2xl border border-blue-100 bg-white/95 px-6 py-5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle>기회 요인 vs 리스크 요인</CardTitle>
-      <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
+      <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
         <FactorList items={opportunities} title="기회 요인" type="good" />
         <FactorList items={risks} title="리스크 요인" type="bad" />
       </div>
@@ -684,24 +615,24 @@ function FactorSection() {
 
 function EvidenceCard() {
   return (
-    <section className="rounded-2xl border border-blue-100 bg-white/95 px-6 py-5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle icon={ShieldCheck}>예측 근거</CardTitle>
-      <div className="grid gap-4">
+      <div className="grid gap-1.5">
         {evidenceItems.map((item) => {
           const Icon = item.icon
 
           return (
-            <div className="flex items-start gap-3.5" key={item.title}>
+            <div className="flex items-start gap-2" key={item.title}>
               <Icon
                 aria-hidden="true"
                 className="mt-0.5 shrink-0 text-blue-600"
-                size={22}
+                size={15}
               />
-              <div>
-                <strong className="text-base font-black text-slate-900">
+              <div className="min-w-0">
+                <strong className="block text-xs leading-none font-black text-slate-900">
                   {item.title}
                 </strong>
-                <p className="m-0 mt-1 text-sm leading-normal font-bold text-slate-500">
+                <p className="m-0 mt-0.5 truncate text-[11px] leading-none font-bold text-slate-500">
                   {item.description}
                 </p>
               </div>
@@ -715,21 +646,21 @@ function EvidenceCard() {
 
 function WarningCard() {
   return (
-    <section className="rounded-2xl border border-blue-100 bg-white/95 px-6 py-5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle icon={AlertTriangle}>주의 요인</CardTitle>
-      <div className="grid gap-4">
+      <div className="grid gap-1.5">
         {warningItems.map((item) => (
-          <div className="flex items-start gap-3.5" key={item.id}>
+          <div className="flex items-start gap-2" key={item.id}>
             <AlertTriangle
               aria-hidden="true"
               className="mt-0.5 shrink-0 text-rose-500"
-              size={21}
+              size={15}
             />
-            <div>
-              <strong className="text-base font-black text-slate-900">
+            <div className="min-w-0">
+              <strong className="block text-xs leading-none font-black text-slate-900">
                 {item.label}
               </strong>
-              <p className="m-0 mt-1 text-sm leading-normal font-bold text-slate-500">
+              <p className="m-0 mt-0.5 truncate text-[11px] leading-none font-bold text-slate-500">
                 {item.description}
               </p>
             </div>
@@ -742,28 +673,28 @@ function WarningCard() {
 
 function StrategySection() {
   return (
-    <section className="rounded-2xl border border-blue-100 bg-white/95 px-6 py-5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle icon={Sparkles}>운영 전략 제안</CardTitle>
-      <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1">
+      <div className="grid grid-cols-4 gap-3 max-xl:grid-cols-2 max-md:grid-cols-1">
         {strategyCards.map((item) => {
           const Icon = item.icon
 
           return (
             <article
-              className={`relative min-h-[185px] overflow-hidden rounded-2xl border px-5 py-6 ${item.tone}`}
+              className={`relative min-h-[116px] overflow-hidden rounded-xl border px-3 py-3 ${item.tone}`}
               key={item.id}
             >
-              <strong className="mb-3 block text-xl font-black">{item.id}</strong>
-              <h4 className="m-0 mb-3 text-lg font-black tracking-[-0.4px]">
+              <strong className="mb-2 block text-base font-black">{item.id}</strong>
+              <h4 className="m-0 mb-2 text-sm font-black tracking-normal">
                 {item.title}
               </h4>
-              <p className="m-0 text-sm leading-relaxed font-bold text-slate-600">
+              <p className="m-0 text-xs leading-relaxed font-bold text-slate-600">
                 {item.description}
               </p>
               <Icon
                 aria-hidden="true"
-                className="absolute bottom-5 right-5 opacity-50"
-                size={38}
+                className="absolute bottom-3 right-3 opacity-45"
+                size={28}
               />
             </article>
           )
@@ -815,51 +746,51 @@ export function ReportPage() {
   }
 
   return (
-    <div className="report-page-original min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(0,117,255,0.08),transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f6f9fe_100%)] text-slate-900">
-      <Topbar />
+    <div className="report-page-compact min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_right,rgba(0,117,255,0.08),transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f6f9fe_100%)] text-slate-900">
+      <TopNavigation activeHref="/report" sticky />
 
-      <div className="grid grid-cols-[335px_1fr] max-lg:grid-cols-1">
+      <div className="grid min-w-0 grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
         <Sidebar />
 
-        <main className="min-w-0 px-20 py-10 max-2xl:px-8 max-md:px-4">
+        <main className="min-w-0 px-8 pt-6 pb-2 max-2xl:px-6 max-md:px-4">
           <span className="sr-only">이전 설정 컨텍스트: {storageContextLabel}</span>
 
-          <div className="mb-5 flex items-start justify-between gap-7 max-lg:flex-col">
+          <div className="mb-3 flex items-start justify-between gap-5 max-lg:flex-col">
             <div>
-              <h1 className="m-0 mb-6 text-[34px] font-black tracking-[-1.2px] text-slate-950 max-md:text-3xl">
+              <h1 className="m-0 mb-4 text-2xl font-black tracking-normal text-slate-950 max-md:text-2xl">
                 미래 매출 예측 리포트
               </h1>
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="inline-flex h-10 items-center rounded-full border border-blue-100 bg-white px-4 text-sm font-bold text-slate-500">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex h-8 items-center rounded-full border border-blue-100 bg-white px-3 text-xs font-bold text-slate-500">
                   선택 상권
                 </span>
-                <strong className="inline-flex h-10 items-center rounded-full border border-blue-100 bg-white px-4 text-base font-black text-slate-900">
+                <strong className="inline-flex h-8 items-center rounded-full border border-blue-100 bg-white px-3 text-sm font-black text-slate-900">
                   {reportSummary.stationArea}
                 </strong>
-                <span className="inline-flex h-10 items-center rounded-full border border-blue-100 bg-white px-4 text-sm font-bold text-slate-500">
+                <span className="inline-flex h-8 items-center rounded-full border border-blue-100 bg-white px-3 text-xs font-bold text-slate-500">
                   선택 업종
                 </span>
-                <strong className="inline-flex h-10 items-center rounded-full border border-blue-100 bg-white px-4 text-base font-black text-slate-900">
+                <strong className="inline-flex h-8 items-center rounded-full border border-blue-100 bg-white px-3 text-sm font-black text-slate-900">
                   {reportSummary.businessType}
                 </strong>
               </div>
             </div>
 
-            <div className="flex gap-4 max-md:w-full">
+            <div className="flex gap-3 max-md:w-full">
               <button
-                className="inline-flex h-[62px] items-center gap-2 rounded-xl border border-slate-300 bg-white px-7 text-lg font-black text-slate-900 max-md:flex-1 max-md:justify-center"
+                className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 text-sm font-black text-slate-900 max-md:flex-1 max-md:justify-center"
                 onClick={handleShare}
                 type="button"
               >
-                <Share2 aria-hidden="true" size={21} />
+                <Share2 aria-hidden="true" size={17} />
                 공유하기
               </button>
               <button
-                className="inline-flex h-[62px] items-center gap-2 rounded-xl bg-blue-600 px-7 text-lg font-black text-white shadow-[0_12px_28px_rgba(0,109,255,0.24)] max-md:flex-1 max-md:justify-center"
+                className="inline-flex h-11 items-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(0,109,255,0.24)] max-md:flex-1 max-md:justify-center"
                 onClick={handlePdfSave}
                 type="button"
               >
-                <FileDown aria-hidden="true" size={21} />
+                <FileDown aria-hidden="true" size={17} />
                 PDF 저장
               </button>
             </div>
@@ -867,24 +798,24 @@ export function ReportPage() {
 
           <HeroCard />
 
-          <div className="mb-4 grid grid-cols-[650px_1fr] gap-4 max-2xl:grid-cols-1">
+          <div className="mb-3 grid min-w-0 grid-cols-[minmax(390px,0.9fr)_minmax(0,1.45fr)] gap-3 max-2xl:grid-cols-1">
             <SummaryInsightCard />
             <MetricSection />
           </div>
 
-          <div className="mb-4 grid grid-cols-[735px_575px_1fr] gap-4 max-2xl:grid-cols-1">
+          <div className="mb-3 grid min-w-0 grid-cols-[minmax(0,1.12fr)_minmax(0,0.86fr)_minmax(320px,0.95fr)] gap-3 max-2xl:grid-cols-1">
             <SalesTrendCard />
             <MapSnapshotCard />
             <FactorSection />
           </div>
 
-          <div className="grid grid-cols-[410px_410px_1fr] gap-4 max-2xl:grid-cols-1">
+          <div className="grid min-w-0 grid-cols-[minmax(250px,0.72fr)_minmax(250px,0.72fr)_minmax(0,1.48fr)] gap-3 max-2xl:grid-cols-1">
             <EvidenceCard />
             <WarningCard />
             <StrategySection />
           </div>
 
-          <p className="m-0 mt-4 text-center text-sm font-bold text-slate-400">
+          <p className="m-0 mt-3 text-center text-xs font-bold text-slate-400">
             본 예측 리포트는 AI 분석과 다양한 공공 및 민간 데이터를 기반으로 산출된
             예측치이며, 실제 결과는 시장 상황에 따라 달라질 수 있습니다.
           </p>
