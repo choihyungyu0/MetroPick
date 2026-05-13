@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   BarChart3,
@@ -25,6 +25,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { onboardingAssets } from '@/shared/assets/onboardingAssets'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 
 type BusinessTypeId =
@@ -52,14 +53,7 @@ type BusinessTypeSetup = {
   selectedBusinessTypes: BusinessTypeId[]
 }
 
-type StationSetup = {
-  radius?: string
-  route?: string
-  selectedStations?: string[]
-}
-
 const STORAGE_KEY = 'metropick-onboarding-business-types'
-const STATION_STORAGE_KEY = 'metropick-onboarding-stations'
 const MAX_SELECTIONS = 3
 
 const analysisGoal = '매출 잠재력 예측 / 성장성 비교'
@@ -216,36 +210,6 @@ function loadInitialSetup(): BusinessTypeSetup {
   }
 }
 
-function loadStationSetup(): StationSetup | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  try {
-    const saved = window.localStorage.getItem(STATION_STORAGE_KEY)
-    if (!saved) {
-      return null
-    }
-
-    const parsed: unknown = JSON.parse(saved)
-    if (!isRecord(parsed)) {
-      return null
-    }
-
-    return {
-      radius: typeof parsed.radius === 'string' ? parsed.radius : undefined,
-      route: typeof parsed.route === 'string' ? parsed.route : undefined,
-      selectedStations: Array.isArray(parsed.selectedStations)
-        ? parsed.selectedStations.filter(
-            (station): station is string => typeof station === 'string',
-          )
-        : undefined,
-    }
-  } catch {
-    return null
-  }
-}
-
 function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <Link className="flex items-center gap-3" to="/" aria-label="MetroPick AI 홈">
@@ -284,37 +248,38 @@ function Stepper() {
   ]
 
   return (
-    <ol className="flex min-w-[640px] items-start justify-center md:min-w-0">
+    <ol className="relative flex w-full min-w-0 items-start justify-between pt-1 md:min-w-[620px] md:justify-center">
       {steps.map((step, index) => (
-        <li className="flex items-start" key={step.label}>
-          <div className="flex min-w-[116px] flex-col items-center">
-            <span
-              aria-current={step.active ? 'step' : undefined}
-              className={[
-                'flex h-11 w-11 items-center justify-center rounded-full border-2 bg-white text-xl font-black',
-                step.done
-                  ? 'border-[#0969f4] bg-[#0969f4] text-white shadow-[0_8px_18px_rgba(9,105,244,0.24)]'
-                  : step.active
-                    ? 'border-[#0969f4] text-[#0969f4]'
-                    : 'border-[#d0d8e6] text-[#b7c1d2]',
-              ].join(' ')}
-            >
-              {step.done ? <Check size={22} strokeWidth={3} /> : index + 1}
-            </span>
-            <span
-              className={[
-                'mt-3 text-center text-sm font-black',
-                step.active ? 'text-[#0969f4]' : 'text-[#6d7890]',
-              ].join(' ')}
-            >
-              {step.label}
-            </span>
-          </div>
+        <li
+          className="relative flex min-w-0 flex-1 flex-col items-center md:w-[155px] md:flex-none"
+          key={step.label}
+        >
+          <span
+            aria-current={step.active ? 'step' : undefined}
+            className={[
+              'relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 text-lg font-black md:h-11 md:w-11 md:text-xl',
+              step.done
+                ? 'border-[#0969f4] bg-[#0969f4] text-white shadow-[0_8px_18px_rgba(9,105,244,0.24)]'
+                : step.active
+                  ? 'border-[#0969f4] bg-white text-[#0969f4]'
+                  : 'border-[#d0d8e6] bg-white text-[#b7c1d2]',
+            ].join(' ')}
+          >
+            {step.done ? <Check size={22} strokeWidth={3} /> : index + 1}
+          </span>
+          <span
+            className={[
+              'mt-2 max-w-[76px] text-center text-[11px] leading-4 font-black sm:max-w-none sm:text-xs md:mt-3 md:text-sm',
+              step.active ? 'text-[#0969f4]' : 'text-[#6d7890]',
+            ].join(' ')}
+          >
+            {step.label}
+          </span>
           {index !== steps.length - 1 ? (
             <span
               aria-hidden="true"
               className={[
-                'mt-[22px] h-0.5 w-[135px]',
+                'absolute top-5 right-[calc(-50%+20px)] left-[calc(50%+20px)] h-0.5 md:top-[22px] md:right-auto md:left-[100px] md:w-[110px]',
                 step.done ? 'bg-[#0969f4]' : 'bg-[#d7deea]',
               ].join(' ')}
             />
@@ -325,10 +290,20 @@ function Stepper() {
   )
 }
 
+function HeroTrainBackdrop() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute top-2 right-0 hidden h-[165px] w-[600px] bg-contain bg-right-bottom bg-no-repeat opacity-[0.16] lg:block"
+      style={{ backgroundImage: `url(${onboardingAssets.initialSetupTrainBg})` }}
+    />
+  )
+}
+
 function Panel({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <section className="rounded-[13px] border border-[#d2def0]/90 bg-white/95 px-5 py-5 shadow-[0_8px_22px_rgba(10,42,90,0.11)] lg:px-6">
-      <h2 className="mb-4 text-2xl font-black tracking-[-0.03em] text-[#061b42]">
+    <section className="rounded-[13px] border border-[#d2def0]/90 bg-white/95 px-5 py-4 shadow-[0_8px_22px_rgba(10,42,90,0.11)] lg:px-6">
+      <h2 className="mb-3 text-[23px] font-black tracking-[-0.03em] text-[#061b42]">
         {title}
       </h2>
       {children}
@@ -351,7 +326,7 @@ function IndustryCard({
     <button
       aria-pressed={selected}
       className={[
-        'relative flex min-h-[105px] items-center gap-4 rounded-[10px] border bg-white px-4 py-5 text-left transition hover:-translate-y-0.5 hover:border-[#7db3ff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none',
+        'relative flex min-h-[92px] items-center gap-3 rounded-[10px] border bg-white px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-[#7db3ff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none',
         selected
           ? 'border-2 border-[#0969f4] bg-gradient-to-br from-[#f9fcff] to-[#eef6ff] shadow-[0_6px_16px_rgba(9,105,244,0.1)]'
           : 'border-[#dbe4ef]',
@@ -362,15 +337,17 @@ function IndustryCard({
       <span
         aria-label={item.iconLabel}
         className={[
-          'flex h-12 w-12 shrink-0 items-center justify-center rounded-full',
+          'flex h-11 w-11 shrink-0 items-center justify-center rounded-full',
           selected ? 'bg-[#eef5ff] text-[#0969f4]' : 'bg-[#f7f9fc] text-[#92a0b2]',
         ].join(' ')}
       >
-        <Icon size={30} strokeWidth={1.9} />
+        <Icon size={27} strokeWidth={1.9} />
       </span>
-      <span className="grid gap-2">
+      <span className="grid gap-1.5">
         <strong className="text-base font-black text-[#061b42]">{item.label}</strong>
-        <span className="text-sm font-semibold text-[#62708a]">{item.description}</span>
+        <span className="text-[13px] font-semibold text-[#62708a]">
+          {item.description}
+        </span>
       </span>
       {selected ? (
         <span className="absolute top-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#0969f4] text-white">
@@ -392,7 +369,7 @@ function IndustrySection({
 }) {
   return (
     <Panel title="관심 업종 선택">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {businessTypeOptions.map((item) => (
           <IndustryCard
             item={item}
@@ -402,7 +379,7 @@ function IndustrySection({
           />
         ))}
       </div>
-      <div className="mt-4 flex flex-col gap-2 text-sm font-bold text-[#8792a5] sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-3 flex flex-col gap-2 text-sm font-bold text-[#8792a5] sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-2">
           <Info size={16} />
           최대 3개 업종까지 선택 가능합니다.
@@ -435,22 +412,22 @@ function AnalysisSection() {
 
           return (
             <article
-              className="flex min-h-24 items-center gap-4 rounded-xl border border-[#dbe4ef] bg-white px-5 py-4"
+              className="flex min-h-20 items-center gap-3 rounded-xl border border-[#dbe4ef] bg-white px-4 py-3"
               key={point.title}
             >
               <span
                 className={[
-                  'flex h-14 w-14 shrink-0 items-center justify-center rounded-full',
+                  'flex h-12 w-12 shrink-0 items-center justify-center rounded-full',
                   toneClass[point.tone],
                 ].join(' ')}
               >
-                <Icon size={32} strokeWidth={1.9} />
+                <Icon size={28} strokeWidth={1.9} />
               </span>
               <span>
                 <strong className="text-base font-black text-[#061b42]">
                   {point.title}
                 </strong>
-                <p className="mt-2 text-sm leading-6 font-semibold text-[#55647c]">
+                <p className="mt-1 text-sm leading-5 font-semibold text-[#55647c]">
                   {point.text}
                 </p>
               </span>
@@ -477,13 +454,13 @@ function RecommendSection({
           return (
             <button
               aria-label={`${option.label}와 ${combo.station} 추천 분석 조합 적용`}
-              className="flex min-h-20 items-center gap-3 rounded-xl border-2 border-[#0969f4] bg-gradient-to-br from-white to-[#f1f8ff] px-4 py-3 text-left text-[#061b42] transition hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(9,105,244,0.12)] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none"
+              className="flex min-h-16 items-center gap-3 rounded-xl border-2 border-[#0969f4] bg-gradient-to-br from-white to-[#f1f8ff] px-4 py-2 text-left text-[#061b42] transition hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(9,105,244,0.12)] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none"
               key={`${option.id}-${combo.station}`}
               onClick={() => onApply(option.id)}
               type="button"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#eef5ff] text-[#0969f4]">
-                <Icon size={30} />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eef5ff] text-[#0969f4]">
+                <Icon size={27} />
               </span>
               <strong className="font-black">{option.label}</strong>
               <span className="font-black text-[#0969f4]">+</span>
@@ -495,7 +472,7 @@ function RecommendSection({
           )
         })}
       </div>
-      <p className="mt-4 flex items-center gap-2 text-sm font-bold text-[#8792a5]">
+      <p className="mt-3 flex items-center gap-2 text-sm font-bold text-[#8792a5]">
         <Info size={16} />
         추천 조합을 클릭하면 관심 지역과 함께 분석을 빠르게 설정할 수 있습니다.
       </p>
@@ -544,12 +521,10 @@ function SummaryPanel({
   onNext,
   onPrevious,
   selectedLabels,
-  stationSetup,
 }: {
   onNext: () => void
   onPrevious: () => void
   selectedLabels: string[]
-  stationSetup: StationSetup | null
 }) {
   return (
     <aside className="flex flex-col gap-6">
@@ -560,12 +535,6 @@ function SummaryPanel({
         <p className="mt-2 text-sm font-bold text-[#6c7890]">
           선택한 업종과 분석 방향을 확인해 주세요.
         </p>
-
-        {stationSetup ? null : (
-          <p className="mt-4 rounded-lg border border-[#d6e5f7] bg-[#f6fbff] px-4 py-3 text-sm font-bold text-[#53637a]">
-            이전 단계 설정 정보가 없어 기본값으로 표시됩니다.
-          </p>
-        )}
 
         <div className="mt-5 overflow-hidden rounded-xl border border-[#dbe4ef] bg-white">
           <SummaryRow icon={Train} title="선택 업종">
@@ -626,7 +595,7 @@ function SummaryPanel({
 function Footer() {
   return (
     <footer className="bg-gradient-to-r from-[#061b42] via-[#08295a] to-[#041936] text-[#d8e4f5]">
-      <div className="mx-auto grid min-h-[78px] w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-5 py-5 text-sm font-semibold lg:w-[calc(100%_-_96px)] xl:grid-cols-[230px_1fr_650px]">
+      <div className="mx-auto grid min-h-[78px] w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-4 py-3 text-sm font-semibold lg:w-[calc(100%_-_80px)] xl:grid-cols-[230px_1fr_650px]">
         <Logo compact />
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[#b9c8dc]">
           <span>(주)메트로픽</span>
@@ -652,7 +621,6 @@ function Footer() {
 
 export function OnboardingBusinessTypePage() {
   const navigate = useNavigate()
-  const stationSetup = useMemo(() => loadStationSetup(), [])
   const [setup, setSetup] = useState<BusinessTypeSetup>(loadInitialSetup)
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -722,16 +690,11 @@ export function OnboardingBusinessTypePage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-[#f7fbff] to-[#eef6ff] text-[#071a3d]">
+    <div className="onboarding-business-type-page flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-b from-[#f7fbff] to-[#eef6ff] text-[#071a3d]">
       <TopNavigation />
 
-      <main className="relative overflow-hidden px-4 py-7 md:px-8 lg:px-11">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-8 right-10 hidden h-32 w-[530px] text-[#0567dd] opacity-[0.13] xl:block"
-        >
-          <Train className="absolute top-6 right-0 h-24 w-64" strokeWidth={1.2} />
-        </div>
+      <main className="relative flex-1 overflow-hidden px-4 py-6 md:px-8 lg:px-10 xl:py-7">
+        <HeroTrainBackdrop />
 
         <section className="relative z-10 grid gap-8 lg:grid-cols-[480px_1fr] lg:items-start">
           <div>
@@ -762,7 +725,6 @@ export function OnboardingBusinessTypePage() {
             onNext={handleNext}
             onPrevious={() => navigate('/onboarding/stations')}
             selectedLabels={selectedLabels}
-            stationSetup={stationSetup}
           />
         </section>
       </main>

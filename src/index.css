@@ -13,7 +13,7 @@
 }
 
 :root {
-  --app-topbar-height: 64px;
+  --app-topbar-height: 82px;
   --app-density-scale: 1;
   color: #17201d;
   background: #f5f7f6;
@@ -38,11 +38,6 @@ body {
 
 .ai-prediction-page {
   --app-footer-height: 102px;
-  --app-topbar-height: 82px;
-}
-
-.commercial-analysis-page {
-  --app-topbar-height: 82px;
 }
 
 #root {
@@ -79,6 +74,46 @@ body {
   }
 
   #root:has(.login-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.signup-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.landing-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.report-page-compact) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.mypage-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.onboarding-initial-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.onboarding-station-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.onboarding-business-type-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  #root:has(.onboarding-notifications-page) {
     min-height: 100vh;
     zoom: 1;
   }

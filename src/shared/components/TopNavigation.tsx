@@ -86,7 +86,7 @@ function BrandLink() {
     >
       <img
         alt="MetroPick AI 로고"
-        className="h-9 w-11 shrink-0 scale-[1.45] object-contain"
+        className="h-11 w-14 shrink-0 scale-[1.6] object-contain"
         draggable={false}
         src={landingAssets.logo}
       />

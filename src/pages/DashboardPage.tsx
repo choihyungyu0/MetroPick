@@ -160,7 +160,7 @@ function MiniSparkline({ tone }: { tone: DashboardKpiTone }) {
   return (
     <svg
       aria-hidden="true"
-      className={`h-12 w-[110px] self-end max-2xl:hidden ${sparklineToneClasses[tone]}`}
+      className={`pointer-events-none absolute right-5 bottom-5 h-12 w-[110px] max-[1880px]:hidden ${sparklineToneClasses[tone]}`}
       viewBox="0 0 110 45"
     >
       <path
@@ -186,24 +186,26 @@ function SummaryCard({ kpi }: { kpi: DashboardKpi }) {
   const Icon = kpiIcons[kpi.iconKey]
 
   return (
-    <article className="grid min-h-[145px] grid-cols-[62px_1fr_110px] items-center gap-3.5 rounded-xl border border-slate-200 bg-white p-5 shadow-[0_8px_22px_rgba(12,33,70,0.06)] max-2xl:grid-cols-[56px_1fr]">
+    <article className="relative grid min-h-[145px] min-w-0 grid-cols-[58px_minmax(0,1fr)] items-center gap-3.5 rounded-xl border border-slate-200 bg-white p-5 pr-[136px] shadow-[0_8px_22px_rgba(12,33,70,0.06)] max-[1880px]:pr-5">
       <div
         className={`grid h-[58px] w-[58px] place-items-center rounded-[10px] ${kpiToneClasses[kpi.tone]}`}
       >
         <Icon aria-hidden="true" size={32} />
       </div>
 
-      <div>
+      <div className="min-w-0">
         <span className="block text-[15px] font-extrabold text-slate-700">
           {kpi.label}
         </span>
-        <strong className="mt-1 block text-[28px] font-black tracking-[-0.8px] text-slate-950">
+        <strong className="mt-1 block whitespace-nowrap text-[28px] font-black tracking-[-0.8px] text-slate-950">
           {kpi.value}
         </strong>
-        <p className="mt-3 flex items-center gap-1 text-sm font-black text-emerald-600">
+        <p className="mt-3 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-sm font-black text-emerald-600">
           <TrendingUp aria-hidden="true" size={15} />
           {kpi.change}
-          <em className="ml-2 not-italic text-slate-500">{kpi.caption}</em>
+          <em className="ml-2 whitespace-nowrap not-italic text-slate-500">
+            {kpi.caption}
+          </em>
         </p>
       </div>
 
@@ -628,7 +630,7 @@ export function DashboardPage() {
     <div className="dashboard-page min-h-screen w-full bg-slate-50 text-slate-950">
       <TopNavigation activeHref="/dashboard" />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-[1121px]:grid-cols-1">
         <AppSidebar activeHref="/dashboard" ariaLabel="대시보드 사이드 메뉴" />
 
         <main className="min-w-0">
@@ -661,13 +663,13 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1">
+          <div className="grid grid-cols-4 gap-4 max-[1880px]:grid-cols-2 max-sm:grid-cols-1">
             {dashboardKpis.map((kpi) => (
               <SummaryCard key={kpi.id} kpi={kpi} />
             ))}
           </div>
 
-          <div className="mt-3.5 grid grid-cols-[1.45fr_0.85fr_0.85fr] gap-3.5 max-2xl:grid-cols-2 max-lg:grid-cols-1">
+          <div className="mt-3.5 grid grid-cols-[1.45fr_0.85fr_0.85fr] gap-3.5 max-[1880px]:grid-cols-2 max-lg:grid-cols-1">
             <MapPanel />
             <PopulationTrendChart />
             <BusinessPotentialPanel selectedBusinessLabels={selectedBusinessLabels} />

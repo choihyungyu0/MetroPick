@@ -162,6 +162,8 @@ const categoryFilters: Array<{
   { id: 'recommendation', label: '입지 추천', count: 2 },
 ]
 
+const reportsPerPage = 4
+
 const defaultReports: SavedReport[] = [
   {
     id: 'default-commercial-sangmu',
@@ -603,56 +605,56 @@ function getReportRoute(category: ReportCategory): string {
 
 function ProfileCard({ profile }: { profile: UserProfile }) {
   return (
-    <section className="rounded-[15px] border border-blue-100 bg-white/95 px-7 py-8 shadow-[0_10px_30px_rgba(20,55,90,0.05)]">
-      <div className="mb-6 flex items-center gap-5">
-        <div className="relative grid h-[74px] w-[74px] place-items-center overflow-hidden rounded-full bg-gradient-to-br from-blue-100 to-blue-300">
+    <section className="rounded-[15px] border border-blue-100 bg-white/95 px-7 py-7 shadow-[0_10px_30px_rgba(20,55,90,0.05)] max-sm:px-5">
+      <div className="mb-5 flex items-center gap-4">
+        <div className="relative grid h-[68px] w-[68px] shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-blue-100 to-blue-300">
           <CircleUserRound
             aria-hidden="true"
             className="text-blue-600"
             fill="rgba(37,99,235,0.15)"
-            size={62}
+            size={58}
             strokeWidth={1.8}
           />
         </div>
 
-        <div>
-          <div className="flex items-center gap-3">
-            <h3 className="m-0 text-2xl font-black tracking-[-0.5px]">
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <h3 className="m-0 text-[22px] font-black tracking-[-0.3px]">
               {profile.name}
             </h3>
             <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-black text-blue-600">
               {profile.plan}
             </span>
           </div>
-          <p className="m-0 mt-2 text-[15px] font-semibold text-slate-500">
+          <p className="m-0 mt-2 truncate text-[14px] font-semibold text-slate-500">
             {profile.email}
           </p>
         </div>
       </div>
 
-      <dl className="grid gap-5">
-        <div className="grid grid-cols-[110px_1fr] items-center">
-          <dt className="text-[15px] font-extrabold text-slate-500">역할</dt>
-          <dd className="m-0 text-[15px] font-extrabold text-slate-900">
+      <dl className="grid gap-4">
+        <div className="grid grid-cols-[96px_1fr] items-center">
+          <dt className="text-[14px] font-extrabold text-slate-500">역할</dt>
+          <dd className="m-0 text-[14px] font-extrabold text-slate-900">
             {profile.role}
           </dd>
         </div>
-        <div className="grid grid-cols-[110px_1fr] items-center">
-          <dt className="text-[15px] font-extrabold text-slate-500">관심 지역</dt>
-          <dd className="m-0 text-[15px] font-extrabold text-slate-900">
+        <div className="grid grid-cols-[96px_1fr] items-center">
+          <dt className="text-[14px] font-extrabold text-slate-500">관심 지역</dt>
+          <dd className="m-0 text-[14px] font-extrabold text-slate-900">
             {profile.preferredArea}
           </dd>
         </div>
-        <div className="grid grid-cols-[110px_1fr] items-center">
-          <dt className="text-[15px] font-extrabold text-slate-500">관심 업종</dt>
-          <dd className="m-0 text-[15px] font-extrabold text-slate-900">
+        <div className="grid grid-cols-[96px_1fr] items-center">
+          <dt className="text-[14px] font-extrabold text-slate-500">관심 업종</dt>
+          <dd className="m-0 text-[14px] font-extrabold text-slate-900">
             {profile.businessTypes}
           </dd>
         </div>
       </dl>
 
-      <button className="mt-7 flex h-[52px] w-full items-center gap-3 rounded-[10px] border-none bg-slate-100 px-4 text-base font-black text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
-        <UserCog aria-hidden="true" className="text-slate-700" size={21} />
+      <button className="mt-6 flex h-12 w-full items-center gap-3 rounded-[10px] border-none bg-slate-100 px-4 text-[15px] font-black text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
+        <UserCog aria-hidden="true" className="text-slate-700" size={20} />
         계정 설정
         <span className="ml-auto text-2xl">›</span>
       </button>
@@ -662,15 +664,15 @@ function ProfileCard({ profile }: { profile: UserProfile }) {
 
 function AlertCard({ notifications }: { notifications: RecentNotification[] }) {
   return (
-    <section className="rounded-[15px] border border-blue-100 bg-white/95 px-5 py-6 shadow-[0_10px_30px_rgba(20,55,90,0.05)]">
-      <div className="mb-5 flex items-center justify-between">
-        <h3 className="m-0 text-[19px] font-black">최근 알림</h3>
+    <section className="rounded-[15px] border border-blue-100 bg-white/95 px-5 py-5 shadow-[0_10px_30px_rgba(20,55,90,0.05)]">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="m-0 text-lg font-black">최근 알림</h3>
         <button className="text-sm font-black text-blue-600" type="button">
           모두 보기 ›
         </button>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3.5">
         {notifications.map((item, index) => {
           const Icon = notificationIcons[index] ?? Bell
           const tones = [
@@ -682,21 +684,21 @@ function AlertCard({ notifications }: { notifications: RecentNotification[] }) {
 
           return (
             <article
-              className="grid grid-cols-[32px_1fr_64px] items-start gap-3"
+              className="grid grid-cols-[30px_minmax(0,1fr)_58px] items-start gap-3"
               key={item.id}
             >
               <div
-                className={`grid h-[30px] w-[30px] place-items-center rounded-[9px] ${
+                className={`grid h-7 w-7 place-items-center rounded-[9px] ${
                   tones[index] ?? tones[0]
                 }`}
               >
-                <Icon aria-hidden="true" size={16} />
+                <Icon aria-hidden="true" size={15} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <strong className="block text-sm font-black text-slate-900">
                   {item.title}
                 </strong>
-                <p className="m-0 mt-1 text-xs leading-normal font-bold text-slate-500">
+                <p className="m-0 mt-1 text-xs leading-snug font-bold text-slate-500">
                   {item.description}
                 </p>
               </div>
@@ -713,7 +715,7 @@ function AlertCard({ notifications }: { notifications: RecentNotification[] }) {
 
 function ReportThumbnail({ report }: { report: SavedReport }) {
   return (
-    <div className="h-[84px] w-[150px] overflow-hidden rounded-[9px] border border-blue-50 bg-slate-100 max-lg:h-[150px] max-lg:w-full">
+    <div className="h-[76px] w-[120px] overflow-hidden rounded-[9px] border border-blue-50 bg-slate-100 max-[1400px]:w-[140px] max-lg:h-[150px] max-lg:w-full">
       <img
         alt={`${report.title} 썸네일`}
         className="h-full w-full object-cover"
@@ -734,14 +736,14 @@ function ReportItem({
   report: SavedReport
 }) {
   return (
-    <article className="grid min-h-[118px] grid-cols-[150px_1fr_110px_310px] items-center gap-5 rounded-[13px] border border-blue-100 bg-white px-4 py-3 shadow-[0_8px_22px_rgba(20,55,90,0.04)] max-xl:grid-cols-[130px_1fr] max-lg:grid-cols-1">
+    <article className="grid min-h-[108px] grid-cols-[120px_minmax(165px,1fr)_88px_minmax(236px,auto)] items-center gap-4 rounded-[13px] border border-blue-100 bg-white px-3.5 py-2.5 shadow-[0_8px_22px_rgba(20,55,90,0.04)] max-[1400px]:grid-cols-[130px_minmax(0,1fr)] max-lg:grid-cols-1">
       <ReportThumbnail report={report} />
 
-      <div>
-        <h3 className="m-0 mb-3.5 text-lg font-black text-slate-900">
+      <div className="min-w-0">
+        <h3 className="m-0 mb-2 text-[17px] font-black text-slate-900">
           {report.title}
         </h3>
-        <div className="mb-2.5 flex flex-wrap items-center gap-3 text-sm font-bold text-slate-500">
+        <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-bold text-slate-500">
           <span>업종</span>
           <strong className="text-slate-900">{report.businessType}</strong>
           <span>역세권</span>
@@ -755,14 +757,14 @@ function ReportItem({
       <span
         className={`justify-self-start rounded-md px-3 py-2 text-[13px] font-black ${
           badgeClasses[report.category]
-        } max-xl:col-start-2 max-lg:col-auto`}
+        } max-[1400px]:col-start-2 max-lg:col-auto`}
       >
         {report.category}
       </span>
 
-      <div className="flex items-center justify-end gap-3 max-xl:col-start-2 max-xl:justify-start max-lg:col-auto max-lg:flex-wrap">
+      <div className="flex min-w-0 items-center justify-end gap-2 max-[1400px]:col-start-2 max-[1400px]:justify-start max-lg:col-auto max-lg:flex-wrap">
         <button
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-black text-slate-800"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-800 max-sm:flex-1 max-sm:justify-center"
           onClick={() => onOpen(report)}
           type="button"
         >
@@ -770,7 +772,7 @@ function ReportItem({
           다시 보기
         </button>
         <button
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-black text-slate-800"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-800 max-sm:flex-1 max-sm:justify-center"
           onClick={() => onShare(report)}
           type="button"
         >
@@ -810,9 +812,11 @@ function ReportsTab({
   searchQuery: string
   sortOrder: SortOrder
 }) {
+  const visibleReports = reports.slice(0, reportsPerPage)
+
   return (
     <>
-      <div className="flex items-center justify-between gap-5 px-5 py-4 max-xl:flex-col max-xl:items-stretch">
+      <div className="flex items-center justify-between gap-5 px-5 py-3 max-[1740px]:flex-col max-[1740px]:items-stretch">
         <div className="flex flex-wrap items-center gap-3">
           {categoryFilters.map((filter) => (
             <button
@@ -833,7 +837,7 @@ function ReportsTab({
         </div>
 
         <div className="flex items-center gap-3 max-md:flex-col max-md:items-stretch">
-          <label className="flex h-10 w-[270px] items-center gap-2 rounded-lg border border-blue-100 bg-white px-3 max-md:w-full">
+          <label className="flex h-10 w-[260px] items-center gap-2 rounded-lg border border-blue-100 bg-white px-3 max-md:w-full">
             <Search aria-hidden="true" className="text-slate-400" size={16} />
             <input
               className="w-full border-none bg-transparent text-sm font-bold text-slate-900 outline-none placeholder:text-slate-400"
@@ -857,9 +861,9 @@ function ReportsTab({
         </div>
       </div>
 
-      <div className="grid gap-2 px-5 pb-3">
-        {reports.length ? (
-          reports.map((report) => (
+      <div className="grid gap-2 px-5 pb-2">
+        {visibleReports.length ? (
+          visibleReports.map((report) => (
             <ReportItem
               key={report.id}
               onOpen={onOpen}
@@ -874,7 +878,7 @@ function ReportsTab({
         )}
       </div>
 
-      <div className="flex h-[58px] items-center justify-center gap-4">
+      <div className="flex h-12 items-center justify-center gap-4">
         <button className="h-8 w-8 rounded-md text-slate-700" type="button">
           ‹
         </button>
@@ -1115,16 +1119,16 @@ function ReportPanel({
   sortOrder: SortOrder
 }) {
   return (
-    <section className="min-h-[690px] overflow-hidden rounded-[15px] border border-blue-100 bg-white/95 shadow-[0_10px_30px_rgba(20,55,90,0.05)]">
+    <section className="min-h-[642px] overflow-hidden rounded-[15px] border border-blue-100 bg-white/95 shadow-[0_10px_30px_rgba(20,55,90,0.05)]">
       <nav
         aria-label="마이페이지 탭"
-        className="flex h-[62px] items-center gap-[54px] overflow-x-auto border-b border-blue-100 px-7"
+        className="flex h-[60px] items-center gap-[54px] overflow-x-auto border-b border-blue-100 px-7 max-md:gap-8 max-md:px-5"
         role="tablist"
       >
         {tabs.map((tab) => (
           <button
             aria-selected={activeTab === tab.id}
-            className={`relative h-[62px] shrink-0 text-base font-black ${
+            className={`relative h-[60px] shrink-0 text-base font-black ${
               activeTab === tab.id
                 ? 'text-blue-600 after:absolute after:right-0 after:bottom-[-1px] after:left-0 after:h-1 after:rounded-full after:bg-blue-600'
                 : 'text-slate-500'
@@ -1176,19 +1180,19 @@ function ReportPanel({
 
 function UpgradeBanner() {
   return (
-    <section className="mt-4 grid min-h-[90px] grid-cols-[74px_1fr_285px] items-center gap-6 rounded-xl bg-[linear-gradient(100deg,#031b42_0%,#004f7a_65%,#00a7a7_100%)] px-7 py-4 text-white shadow-[0_14px_30px_rgba(3,27,66,0.22)] max-lg:grid-cols-1 max-lg:text-center">
-      <div className="grid h-[58px] w-[58px] place-items-center rounded-full border border-cyan-400 bg-cyan-400/10 text-cyan-300 max-lg:mx-auto">
-        <ChartNoAxesCombined aria-hidden="true" size={32} />
+    <section className="mt-4 grid min-h-[82px] grid-cols-[58px_1fr_285px] items-center gap-5 rounded-xl bg-[linear-gradient(100deg,#031b42_0%,#004f7a_65%,#00a7a7_100%)] px-7 py-3 text-white shadow-[0_14px_30px_rgba(3,27,66,0.22)] max-lg:grid-cols-1 max-lg:text-center">
+      <div className="grid h-[50px] w-[50px] place-items-center rounded-full border border-cyan-400 bg-cyan-400/10 text-cyan-300 max-lg:mx-auto">
+        <ChartNoAxesCombined aria-hidden="true" size={28} />
       </div>
       <div>
-        <h3 className="m-0 mb-2 text-[22px] font-black">
+        <h3 className="m-0 mb-1.5 text-[21px] font-black">
           더 많은 인사이트를 원하시나요?
         </h3>
         <p className="m-0 text-sm font-bold text-white/80">
           프로 플랜에서는 리포트 저장 무제한, 고급 분석, 데이터 다운로드 기능을 제공합니다.
         </p>
       </div>
-      <button className="h-[50px] rounded-lg bg-white text-[17px] font-black text-slate-900" type="button">
+      <button className="h-11 rounded-lg bg-white text-[16px] font-black text-slate-900" type="button">
         프로 플랜 업그레이드 →
       </button>
     </section>
@@ -1197,7 +1201,7 @@ function UpgradeBanner() {
 
 function Footer() {
   return (
-    <footer className="grid min-h-[110px] grid-cols-[290px_1fr_420px_170px] items-center gap-10 bg-[linear-gradient(90deg,#071e45_0%,#03152f_52%,#06204a_100%)] px-16 py-6 text-white max-2xl:grid-cols-2 max-lg:grid-cols-1 max-lg:text-center max-md:px-5">
+    <footer className="grid min-h-[104px] grid-cols-[290px_1fr_420px_170px] items-center gap-10 bg-[linear-gradient(90deg,#071e45_0%,#03152f_52%,#06204a_100%)] px-16 py-4 text-white max-2xl:grid-cols-2 max-lg:grid-cols-1 max-lg:text-center max-md:px-5">
       <div>
         <div className="flex items-center gap-3 max-lg:justify-center">
           <img
@@ -1341,7 +1345,7 @@ export function MyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="mypage-page min-h-screen bg-slate-50 text-slate-900">
       <TopNavigation
         renderActions={() => (
           <>
@@ -1363,12 +1367,12 @@ export function MyPage() {
         sticky
       />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-[1121px]:grid-cols-1">
         <AppSidebar activeHref="/mypage" ariaLabel="마이페이지 사이드 메뉴" />
 
-        <main className="min-w-0 px-[68px] py-9 max-xl:px-8 max-md:px-4">
-          <div className="mb-6">
-            <h1 className="m-0 mb-2 text-[34px] font-black tracking-[-1.2px]">
+        <main className="min-w-0 px-[58px] pt-7 pb-4 max-2xl:px-8 max-md:px-4">
+          <div className="mb-4">
+            <h1 className="m-0 mb-2 text-[31px] font-black tracking-[-0.8px]">
               마이페이지
             </h1>
             <p className="m-0 text-base font-bold text-slate-500">
@@ -1376,7 +1380,7 @@ export function MyPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-[400px_1fr] gap-7 max-xl:grid-cols-[360px_1fr] max-lg:grid-cols-1">
+          <div className="grid grid-cols-[380px_minmax(0,1fr)] gap-7 max-[1740px]:grid-cols-[340px_minmax(0,1fr)] max-xl:grid-cols-1">
             <div className="grid content-start gap-5">
               <ProfileCard profile={profile} />
               <AlertCard notifications={defaultNotifications} />

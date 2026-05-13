@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   Bell,
@@ -16,7 +16,6 @@ import {
   Moon,
   PartyPopper,
   Phone,
-  Train,
   TrendingUp,
   UsersRound,
   Zap,
@@ -24,6 +23,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { onboardingAssets } from '@/shared/assets/onboardingAssets'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 
 type NotificationId =
@@ -272,49 +272,46 @@ function Logo({ compact = false }: { compact?: boolean }) {
 
 function Stepper() {
   const steps = [
-    { label: '관심 지역 설정', done: true },
-    { label: '관심 역세권 설정', done: true },
-    { label: '분석 업종 설정', done: true },
-    { label: '알림 설정', active: true },
+    { label: '관심 지역 설정', status: 'checked' },
+    { label: '관심 역세권 설정', status: 'completed' },
+    { label: '분석 업종 설정', status: 'completed' },
+    { label: '알림 설정', status: 'active' },
   ]
 
   return (
-    <ol className="flex min-w-[680px] items-start justify-center md:min-w-0">
+    <ol className="relative flex min-w-[620px] items-start justify-center pt-1 md:min-w-0">
       {steps.map((step, index) => (
-        <Fragment key={step.label}>
-          <li className="flex min-w-[124px] flex-col items-center">
-            <span
-              aria-current={step.active ? 'step' : undefined}
-              className={[
-                'flex h-11 w-11 items-center justify-center rounded-full border-2 bg-white text-xl font-black',
-                step.done
-                  ? 'border-[#0969f4] bg-[#0969f4] text-white shadow-[0_8px_18px_rgba(9,105,244,0.24)]'
-                  : step.active
-                    ? 'border-[#0969f4] text-[#0969f4]'
-                    : 'border-[#d1d9e7] text-[#b8c1d0]',
-              ].join(' ')}
-            >
-              {step.done ? <Check size={21} strokeWidth={3} /> : index + 1}
-            </span>
-            <span
-              className={[
-                'mt-3 text-center text-sm font-black',
-                step.active ? 'text-[#0969f4]' : 'text-[#303c52]',
-              ].join(' ')}
-            >
-              {step.label}
-            </span>
-          </li>
+        <li className="relative flex w-[155px] flex-col items-center" key={step.label}>
+          <span
+            aria-current={step.status === 'active' ? 'step' : undefined}
+            className={[
+              'relative z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 text-xl font-black',
+              step.status === 'checked' || step.status === 'completed'
+                ? 'border-[#0969f4] bg-[#0969f4] text-white shadow-[0_8px_18px_rgba(9,105,244,0.24)]'
+                : '',
+              step.status === 'active' ? 'border-[#0969f4] bg-white text-[#0969f4]' : '',
+            ].join(' ')}
+          >
+            {step.status === 'checked' ? <Check size={21} strokeWidth={3} /> : index + 1}
+          </span>
+          <span
+            className={[
+              'mt-3 text-center text-sm font-black',
+              step.status === 'active' ? 'text-[#0969f4]' : 'text-[#303c52]',
+            ].join(' ')}
+          >
+            {step.label}
+          </span>
           {index !== steps.length - 1 ? (
             <span
               aria-hidden="true"
               className={[
-                'mt-[22px] h-0.5 w-36',
+                'absolute top-[23px] left-[100px] h-0.5 w-[110px]',
                 index < 3 ? 'bg-[#0969f4]' : 'bg-[#d7deea]',
               ].join(' ')}
             />
           ) : null}
-        </Fragment>
+        </li>
       ))}
     </ol>
   )
@@ -334,7 +331,7 @@ function Toggle({
       aria-label={label}
       aria-pressed={active}
       className={[
-        'grid h-[29px] w-[52px] items-center rounded-full p-[3px] transition focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:ring-offset-2 focus-visible:outline-none',
+        'grid h-[25px] w-[46px] items-center rounded-full p-0.5 transition focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:ring-offset-2 focus-visible:outline-none',
         active ? 'bg-[#0969f4]' : 'bg-[#d7e0ee]',
       ].join(' ')}
       onClick={onClick}
@@ -342,8 +339,8 @@ function Toggle({
     >
       <span
         className={[
-          'block h-[23px] w-[23px] rounded-full bg-white shadow-[0_2px_7px_rgba(17,38,72,0.22)] transition',
-          active ? 'translate-x-[23px]' : 'translate-x-0',
+          'block h-[21px] w-[21px] rounded-full bg-white shadow-[0_2px_7px_rgba(17,38,72,0.22)] transition',
+          active ? 'translate-x-[21px]' : 'translate-x-0',
         ].join(' ')}
       />
     </button>
@@ -352,8 +349,8 @@ function Toggle({
 
 function Panel({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <section className="rounded-[13px] border border-[#d2def0]/95 bg-white/95 px-5 py-5 shadow-[0_8px_22px_rgba(10,42,90,0.12)] lg:px-7">
-      <h2 className="text-[23px] font-black tracking-[-0.03em] text-[#061b42]">
+    <section className="rounded-[13px] border border-[#d2def0]/95 bg-white/95 px-5 py-3.5 shadow-[0_8px_22px_rgba(10,42,90,0.12)] lg:px-6">
+      <h2 className="text-[21px] font-black tracking-[-0.03em] text-[#061b42]">
         {title}
       </h2>
       {children}
@@ -372,27 +369,27 @@ function AlertListPanel({
 }) {
   return (
     <Panel title="받고 싶은 알림 선택">
-      <div className="mt-4 overflow-hidden rounded-lg border border-[#dbe4ef] bg-white">
+      <div className="mt-3 overflow-hidden rounded-lg border border-[#dbe4ef] bg-white">
         {notificationOptions.map((item) => {
           const Icon = item.icon
           const active = enabledNotificationIds.includes(item.id)
 
           return (
             <div
-              className="grid min-h-16 grid-cols-[59px_1fr] items-center gap-3 border-b border-[#dbe4ef] px-4 py-3 last:border-b-0 sm:grid-cols-[59px_1fr_56px] sm:pr-7"
+              className="grid min-h-[58px] grid-cols-[47px_1fr] items-center gap-3 border-b border-[#dbe4ef] px-3.5 py-2 last:border-b-0 sm:grid-cols-[47px_1fr_50px] sm:pr-6"
               key={item.id}
             >
               <span
                 aria-label={item.iconLabel}
-                className="flex h-[50px] w-[50px] items-center justify-center rounded-lg bg-[#edf5ff] text-[#0969f4]"
+                className="flex h-[42px] w-[42px] items-center justify-center rounded-lg bg-[#edf5ff] text-[#0969f4]"
               >
-                <Icon size={28} />
+                <Icon size={25} />
               </span>
               <span>
-                <strong className="block text-base font-black text-[#061b42]">
+                <strong className="block text-[15px] font-black text-[#061b42]">
                   {item.title}
                 </strong>
-                <span className="mt-1 block text-sm leading-5 font-semibold text-[#5d6d85]">
+                <span className="mt-1 block text-[12.5px] leading-4 font-semibold text-[#5d6d85]">
                   {item.description}
                 </span>
               </span>
@@ -436,7 +433,7 @@ function MethodPanel({
             <button
               aria-pressed={active}
               className={[
-                'relative flex min-h-[82px] items-center gap-5 rounded-[10px] border bg-white px-5 py-4 pr-14 text-left transition hover:bg-[#f8fbff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none',
+                'relative flex min-h-[68px] items-center gap-4 rounded-[10px] border bg-white px-4 py-3 pr-12 text-left transition hover:bg-[#f8fbff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none',
                 active
                   ? 'border-2 border-[#0969f4] bg-gradient-to-br from-white to-[#f1f7ff]'
                   : 'border-[#dbe4ef]',
@@ -445,23 +442,23 @@ function MethodPanel({
               onClick={() => onToggle(method.id)}
               type="button"
             >
-              <Icon className={active ? 'text-[#0969f4]' : 'text-[#77859a]'} size={34} />
+              <Icon className={active ? 'text-[#0969f4]' : 'text-[#77859a]'} size={30} />
               <span>
                 <strong
                   className={[
-                    'block text-base font-black',
+                    'block text-[15px] font-black',
                     active ? 'text-[#0969f4]' : 'text-[#27364e]',
                   ].join(' ')}
                 >
                   {method.label}
                 </strong>
-                <span className="mt-1 block text-sm font-semibold text-[#6c7890]">
+                <span className="mt-1 block text-[12.5px] font-semibold text-[#6c7890]">
                   {method.description}
                 </span>
               </span>
               <span
                 className={[
-                  'absolute top-7 right-5 flex h-[22px] w-[22px] items-center justify-center rounded-md border',
+                  'absolute top-6 right-4 flex h-5 w-5 items-center justify-center rounded-md border',
                   active
                     ? 'border-[#0969f4] bg-[#0969f4] text-white'
                     : 'border-[#cbd6e6] bg-white',
@@ -493,7 +490,7 @@ function FrequencyPanel({
 }) {
   return (
     <Panel title="알림 빈도 설정">
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+      <div className="mt-3 grid gap-4 lg:grid-cols-3">
         {frequencyOptions.map((item) => {
           const Icon = item.icon
           const active = frequency === item.id
@@ -502,7 +499,7 @@ function FrequencyPanel({
             <button
               aria-pressed={active}
               className={[
-                'flex h-12 items-center justify-center gap-3 rounded-lg border bg-white font-black transition hover:bg-[#f8fbff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none',
+                'flex h-11 items-center justify-center gap-3 rounded-lg border bg-white text-sm font-black transition hover:bg-[#f8fbff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none',
                 active
                   ? 'border-2 border-[#0969f4] text-[#0969f4]'
                   : 'border-[#dbe4ef] text-[#606d82]',
@@ -519,7 +516,7 @@ function FrequencyPanel({
       </div>
 
       <button
-        className="mt-3 flex min-h-[53px] w-full flex-col gap-3 rounded-lg border border-[#dbe4ef] bg-white px-5 py-3 text-left text-[#061b42] transition hover:bg-[#f8fbff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none sm:flex-row sm:items-center sm:justify-between"
+        className="mt-2.5 flex min-h-[48px] w-full flex-col gap-3 rounded-lg border border-[#dbe4ef] bg-white px-5 py-2.5 text-left text-[#061b42] transition hover:bg-[#f8fbff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:outline-none sm:flex-row sm:items-center sm:justify-between"
         type="button"
       >
         <span className="flex items-center gap-3">
@@ -560,9 +557,9 @@ function SummaryRow({
   title: string
 }) {
   return (
-    <div className="grid min-h-[76px] grid-cols-[48px_1fr] items-center gap-3 border-b border-[#dbe4ef] px-5 py-4 last:border-b-0 xl:grid-cols-[48px_170px_1fr]">
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef5ff] text-[#0969f4]">
-        <Icon size={27} />
+    <div className="grid min-h-[64px] grid-cols-[43px_1fr] items-center gap-3 border-b border-[#dbe4ef] px-4 py-3 last:border-b-0 xl:grid-cols-[43px_150px_1fr]">
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef5ff] text-[#0969f4]">
+        <Icon size={24} />
       </span>
       <strong className="text-base font-black text-[#101e37]">{title}</strong>
       <div className="col-span-2 flex items-center xl:col-span-1 xl:justify-end">
@@ -590,24 +587,24 @@ function SummaryPanel({
     <aside className="flex flex-col gap-5">
       <section
         aria-label="알림 설정 요약"
-        className="rounded-[13px] border border-[#d2def0]/95 bg-white/95 px-5 py-6 shadow-[0_8px_22px_rgba(10,42,90,0.12)] lg:px-7"
+        className="rounded-[13px] border border-[#d2def0]/95 bg-white/95 px-5 py-5 shadow-[0_8px_22px_rgba(10,42,90,0.12)] lg:px-6"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-[23px] font-black tracking-[-0.03em] text-[#061b42]">
+            <h2 className="text-[21px] font-black tracking-[-0.03em] text-[#061b42]">
               나의 알림 설정
             </h2>
-            <p className="mt-3 text-sm font-bold text-[#667389]">
+            <p className="mt-2 text-sm font-bold text-[#667389]">
               완료 전 설정 내용을 확인해 주세요.
             </p>
           </div>
           <PartyPopper
             className="mr-3 hidden fill-[#0969f4]/10 text-[#0969f4] sm:block"
-            size={70}
+            size={64}
           />
         </div>
 
-        <div className="mt-5 overflow-hidden rounded-xl border border-[#dbe4ef] bg-white">
+        <div className="mt-4 overflow-hidden rounded-xl border border-[#dbe4ef] bg-white">
           <SummaryRow icon={Bell} title="활성화 알림">
             <span className="text-base font-black text-[#111827]">
               {enabledNotificationIds.length}개 항목 활성화
@@ -626,11 +623,11 @@ function SummaryPanel({
           </SummaryRow>
         </div>
 
-        <section className="mt-5 rounded-xl bg-gradient-to-br from-[#eef6ff] to-[#e4f0ff] px-5 py-5">
+        <section className="mt-4 rounded-xl bg-gradient-to-br from-[#eef6ff] to-[#e4f0ff] px-5 py-4">
           <h3 className="text-lg font-black text-[#0969f4]">
             설정 완료 후 받을 수 있어요
           </h3>
-          <ul className="mt-4 grid gap-3 text-sm leading-6 font-bold text-[#34445c]">
+          <ul className="mt-3 grid gap-2.5 text-sm leading-6 font-bold text-[#34445c]">
             {[
               '선택한 역세권과 업종에 맞춘 개인화된 예측 알림을 받아보세요.',
               '개통 일정 변경, 매출 변동 등 중요한 변화를 놓치지 않아요.',
@@ -650,14 +647,14 @@ function SummaryPanel({
 
       <div className="grid gap-4 sm:grid-cols-[255px_1fr]">
         <button
-          className="h-16 rounded-xl border border-[#cbd6e6] bg-white text-xl font-black text-[#061b42] shadow-[0_6px_16px_rgba(10,42,90,0.08)] transition hover:bg-[#f7fbff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:ring-offset-2 focus-visible:outline-none lg:h-[73px]"
+          className="h-14 rounded-xl border border-[#cbd6e6] bg-white text-lg font-black text-[#061b42] shadow-[0_6px_16px_rgba(10,42,90,0.08)] transition hover:bg-[#f7fbff] focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:ring-offset-2 focus-visible:outline-none lg:h-16"
           onClick={onPrevious}
           type="button"
         >
           이전 단계
         </button>
         <button
-          className="flex h-16 items-center justify-center gap-3 rounded-xl bg-gradient-to-br from-[#0969f4] to-[#0064ec] text-xl font-black text-white shadow-[0_10px_22px_rgba(9,105,244,0.26)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:ring-offset-2 focus-visible:outline-none lg:h-[73px]"
+          className="flex h-14 items-center justify-center gap-3 rounded-xl bg-gradient-to-br from-[#0969f4] to-[#0064ec] text-lg font-black text-white shadow-[0_10px_22px_rgba(9,105,244,0.26)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[#0969f4] focus-visible:ring-offset-2 focus-visible:outline-none lg:h-16"
           onClick={onComplete}
           type="button"
         >
@@ -693,6 +690,16 @@ function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+function HeroTrainBackdrop() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute top-4 right-0 hidden h-[132px] w-[650px] bg-contain bg-right-bottom bg-no-repeat opacity-[0.16] lg:block"
+      style={{ backgroundImage: `url(${onboardingAssets.initialSetupTrainBg})` }}
+    />
   )
 }
 
@@ -774,16 +781,11 @@ export function OnboardingNotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-[#f7fbff] to-[#eef6ff] text-[#061b42]">
+    <div className="onboarding-notifications-page min-h-screen overflow-x-hidden bg-gradient-to-b from-[#f7fbff] to-[#eef6ff] text-[#061b42]">
       <TopNavigation />
 
-      <main className="relative overflow-hidden px-4 py-7 md:px-8 lg:px-[53px]">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-6 right-14 hidden h-32 w-[550px] text-[#0969f4] opacity-[0.12] xl:block"
-        >
-          <Train className="absolute top-6 right-0 h-24 w-[270px]" strokeWidth={1.2} />
-        </div>
+      <main className="relative overflow-hidden px-4 pt-6 pb-5 md:px-8 lg:px-[53px]">
+        <HeroTrainBackdrop />
 
         <section className="relative z-10 grid gap-8 lg:grid-cols-[510px_1fr] lg:items-start">
           <div>
@@ -799,7 +801,7 @@ export function OnboardingNotificationsPage() {
           </div>
         </section>
 
-        <section className="relative z-10 mt-7 grid gap-8 2xl:grid-cols-[minmax(0,1fr)_665px] 2xl:gap-[54px]">
+        <section className="relative z-10 mt-6 grid gap-8 2xl:grid-cols-[minmax(0,1fr)_665px] 2xl:gap-[54px]">
           <div className="grid gap-3">
             <AlertListPanel
               enabledNotificationIds={setup.enabledNotificationIds}

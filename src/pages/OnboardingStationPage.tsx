@@ -1,4 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  ArrowRight,
+  BarChart3,
+  Check,
+  CircleCheck,
+  Lightbulb,
+  MapPin,
+  Search,
+  Target,
+  TrainFront,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
@@ -90,46 +102,56 @@ function loadInitialSetup(): OnboardingStationSetup {
 
 function Stepper() {
   return (
-    <ol className="relative grid min-w-[640px] grid-cols-4 pt-1 before:absolute before:top-[23px] before:right-[72px] before:left-[72px] before:h-px before:bg-[#cad8e8] before:content-['']">
+    <ol className="relative flex min-w-[600px] items-start justify-center pt-1 md:min-w-0">
       {stepItems.map((step, index) => (
-        <li className="relative grid justify-items-center gap-2.5" key={step.label}>
+        <li className="relative flex w-[150px] flex-col items-center" key={step.label}>
           <span
             className={[
-              'relative z-10 grid h-10 w-10 place-items-center rounded-full border-2 text-lg font-black',
+              'relative z-10 grid h-11 w-11 place-items-center rounded-full border-2 text-lg font-black',
               step.status === 'completed'
-                ? 'border-[#13bfae] bg-[#13bfae] text-white shadow-[0_10px_24px_rgba(19,191,174,0.2)]'
-                : '',
-              step.status === 'active'
                 ? 'border-[#096bff] bg-[#096bff] text-white shadow-[0_10px_24px_rgba(9,107,255,0.22)]'
                 : '',
+              step.status === 'active'
+                ? 'border-[#096bff] bg-white text-[#096bff] shadow-[0_10px_24px_rgba(9,107,255,0.12)]'
+                : '',
               step.status === 'inactive'
-                ? 'border-[#cad8e8] bg-white text-[#7b889c]'
+                ? 'border-[#cad8e8] bg-white text-[#8a96a7]'
                 : '',
             ].join(' ')}
             aria-current={step.status === 'active' ? 'step' : undefined}
           >
-            {step.status === 'completed' ? '✓' : index + 1}
+            {step.status === 'completed' ? <Check size={21} strokeWidth={3} /> : index + 1}
           </span>
-          <span className="text-center text-sm font-black text-[#1e2e49]">
+          <span
+            className={[
+              'mt-3 text-center text-sm font-black',
+              step.status === 'active' ? 'text-[#096bff]' : 'text-[#59677c]',
+            ].join(' ')}
+          >
             {step.label}
           </span>
+          {index < stepItems.length - 1 ? (
+            <span
+              aria-hidden="true"
+              className={[
+                'absolute top-[22px] left-[98px] h-px w-[104px]',
+                index === 0 ? 'bg-[#096bff]' : 'bg-[#cad8e8]',
+              ].join(' ')}
+            />
+          ) : null}
         </li>
       ))}
     </ol>
   )
 }
 
-function BackgroundTrain() {
+function HeroTrainBackdrop() {
   return (
-    <div className="pointer-events-none absolute top-32 left-[-110px] h-[540px] w-[510px] opacity-50 lg:opacity-80">
-      <img
-        alt=""
-        aria-hidden="true"
-        className="h-full w-full object-contain object-left-top"
-        draggable={false}
-        src={landingAssets.heroTrainBg}
-      />
-    </div>
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute top-0 right-[-24px] hidden h-[185px] w-[640px] bg-contain bg-right-bottom bg-no-repeat opacity-[0.18] lg:block"
+      style={{ backgroundImage: `url(${onboardingAssets.initialSetupTrainBg})` }}
+    />
   )
 }
 
@@ -146,7 +168,7 @@ function StationButton({
     <button
       aria-pressed={isSelected}
       className={[
-        'relative h-12 rounded-xl border px-4 text-sm font-black transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none sm:text-base',
+        'inline-flex h-12 items-center justify-center gap-2 rounded-[10px] border px-4 text-sm font-black transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none sm:text-base',
         isSelected
           ? 'border-2 border-[#096bff] bg-[#f7fbff] text-[#096bff] shadow-[0_8px_20px_rgba(9,107,255,0.08)]'
           : 'border-[#d5e0ec] bg-white text-[#526177] hover:border-[#96b9e9]',
@@ -154,12 +176,12 @@ function StationButton({
       onClick={onClick}
       type="button"
     >
-      {station}
       {isSelected ? (
-        <span className="ml-2 inline-grid h-5 w-5 place-items-center rounded-full bg-[#096bff] text-xs text-white">
-          ✓
+        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#096bff] text-white">
+          <Check size={13} strokeWidth={3} />
         </span>
       ) : null}
+      {station}
     </button>
   )
 }
@@ -177,7 +199,7 @@ function RadiusButton({
     <button
       aria-pressed={isSelected}
       className={[
-        'h-12 rounded-xl border px-5 text-base font-black transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none',
+        'inline-flex h-12 items-center justify-center gap-3 rounded-[10px] border px-5 text-base font-black transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none',
         isSelected
           ? 'border-2 border-[#096bff] bg-[#f7fbff] text-[#096bff] shadow-[0_8px_20px_rgba(9,107,255,0.08)]'
           : 'border-[#d5e0ec] bg-white text-[#526177] hover:border-[#96b9e9]',
@@ -185,6 +207,15 @@ function RadiusButton({
       onClick={onClick}
       type="button"
     >
+      <span
+        className={[
+          'grid h-5 w-5 place-items-center rounded-full border',
+          isSelected ? 'border-[#096bff]' : 'border-[#c5d1df]',
+        ].join(' ')}
+        aria-hidden="true"
+      >
+        {isSelected ? <span className="h-2.5 w-2.5 rounded-full bg-[#096bff]" /> : null}
+      </span>
       {radius}
     </button>
   )
@@ -192,15 +223,15 @@ function RadiusButton({
 
 function SelectedStationMap() {
   return (
-    <section className="rounded-2xl border border-[#dce9f7] bg-white p-5 shadow-[0_14px_38px_rgba(14,59,116,0.06)]">
-      <h2 className="text-xl font-black tracking-[-0.03em] text-[#07152f]">
+    <section className="rounded-2xl border border-[#dce9f7] bg-white/95 p-6 shadow-[0_14px_38px_rgba(14,59,116,0.06)]">
+      <h2 className="text-[22px] font-black tracking-[-0.03em] text-[#07152f]">
         선택 역세권 미리보기
       </h2>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-[#dbe7f4] bg-white shadow-sm">
+      <div className="mt-4 h-[168px] overflow-hidden rounded-xl border border-[#dbe7f4] bg-white shadow-sm max-lg:h-auto">
         <img
           alt="선택한 광주 2호선 역세권 미리보기 지도"
-          className="block h-auto w-full object-contain"
+          className="block h-full w-full object-cover"
           draggable={false}
           src={onboardingAssets.stationPreviewMap}
         />
@@ -211,32 +242,60 @@ function SelectedStationMap() {
 
 function SummaryPanel({ radius, route, selectedStations }: OnboardingStationSetup) {
   return (
-    <aside className="rounded-2xl border border-[#dce9f7] bg-white/95 p-6 shadow-[0_18px_52px_rgba(14,59,116,0.1)] xl:sticky xl:top-28">
-      <h2 className="text-2xl font-black tracking-[-0.03em] text-[#07152f]">
+    <aside className="rounded-2xl border border-[#dce9f7] bg-white/95 p-7 shadow-[0_18px_52px_rgba(14,59,116,0.1)]">
+      <h2 className="text-[25px] font-black tracking-[-0.03em] text-[#07152f]">
         나의 역세권 설정
       </h2>
       <p className="mt-2 text-sm font-semibold text-[#67758a]">
-        설정한 정보를 확인해주세요.
+        선택한 내용을 확인해 주세요.
       </p>
 
-      <div className="mt-6 divide-y divide-[#edf2f7] overflow-hidden rounded-xl border border-[#dce8f5] bg-white">
-        <SummaryRow label="선택 노선" value={route} />
-        <SummaryRow label="선택 역세권" tags={selectedStations} />
-        <SummaryRow label="분석 반경" value={radius} />
-        <SummaryRow
-          label="예상 분석 범위"
-          value={`${selectedStations.length}개 역세권 / 반경 ${radius}`}
-        />
+      <div className="mt-5 grid gap-0 overflow-hidden rounded-xl border border-[#dce8f5] bg-white">
+        <SummaryRow icon={TrainFront} label="선택 노선">
+          <p className="text-base font-black text-[#17233d]">{route}</p>
+        </SummaryRow>
+        <SummaryRow icon={MapPin} label="선택 역세권">
+          <div className="flex flex-wrap gap-2">
+            {selectedStations.map((station) => (
+              <span
+                className="inline-flex min-h-8 items-center rounded-lg border border-[#79adff] bg-white px-3 text-sm font-black text-[#096bff]"
+                key={station}
+              >
+                {station}
+              </span>
+            ))}
+          </div>
+        </SummaryRow>
+        <SummaryRow icon={Target} label="분석 반경">
+          <p className="text-base font-black text-[#17233d]">{radius}</p>
+        </SummaryRow>
+        <SummaryRow icon={BarChart3} label="예상 분석 범위">
+          <p className="text-base font-black text-[#17233d]">
+            {selectedStations.length}개 역세권 / 반경 {radius}
+          </p>
+        </SummaryRow>
       </div>
 
-      <section className="mt-4 rounded-xl border border-[#cfe1f5] bg-gradient-to-b from-[#f3f9ff] to-[#eaf4ff] p-5">
-        <h3 className="text-base font-black tracking-[-0.02em] text-[#0a4ba3]">
+      <section className="mt-5 rounded-xl bg-[#eef6ff] px-6 py-5">
+        <h3 className="flex items-center gap-2 text-base font-black tracking-[-0.02em] text-[#096bff]">
+          <Lightbulb size={19} strokeWidth={2.3} />
           이렇게 활용돼요
         </h3>
-        <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-6 font-bold text-[#28405f]">
-          <li>역세권별 상권 현황과 성장 잠재력을 비교할 수 있어요.</li>
-          <li>개통 후 유동인구 변화와 상권 영향도를 예측해요.</li>
-          <li>분석 결과를 바탕으로 최적의 입지를 추천받을 수 있어요.</li>
+        <ul className="mt-3 grid gap-2 text-sm leading-5 font-bold text-[#28405f]">
+          {[
+            '역세권별 상권 현황과 성장 잠재력을 비교할 수 있어요.',
+            '개통 후 유동인구 변화와 상권 영향도를 예측해요.',
+            '분석 결과를 바탕으로 최적의 입지를 추천받을 수 있어요.',
+          ].map((item) => (
+            <li className="flex items-start gap-2" key={item}>
+              <CircleCheck
+                className="mt-0.5 shrink-0 text-[#096bff]"
+                size={16}
+                strokeWidth={2.6}
+              />
+              <span>{item}</span>
+            </li>
+          ))}
         </ul>
       </section>
     </aside>
@@ -244,38 +303,21 @@ function SummaryPanel({ radius, route, selectedStations }: OnboardingStationSetu
 }
 
 function SummaryRow({
+  children,
+  icon: Icon,
   label,
-  tags,
-  value,
 }: {
+  children: ReactNode
+  icon: LucideIcon
   label: string
-  tags?: string[]
-  value?: string
 }) {
   return (
-    <div className="grid gap-2 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <strong className="text-sm font-black text-[#0b1d3a]">{label}</strong>
-        <button
-          className="h-8 rounded-lg border border-[#d4dfec] bg-[#fbfdff] px-3 text-xs font-bold text-[#465872] focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none"
-          type="button"
-        >
-          수정
-        </button>
-      </div>
-      {value ? <p className="text-sm font-semibold text-[#5d6b80]">{value}</p> : null}
-      {tags ? (
-        <div className="flex flex-wrap gap-1.5">
-          {tags.map((tag) => (
-            <span
-              className="inline-flex min-h-6 items-center rounded-full border border-[#dce6f1] bg-[#f2f6fb] px-2.5 text-xs font-black text-[#53637a]"
-              key={tag}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      ) : null}
+    <div className="grid min-h-[76px] grid-cols-[44px_116px_minmax(0,1fr)] items-center gap-4 border-b border-[#edf2f7] px-4 py-4 last:border-b-0 max-sm:grid-cols-[40px_1fr]">
+      <span className="grid h-10 w-10 place-items-center rounded-full bg-[#eef6ff] text-[#096bff]">
+        <Icon size={22} strokeWidth={2.2} />
+      </span>
+      <strong className="text-base font-black text-[#0b1d3a]">{label}</strong>
+      <div className="min-w-0 max-sm:col-span-2">{children}</div>
     </div>
   )
 }
@@ -283,43 +325,26 @@ function SummaryRow({
 function Footer() {
   return (
     <footer className="relative z-10 bg-gradient-to-r from-[#061a3d] via-[#071f4b] to-[#052b67] text-white">
-      <div className="mx-auto grid min-h-28 w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-6 py-7 text-center lg:w-[calc(100%_-_64px)] xl:grid-cols-[1fr_440px_180px] xl:text-left">
-        <div className="flex flex-col items-center gap-4 xl:flex-row">
-          <div className="grid h-[78px] w-[78px] shrink-0 place-items-center rounded-full border border-[#00d6d5]/70 bg-[#00d9d8]/10 shadow-[0_0_24px_rgba(0,217,216,0.14)]">
-            <img
-              alt=""
-              aria-hidden="true"
-              className="h-12 w-12 object-contain"
-              draggable={false}
-              src={landingAssets.growthChart}
-            />
-          </div>
-          <div>
-            <h2 className="text-xl font-black tracking-[-0.025em]">
-              AI가 분석한 광주 2호선 상권 변화, 지금 바로 확인해보세요!
-            </h2>
-            <p className="mt-2 text-sm font-semibold text-white/75 sm:text-base">
-              맞춤 설정 완료 후 다양한 인사이트와 리포트를 이용할 수 있습니다.
-            </p>
-          </div>
+      <div className="mx-auto flex min-h-[78px] w-[calc(100%_-_32px)] max-w-[1820px] flex-wrap items-center gap-x-9 gap-y-3 py-3 text-sm font-semibold text-white/70 lg:w-[calc(100%_-_80px)]">
+        <div className="flex items-center gap-3 text-white">
+          <img
+            alt=""
+            aria-hidden="true"
+            className="h-9 w-11 shrink-0 scale-[1.35] object-contain"
+            draggable={false}
+            src={landingAssets.logo}
+          />
+          <strong className="text-xl font-black">
+            MetroPick <span className="text-[#16c8ff]">AI</span>
+          </strong>
         </div>
-        <address className="text-sm leading-6 text-white/75 not-italic">
-          <p>(주)메트로픽시 ㅣ 대표이사: 김주현</p>
-          <p>광주광역시 동구 금남로 193-22, 4층</p>
-          <p>고객센터: 062-123-4567 ㅣ 062-123-4567</p>
-          <p>contact@metropick.ai</p>
-        </address>
-        <div className="flex justify-center gap-3 xl:justify-end">
-          {['f', 'N', '▶'].map((item) => (
-            <button
-              className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-white/5 font-black text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              key={item}
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
+        <span>(주)메트로픽</span>
+        <span>대표이사: 김지현</span>
+        <span>사업자등록번호: 123-45-67890</span>
+        <span>통신판매업신고: 2024-광주동구-0123</span>
+        <span className="ml-auto max-lg:ml-0">062-123-4567</span>
+        <span>contact@metropick.ai</span>
+        <span>© 2024 MetroPick Inc. All rights reserved.</span>
       </div>
     </footer>
   )
@@ -384,46 +409,45 @@ export function OnboardingStationPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_18%_25%,rgba(46,154,255,0.12),transparent_26%),radial-gradient(circle_at_78%_20%,rgba(0,210,214,0.08),transparent_24%),linear-gradient(180deg,#eef8ff_0%,#ffffff_56%,#ffffff_100%)] text-[#07152f]">
+    <div className="onboarding-station-page flex min-h-screen flex-col overflow-x-hidden bg-[#f6fbff] text-[#07152f]">
       <TopNavigation />
-      <BackgroundTrain />
 
-      <main className="relative z-10 mx-auto w-[calc(100%_-_32px)] max-w-[1720px] py-9 lg:w-[calc(100%_-_80px)]">
-        <section className="grid items-start gap-8 xl:grid-cols-[minmax(360px,1fr)_720px_420px]">
-          <div>
-            <h1 className="text-[clamp(2.5rem,3.2vw,3.25rem)] leading-none font-black tracking-[-0.05em] text-[#07152f]">
-              관심 역세권 설정
-            </h1>
-            <p className="mt-4 text-base font-semibold text-[#53637a] sm:text-lg">
-              분석하고 싶은 역세권을 선택하고 반경을 설정해 주세요.
-            </p>
-          </div>
-          <div className="overflow-x-auto pb-2 xl:col-span-1">
-            <Stepper />
-          </div>
-        </section>
+      <main className="relative flex-1 overflow-hidden">
+        <HeroTrainBackdrop />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_24%,rgba(46,154,255,0.09),transparent_28%),radial-gradient(circle_at_76%_18%,rgba(0,210,214,0.07),transparent_26%)]" />
 
-        <section className="mt-8 grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:gap-14">
-          <div className="grid min-w-0 gap-5">
-            <section className="rounded-2xl border border-[#dce9f7] bg-white/95 p-5 shadow-[0_14px_38px_rgba(14,59,116,0.07)] sm:p-7">
-              <div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
-                <div className="border-b border-[#dbe5f1] pb-5 lg:border-r lg:border-b-0 lg:pr-7 lg:pb-0">
-                  <span className="text-2xl font-black text-[#096bff]">02</span>
-                  <h2 className="mt-2 text-xl font-black tracking-[-0.03em] text-[#0a1834]">
-                    노선 및 역 선택
-                  </h2>
-                  <p className="mt-2 text-sm font-semibold text-[#6a7688]">
-                    분석을 원하는 노선과 역세권을 선택해주세요.
-                  </p>
-                </div>
+        <div className="relative z-10 mx-auto w-[calc(100%_-_32px)] max-w-[1820px] pt-8 pb-8 lg:w-[calc(100%_-_80px)]">
+          <section className="grid items-start gap-7 xl:grid-cols-[520px_minmax(0,1fr)]">
+            <div>
+              <h1 className="text-[clamp(2.35rem,3vw,3.15rem)] leading-none font-black tracking-[-0.05em] text-[#07152f]">
+                관심 역세권 설정
+              </h1>
+              <p className="mt-4 text-base font-semibold text-[#53637a] sm:text-lg">
+                분석하고 싶은 역세권을 선택하고 반경을 설정해 주세요.
+              </p>
+            </div>
+            <div className="overflow-x-auto pb-2">
+              <Stepper />
+            </div>
+          </section>
 
-                <div className="grid gap-5">
-                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-                    <label className="sr-only" htmlFor="route-select">
-                      분석 노선 선택
+          <section className="mt-6 grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_620px]">
+            <div className="grid min-w-0 gap-3">
+              <section className="rounded-2xl border border-[#dce9f7] bg-white/95 px-6 py-5 shadow-[0_14px_38px_rgba(14,59,116,0.07)] sm:px-7">
+                <h2 className="text-[22px] font-black tracking-[-0.03em] text-[#0a1834]">
+                  노선 및 역 선택
+                </h2>
+
+                <div className="mt-4 grid items-end gap-4 lg:grid-cols-[minmax(220px,360px)_112px_minmax(280px,1fr)]">
+                  <div>
+                    <label
+                      className="mb-2 block text-xs font-black text-[#59677c]"
+                      htmlFor="route-select"
+                    >
+                      노선 선택
                     </label>
                     <select
-                      className="h-12 rounded-xl border border-[#d5e0ec] bg-white px-4 text-base font-black text-[#11284c] outline-none focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10"
+                      className="h-12 w-full rounded-lg border border-[#d5e0ec] bg-white px-4 text-sm font-black text-[#11284c] outline-none focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10 sm:text-base"
                       id="route-select"
                       onChange={(event) =>
                         setSetup((currentSetup) => ({
@@ -439,24 +463,26 @@ export function OnboardingStationPage() {
                         </option>
                       ))}
                     </select>
-                    <button
-                      className="h-12 rounded-xl border border-[#d5e0ec] bg-white px-5 font-black text-[#096bff] transition hover:bg-[#f7fbff] focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none"
-                      onClick={handleComparisonClick}
-                      type="button"
-                    >
-                      1호선 비교
-                    </button>
                   </div>
-
-                  <div>
-                    <label
-                      className="mb-2 block text-sm font-black text-[#0f2446]"
-                      htmlFor="station-search"
-                    >
+                  <button
+                    className="h-12 rounded-lg border border-[#86b5ff] bg-white px-4 font-black text-[#096bff] transition hover:bg-[#f7fbff] focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none"
+                    onClick={handleComparisonClick}
+                    type="button"
+                  >
+                    1호선 비교
+                  </button>
+                  <div className="relative">
+                    <label className="sr-only" htmlFor="station-search">
                       역세권 검색
                     </label>
+                    <Search
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[#8d9bb0]"
+                      size={22}
+                      strokeWidth={2}
+                    />
                     <input
-                      className="h-12 w-full rounded-xl border border-[#d5e0ec] bg-white px-4 text-base font-semibold text-[#11284c] outline-none placeholder:text-[#98a7ba] focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10"
+                      className="h-12 w-full rounded-lg border border-[#d5e0ec] bg-white pr-4 pl-12 text-base font-semibold text-[#11284c] outline-none placeholder:text-[#7f8da1] focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10"
                       id="station-search"
                       onChange={(event) => setSearchKeyword(event.target.value)}
                       placeholder="역명으로 검색하세요"
@@ -464,97 +490,99 @@ export function OnboardingStationPage() {
                       value={searchKeyword}
                     />
                   </div>
+                </div>
 
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <strong className="text-sm font-black text-[#0f2446]">
-                        역세권 선택
-                      </strong>
-                      <span className="rounded-full bg-[#edf4ff] px-3 py-1 text-sm font-black text-[#096bff]">
-                        {selectedCountLabel}
-                      </span>
+                <div className="mt-4">
+                  {filteredStations.length ? (
+                    <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+                      {filteredStations.map((station) => (
+                        <StationButton
+                          isSelected={setup.selectedStations.includes(station)}
+                          key={station}
+                          onClick={() => handleStationToggle(station)}
+                          station={station}
+                        />
+                      ))}
                     </div>
-                    {filteredStations.length ? (
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        {filteredStations.map((station) => (
-                          <StationButton
-                            isSelected={setup.selectedStations.includes(station)}
-                            key={station}
-                            onClick={() => handleStationToggle(station)}
-                            station={station}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="rounded-xl border border-dashed border-[#cfddea] bg-[#fbfdff] px-4 py-5 text-center text-sm font-bold text-[#6a7688]">
-                        검색 결과가 없습니다.
-                      </p>
-                    )}
-                    {errorMessage ? (
-                      <p className="text-sm font-bold text-[#d4380d]" role="alert">
-                        {errorMessage}
-                      </p>
-                    ) : null}
+                  ) : (
+                    <p className="rounded-xl border border-dashed border-[#cfddea] bg-[#fbfdff] px-4 py-5 text-center text-sm font-bold text-[#6a7688]">
+                      검색 결과가 없습니다.
+                    </p>
+                  )}
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-[#8a96a7]">
+                      최대 5개 역세권까지 선택할 수 있습니다.
+                    </p>
+                    <span className="text-sm font-black text-[#096bff]">
+                      {selectedCountLabel}
+                    </span>
+                  </div>
+                  {errorMessage ? (
+                    <p className="mt-2 text-sm font-bold text-[#d4380d]" role="alert">
+                      {errorMessage}
+                    </p>
+                  ) : null}
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-[#dce9f7] bg-white/95 px-6 py-4 shadow-[0_14px_38px_rgba(14,59,116,0.07)] sm:px-7">
+                <div className="grid items-center gap-5 lg:grid-cols-[minmax(0,580px)_1fr]">
+                  <div>
+                    <h2 className="text-[22px] font-black tracking-[-0.03em] text-[#0a1834]">
+                      분석 반경 설정
+                    </h2>
+                    <div className="mt-3 grid gap-4 sm:grid-cols-3">
+                      {radiusOptions.map((radius) => (
+                        <RadiusButton
+                          isSelected={setup.radius === radius}
+                          key={radius}
+                          onClick={() =>
+                            setSetup((currentSetup) => ({ ...currentSetup, radius }))
+                          }
+                          radius={radius}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="text-sm leading-6 font-semibold text-[#7a8798]">
+                    <p>선택한 역을 중심으로 설정한 반경 내</p>
+                    <p>도보 이동 가능 범위를 기준으로 분석합니다.</p>
+                    <p className="mt-1 text-xs text-[#9aa6b6]">
+                      일반적인 도보 5~7분 거리를 기준으로 합니다.
+                    </p>
                   </div>
                 </div>
-              </div>
-            </section>
+              </section>
 
-            <section className="rounded-2xl border border-[#dce9f7] bg-white/95 p-5 shadow-[0_14px_38px_rgba(14,59,116,0.07)] sm:p-7">
-              <div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-center">
-                <div className="border-b border-[#dbe5f1] pb-5 lg:border-r lg:border-b-0 lg:pr-7 lg:pb-0">
-                  <span className="text-2xl font-black text-[#096bff]">02-1</span>
-                  <h2 className="mt-2 text-xl font-black tracking-[-0.03em] text-[#0a1834]">
-                    분석 반경 설정
-                  </h2>
-                  <p className="mt-2 text-sm font-semibold text-[#6a7688]">
-                    역 주변 상권을 비교할 거리 기준을 선택해주세요.
-                  </p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {radiusOptions.map((radius) => (
-                    <RadiusButton
-                      isSelected={setup.radius === radius}
-                      key={radius}
-                      onClick={() =>
-                        setSetup((currentSetup) => ({ ...currentSetup, radius }))
-                      }
-                      radius={radius}
-                    />
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <SelectedStationMap />
-
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-              <button
-                className="h-14 rounded-lg border border-[#cbd9ea] bg-white px-7 text-base font-black text-[#465872] transition hover:bg-[#f7fbff] focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none"
-                onClick={() => navigate(-1)}
-                type="button"
-              >
-                이전 단계
-              </button>
-              <button
-                className="h-14 rounded-lg bg-gradient-to-r from-[#096bff] to-[#0058f5] px-7 text-base font-black text-white shadow-[0_16px_28px_rgba(9,107,255,0.22)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none"
-                onClick={handleNext}
-                type="button"
-              >
-                다음: 분석 업종 설정
-                <span className="ml-3" aria-hidden="true">
-                  →
-                </span>
-              </button>
+              <SelectedStationMap />
             </div>
-          </div>
 
-          <SummaryPanel
-            radius={setup.radius}
-            route={setup.route}
-            selectedStations={setup.selectedStations}
-          />
-        </section>
+            <div>
+              <SummaryPanel
+                radius={setup.radius}
+                route={setup.route}
+                selectedStations={setup.selectedStations}
+              />
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <button
+                  className="h-16 rounded-lg border border-[#cbd9ea] bg-white px-7 text-lg font-black text-[#17233d] transition hover:bg-[#f7fbff] focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none"
+                  onClick={() => navigate(-1)}
+                  type="button"
+                >
+                  이전 단계
+                </button>
+                <button
+                  className="inline-flex h-16 items-center justify-center gap-4 rounded-lg bg-gradient-to-r from-[#096bff] to-[#0058f5] px-7 text-lg font-black text-white shadow-[0_16px_28px_rgba(9,107,255,0.22)] transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:ring-offset-2 focus-visible:outline-none"
+                  onClick={handleNext}
+                  type="button"
+                >
+                  다음: 분석 업종 설정
+                  <ArrowRight size={24} strokeWidth={2.4} />
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
       </main>
 
       <Footer />

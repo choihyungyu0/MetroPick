@@ -500,7 +500,7 @@ function LandingFooter() {
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-[#f7fcff] via-white to-[#f7fbff] text-[#071936]">
+    <div className="landing-page min-h-screen overflow-x-hidden bg-gradient-to-b from-[#f7fcff] via-white to-[#f7fbff] text-[#071936]">
       <TopNavigation ctaHref="/onboarding" navItems={navItems} sticky />
       <main>
         <HeroSection />

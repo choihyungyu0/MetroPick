@@ -283,15 +283,15 @@ function RecommendationCard({
       : 'bg-amber-50 text-amber-600'
 
   return (
-    <article className="grid min-h-[126px] grid-cols-[36px_150px_90px_150px_minmax(190px,1fr)_132px] items-center gap-3 rounded-[10px] border border-blue-100 bg-white p-3 max-xl:grid-cols-[42px_1fr_100px]">
+    <article className="grid min-h-[126px] w-full min-w-0 grid-cols-[36px_minmax(148px,156px)_80px_minmax(118px,150px)_minmax(0,1fr)_132px] items-center gap-2 rounded-[10px] border border-blue-100 bg-white p-3 max-xl:grid-cols-[42px_1fr_100px] max-xl:gap-3">
       <div
         className={`grid h-8 w-8 place-items-center rounded-lg text-lg font-black text-white ${rankClass}`}
       >
         {item.rank}
       </div>
 
-      <div className="border-r border-slate-100 pr-3 max-xl:border-r-0">
-        <div className="flex items-center gap-2">
+      <div className="min-w-0 border-r border-slate-100 pr-3 max-xl:border-r-0">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <h3 className="m-0 whitespace-nowrap text-xl font-black tracking-normal text-slate-900">
             {item.station}
           </h3>
@@ -302,16 +302,16 @@ function RecommendationCard({
         <p className="m-0 mt-1.5 text-sm font-bold text-slate-600">{item.district}</p>
       </div>
 
-      <div className="text-center max-xl:col-start-3 max-md:col-span-full max-md:flex max-md:items-center max-md:gap-4 max-md:text-left">
+      <div className="min-w-0 text-center max-xl:col-start-3 max-md:col-span-full max-md:flex max-md:items-center max-md:gap-4 max-md:text-left">
         <p className="m-0 mb-1 text-[10px] font-black text-slate-500">AI 종합 점수</p>
         <ScoreCircle score={item.score} />
       </div>
 
-      <div className="max-xl:col-span-2 max-xl:col-start-2 max-md:col-span-full">
+      <div className="min-w-0 max-xl:col-span-2 max-xl:col-start-2 max-md:col-span-full">
         <MetricBars item={item} />
       </div>
 
-      <div className="max-xl:col-span-2 max-xl:col-start-2 max-md:col-span-full">
+      <div className="min-w-0 max-xl:col-span-2 max-xl:col-start-2 max-md:col-span-full">
         <span
           className={`mb-1.5 inline-flex h-5 items-center rounded-md px-2.5 text-[11px] font-black ${riskClass}`}
         >
@@ -320,21 +320,21 @@ function RecommendationCard({
         <strong className="mb-0.5 block text-[11px] font-black text-slate-700">
           추천 사유
         </strong>
-        <p className="m-0 text-[11px] leading-snug font-bold text-slate-600">
+        <p className="m-0 break-words text-[11px] leading-snug font-bold text-slate-600">
           {item.reason}
         </p>
       </div>
 
-      <div className="grid gap-2 max-xl:col-start-3 max-md:col-span-full">
+      <div className="grid min-w-0 gap-2 max-xl:col-start-3 max-md:col-span-full">
         <button
-          className="h-[34px] rounded-lg bg-blue-600 text-xs font-black text-white shadow-[0_8px_18px_rgba(0,101,255,0.24)]"
+          className="h-[34px] w-full min-w-0 whitespace-nowrap rounded-lg bg-blue-600 px-2 text-xs font-black text-white shadow-[0_8px_18px_rgba(0,101,255,0.24)]"
           onClick={() => onViewReport(item)}
           type="button"
         >
           리포트 보기
         </button>
         <button
-          className="h-[34px] rounded-lg border border-blue-200 bg-white text-xs font-black text-blue-600"
+          className="h-[34px] w-full min-w-0 whitespace-nowrap rounded-lg border border-blue-200 bg-white px-2 text-xs font-black text-blue-600"
           onClick={() => onSaveInterest(item)}
           type="button"
         >
@@ -551,7 +551,7 @@ export function RecommendationPage() {
             <TopControls />
           </div>
 
-          <div className="grid grid-cols-[minmax(760px,1fr)_600px] gap-5 max-[1600px]:grid-cols-1">
+          <div className="grid grid-cols-[minmax(760px,1fr)_minmax(520px,600px)] gap-5 max-[1640px]:grid-cols-1">
             <div className="min-w-0">
               <FilterPanel filters={filters} />
               <RecommendationList

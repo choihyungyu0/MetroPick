@@ -22,7 +22,7 @@ import {
   TrainFront,
   Utensils,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
@@ -91,14 +91,14 @@ function StepProgress() {
         <li className="relative flex w-40 flex-col items-center" key={step}>
           <span
             className={[
-              'relative z-10 grid h-10 w-10 place-items-center rounded-full border-2 bg-white text-lg font-black',
+              'relative z-10 grid h-10 w-10 place-items-center rounded-full border-2 text-lg font-black',
               index === 0
-                ? 'border-[#096bff] bg-[#096bff] text-white shadow-[0_10px_24px_rgba(9,107,255,0.22)]'
-                : 'border-[#cad8e8] text-[#7b889c]',
+                ? 'border-[#096bff] bg-white text-[#096bff] shadow-[0_10px_24px_rgba(9,107,255,0.22)]'
+                : 'border-[#cad8e8] bg-white text-[#7b889c]',
             ].join(' ')}
             aria-current={index === 0 ? 'step' : undefined}
           >
-            {index === 0 ? <Check size={20} strokeWidth={3} /> : index + 1}
+            {index + 1}
           </span>
           <span className="mt-3 text-center text-sm font-black text-[#1e2e49]">
             {step}
@@ -128,7 +128,7 @@ function ChoiceButton({
     <button
       aria-pressed={active}
       className={[
-        'inline-flex h-12 min-w-0 items-center justify-center gap-2 rounded-[11px] border px-4 text-sm font-black transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none md:text-[15px]',
+        'inline-flex h-12 min-w-[112px] shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[11px] border px-5 text-sm font-black transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none md:text-[15px]',
         active
           ? 'border-2 border-[#096bff] bg-[#f7fbff] text-[#096bff] shadow-[0_8px_20px_rgba(9,107,255,0.08)]'
           : 'border-[#d5e0ec] bg-white text-[#526177] hover:bg-slate-50',
@@ -138,7 +138,7 @@ function ChoiceButton({
     >
       {children}
       {active ? (
-        <span className="grid h-5 w-5 place-items-center rounded-full bg-[#096bff] text-white">
+        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#096bff] text-white">
           <Check size={13} strokeWidth={3} />
         </span>
       ) : null}
@@ -161,7 +161,7 @@ function IndustryCard({
     <button
       aria-pressed={active}
       className={[
-        'relative grid h-28 place-items-center content-center gap-2 rounded-[11px] border bg-white text-[#11284c] transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none',
+        'relative grid h-[104px] place-items-center content-center gap-2 rounded-[11px] border bg-white text-[#11284c] transition focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none',
         active
           ? 'border-2 border-[#096bff] bg-gradient-to-b from-white to-[#f5faff] shadow-[0_10px_24px_rgba(9,107,255,0.08)]'
           : 'border-[#d5e0ec] hover:bg-slate-50',
@@ -175,7 +175,9 @@ function IndustryCard({
         </span>
       ) : null}
       <Icon className="text-[#0b4a99]" size={34} strokeWidth={1.8} />
-      <span className="text-sm font-black text-[#1a2e51] md:text-[15px]">{label}</span>
+      <span className="whitespace-nowrap text-sm font-black text-[#1a2e51] md:text-[15px]">
+        {label}
+      </span>
     </button>
   )
 }
@@ -194,7 +196,7 @@ function ToggleRow({
   title: string
 }) {
   return (
-    <div className="grid min-h-16 grid-cols-[42px_1fr] items-center gap-3 border-b border-[#edf2f7] bg-white px-5 py-3 last:border-b-0 sm:grid-cols-[42px_1fr_72px] sm:pr-7">
+    <div className="grid min-h-14 grid-cols-[42px_1fr] items-center gap-3 border-b border-[#edf2f7] bg-white px-5 py-2.5 last:border-b-0 sm:grid-cols-[42px_1fr_72px] sm:pr-7">
       <div className="flex justify-center text-[#096bff]">
         <Icon size={25} strokeWidth={2} />
       </div>
@@ -237,14 +239,16 @@ function SetupSection({
   title: string
 }) {
   return (
-    <section className="grid gap-5 rounded-2xl border border-[#dce9f7] bg-white/95 px-5 py-6 shadow-[0_14px_38px_rgba(14,59,116,0.07)] lg:grid-cols-[320px_1fr] lg:items-center lg:px-8 lg:py-7">
-      <div className="grid min-h-16 grid-cols-[48px_1fr] gap-4 border-b border-[#dbe5f1] pb-5 lg:border-r lg:border-b-0 lg:pr-7 lg:pb-0">
+    <section className="grid gap-5 rounded-2xl border border-[#dce9f7] bg-white/95 px-5 py-6 shadow-[0_14px_38px_rgba(14,59,116,0.07)] lg:grid-cols-[288px_1fr] lg:items-center lg:px-8 lg:py-6">
+      <div className="grid min-h-16 grid-cols-[44px_1fr] gap-3 border-b border-[#dbe5f1] pb-5 lg:border-r lg:border-b-0 lg:pr-5 lg:pb-0">
         <span className="text-2xl leading-none font-black text-[#096bff]">{number}</span>
         <div>
           <h2 className="text-xl font-black tracking-[-0.03em] text-[#0a1834]">
             {title}
           </h2>
-          <p className="mt-2 text-sm font-semibold text-[#6a7688]">{desc}</p>
+          <p className="mt-2 text-[13px] leading-5 font-semibold text-[#6a7688]">
+            {desc}
+          </p>
         </div>
       </div>
       <div className="min-w-0">{children}</div>
@@ -365,7 +369,7 @@ function Footer() {
     <footer className="relative z-20 bg-gradient-to-r from-[#061a3d] via-[#071f4b] to-[#052b67] text-white">
       <div className="mx-auto grid min-h-28 w-[calc(100%_-_32px)] max-w-[1840px] items-center gap-6 py-7 text-center lg:w-[calc(100%_-_64px)] xl:grid-cols-[1fr_440px_180px] xl:text-left">
         <div className="flex flex-col items-center gap-5 xl:flex-row">
-          <div className="grid h-[78px] w-[78px] shrink-0 place-items-center rounded-full border border-[#00d6d5]/70 bg-[#00d9d8]/10 text-[#4ae8ff] shadow-[0_0_24px_rgba(0,217,216,0.14)]">
+          <div className="grid h-[76px] w-[76px] shrink-0 place-items-center rounded-full border border-[#00d6d5]/70 bg-[#00d9d8]/10 text-[#4ae8ff] shadow-[0_0_24px_rgba(0,217,216,0.14)]">
             <ChartColumnIncreasing size={42} strokeWidth={2.2} />
           </div>
           <div>
@@ -402,6 +406,28 @@ function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+function OnboardingNavigationActions() {
+  const actionClasses =
+    'inline-flex h-11 items-center justify-center rounded-lg px-6 text-sm font-black transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none'
+
+  return (
+    <>
+      <Link
+        className={`${actionClasses} min-w-[112px] border border-white/45 bg-slate-950/25 text-white hover:bg-white/10`}
+        to="/login"
+      >
+        로그인
+      </Link>
+      <Link
+        className={`${actionClasses} min-w-[170px] bg-[#086bff] text-white shadow-[0_12px_24px_rgba(0,102,255,0.24)] hover:bg-[#0054dc]`}
+        to="/signup"
+      >
+        무료로 시작하기
+      </Link>
+    </>
   )
 }
 
@@ -458,10 +484,10 @@ export function OnboardingInitialSetupPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f6fbff] text-[#07152f]">
-      <TopNavigation />
+    <div className="onboarding-initial-page flex min-h-screen flex-col overflow-x-hidden bg-[#f6fbff] text-[#07152f]">
+      <TopNavigation renderActions={OnboardingNavigationActions} />
 
-      <main className="relative overflow-hidden">
+      <main className="relative flex-1 overflow-hidden">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 bg-no-repeat"
@@ -473,117 +499,121 @@ export function OnboardingInitialSetupPage() {
         />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,rgba(46,154,255,0.10),transparent_26%),radial-gradient(circle_at_78%_20%,rgba(0,210,214,0.08),transparent_24%)]" />
 
-        <div className="relative z-10 mx-auto w-[calc(100%_-_32px)] max-w-[1720px] py-9 lg:w-[calc(100%_-_80px)]">
-          <section className="grid gap-8 xl:grid-cols-[1fr_720px_420px] xl:items-start">
-            <div>
-              <h1 className="text-[clamp(2.5rem,3vw,3rem)] leading-none font-black tracking-[-0.05em] text-[#07152f]">
-                초기 설정
-              </h1>
-              <p className="mt-4 text-base font-semibold text-[#53637a] md:text-lg">
-                맞춤형 AI 분석과 예측을 위해 선호 정보를 설정해주세요.
-              </p>
-            </div>
-            <div className="overflow-x-auto pb-2 xl:col-span-2">
-              <StepProgress />
-            </div>
-          </section>
-
-          <section className="mt-8 grid gap-10 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-start xl:gap-14">
-            <div className="grid gap-4">
-              <SetupSection
-                desc="분석을 원하는 지역을 선택해주세요."
-                number="01"
-                title="관심 지역 선택"
-              >
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-                  {regions.map((region) => (
-                    <ChoiceButton
-                      active={selectedRegion === region}
-                      key={region}
-                      onClick={() => setSelectedRegion(region)}
-                    >
-                      {region}
-                    </ChoiceButton>
-                  ))}
+        <div className="relative z-10 mx-auto w-[calc(100%_-_32px)] max-w-[1720px] pt-8 pb-2 lg:w-[calc(100%_-_80px)]">
+          <section className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-start xl:gap-14">
+            <div className="min-w-0">
+              <section className="grid gap-8 xl:grid-cols-[minmax(280px,1fr)_720px] xl:items-start">
+                <div>
+                  <h1 className="text-[clamp(2.5rem,3vw,3rem)] leading-none font-black tracking-[-0.05em] text-[#07152f]">
+                    초기 설정
+                  </h1>
+                  <p className="mt-4 text-base font-semibold text-[#53637a] md:text-lg">
+                    맞춤형 AI 분석과 예측을 위해 선호 정보를 설정해주세요.
+                  </p>
                 </div>
-              </SetupSection>
-
-              <SetupSection
-                desc="분석을 원하는 역세권을 선택해주세요."
-                number="02"
-                title="관심 역세권 선택"
-              >
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-                  {stations.map((station) => {
-                    const isActive = selectedStations.includes(station)
-                    const isMore = station === '더보기'
-
-                    return (
-                      <ChoiceButton
-                        active={isActive}
-                        key={station}
-                        onClick={() => toggleStation(station)}
-                      >
-                        {station}
-                        {isMore ? <ChevronDown size={16} /> : null}
-                      </ChoiceButton>
-                    )
-                  })}
+                <div className="overflow-x-auto pb-2">
+                  <StepProgress />
                 </div>
-              </SetupSection>
+              </section>
 
-              <SetupSection
-                desc="관심 있는 업종을 선택해주세요."
-                number="03"
-                title="분석 업종 선택"
-              >
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-                  {industries.map((industry) => (
-                    <IndustryCard
-                      active={selectedIndustries.includes(industry.label)}
-                      icon={industry.icon}
-                      key={industry.label}
-                      label={industry.label}
-                      onClick={() => toggleIndustry(industry.label)}
-                    />
-                  ))}
-                </div>
-                <button
-                  className="mt-3 inline-flex items-center gap-1 text-sm font-black text-[#096bff] focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none"
-                  type="button"
+              <div className="mt-6 grid gap-3">
+                <SetupSection
+                  desc="분석을 원하는 지역을 선택해주세요."
+                  number="01"
+                  title="관심 지역 선택"
                 >
-                  더 많은 업종 보기
-                  <ChevronDown size={15} />
-                </button>
-              </SetupSection>
+                  <div className="flex flex-wrap gap-3">
+                    {regions.map((region) => (
+                      <ChoiceButton
+                        active={selectedRegion === region}
+                        key={region}
+                        onClick={() => setSelectedRegion(region)}
+                      >
+                        {region}
+                      </ChoiceButton>
+                    ))}
+                  </div>
+                </SetupSection>
 
-              <SetupSection
-                desc="중요한 정보를 놓치지 않도록 알림을 설정하세요."
-                number="04"
-                title="알림 설정"
-              >
-                <div className="overflow-hidden rounded-xl border border-[#e2eaf3] bg-white">
-                  {alerts.map((alert) => (
-                    <ToggleRow
-                      active={alertSettings.includes(alert.title)}
-                      desc={alert.desc}
-                      icon={alert.icon}
-                      key={alert.title}
-                      onClick={() => toggleAlert(alert.title)}
-                      title={alert.title}
-                    />
-                  ))}
-                </div>
-              </SetupSection>
+                <SetupSection
+                  desc="분석을 원하는 역세권을 선택해주세요."
+                  number="02"
+                  title="관심 역세권 선택"
+                >
+                  <div className="flex flex-wrap gap-3">
+                    {stations.map((station) => {
+                      const isActive = selectedStations.includes(station)
+                      const isMore = station === '더보기'
+
+                      return (
+                        <ChoiceButton
+                          active={isActive}
+                          key={station}
+                          onClick={() => toggleStation(station)}
+                        >
+                          {station}
+                          {isMore ? <ChevronDown size={16} /> : null}
+                        </ChoiceButton>
+                      )
+                    })}
+                  </div>
+                </SetupSection>
+
+                <SetupSection
+                  desc="관심 있는 업종을 선택해주세요."
+                  number="03"
+                  title="분석 업종 선택"
+                >
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+                    {industries.map((industry) => (
+                      <IndustryCard
+                        active={selectedIndustries.includes(industry.label)}
+                        icon={industry.icon}
+                        key={industry.label}
+                        label={industry.label}
+                        onClick={() => toggleIndustry(industry.label)}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-black text-[#096bff] focus-visible:ring-2 focus-visible:ring-[#096bff] focus-visible:outline-none"
+                    type="button"
+                  >
+                    더 많은 업종 보기
+                    <ChevronDown size={15} />
+                  </button>
+                </SetupSection>
+
+                <SetupSection
+                  desc="중요한 정보를 놓치지 않도록 알림을 설정하세요."
+                  number="04"
+                  title="알림 설정"
+                >
+                  <div className="overflow-hidden rounded-xl border border-[#e2eaf3] bg-white">
+                    {alerts.map((alert) => (
+                      <ToggleRow
+                        active={alertSettings.includes(alert.title)}
+                        desc={alert.desc}
+                        icon={alert.icon}
+                        key={alert.title}
+                        onClick={() => toggleAlert(alert.title)}
+                        title={alert.title}
+                      />
+                    ))}
+                  </div>
+                </SetupSection>
+              </div>
             </div>
 
-            <SummaryPanel
-              alertSettings={alertSettings}
-              onComplete={handleComplete}
-              selectedIndustries={selectedIndustries}
-              selectedRegion={selectedRegion}
-              selectedStations={selectedStations}
-            />
+            <div className="xl:pt-4">
+              <SummaryPanel
+                alertSettings={alertSettings}
+                onComplete={handleComplete}
+                selectedIndustries={selectedIndustries}
+                selectedRegion={selectedRegion}
+                selectedStations={selectedStations}
+              />
+            </div>
           </section>
         </div>
       </main>
