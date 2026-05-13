@@ -50,32 +50,16 @@ npm run build
 npm run preview
 ```
 
-## Vercel API Rewrite
+## Vercel Routing
 
-When the frontend is deployed over HTTPS on Vercel, browser requests directly to an
-HTTP backend are blocked by mixed content rules. Use the same-origin `/api/*`
-rewrite instead.
+The app uses React Router with browser history, so Vercel rewrites all unmatched
+paths to `/index.html`. Keep `vercel.json` as a static configuration file with a
+`destination` value on every rewrite entry.
 
-Set this Vercel environment variable:
-
-```text
-METROPICK_BACKEND_ORIGIN=http://YOUR_BACKEND_HOST:8000
-```
-
-Then call backend endpoints through the Vercel deployment origin:
-
-```ts
-await fetch('/api/v1/auth/login', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ email, password }),
-})
-```
-
-The browser sends `https://<frontend-domain>/api/v1/auth/login`, and the Vercel
-rewrite forwards it to `http://YOUR_BACKEND_HOST:8000/api/v1/auth/login`.
+When a production backend is connected later, add an explicit `/api/:path*`
+rewrite with the backend origin as the `destination`. Do not leave the
+destination dynamic or undefined, because Vercel validates the rewrite schema
+before deployment.
 
 ## Quality Commands
 
