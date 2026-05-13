@@ -1,7 +1,16 @@
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { DashboardPage } from './DashboardPage'
+
+function renderDashboardPage() {
+  return render(
+    <MemoryRouter>
+      <DashboardPage />
+    </MemoryRouter>,
+  )
+}
 
 describe('DashboardPage', () => {
   beforeEach(() => {
@@ -9,7 +18,7 @@ describe('DashboardPage', () => {
   })
 
   it('renders the dashboard content and central map asset', () => {
-    render(<DashboardPage />)
+    renderDashboardPage()
 
     expect(
       screen.getByRole('heading', {

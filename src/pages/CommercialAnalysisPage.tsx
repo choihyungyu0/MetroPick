@@ -2,30 +2,21 @@ import { useMemo, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   BarChart3,
-  Bookmark,
   CalendarDays,
   ChevronDown,
-  CircleHelp,
-  FileText,
   Gauge,
-  Home,
   Layers,
-  LineChart,
   MapPin,
-  Menu,
   PieChart,
   RefreshCw,
   Save,
   Search,
-  Settings,
-  ShieldCheck,
   Store,
   Train,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
 
 import { commercialAnalysisAssets } from '@/shared/assets/commercialAnalysisAssets'
-import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppSidebar } from '@/shared/components/AppSidebar'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 
 type RadiusOption = '300m' | '500m' | '1km'
@@ -88,21 +79,6 @@ const defaultFilters: CommercialAnalysisFilters = {
     floatingNight: false,
   },
 }
-
-const sideMenuItems: Array<{
-  active?: boolean
-  href: string
-  icon: LucideIcon
-  label: string
-}> = [
-  { label: '대시보드', icon: Home, href: '/dashboard' },
-  { label: '상권 분석', icon: BarChart3, href: '/commercial-analysis', active: true },
-  { label: 'AI 예측', icon: LineChart, href: '/ai-prediction' },
-  { label: '입지 추천', icon: MapPin, href: '/recommendation' },
-  { label: '리포트', icon: FileText, href: '/report' },
-  { label: '관심 지역', icon: Bookmark, href: '/dashboard' },
-  { label: '설정', icon: Settings, href: '/dashboard' },
-]
 
 const summaryCards = [
   { title: '총 점포 수', value: '12,843개', change: '+8.7%', desc: '전월 대비' },
@@ -225,64 +201,6 @@ function appendSavedReport(report: SavedCommercialAnalysisReport) {
   const key = 'metropick-saved-commercial-analysis-reports'
   const existing = safeParseStorage<SavedCommercialAnalysisReport[]>(key) ?? []
   window.localStorage.setItem(key, JSON.stringify([...existing, report]))
-}
-
-function Sidebar() {
-  return (
-    <aside className="flex min-h-[calc(100vh-var(--app-topbar-height))] flex-col justify-between border-r border-slate-200 bg-white px-[18px] py-7 max-lg:hidden">
-      <div>
-        <div className="flex items-center gap-2.5 border-b border-slate-100 px-2 pb-7">
-          <img
-            alt="MetroPick AI 로고"
-            className="h-8 w-9 object-contain"
-            draggable={false}
-            src={landingAssets.logo}
-          />
-          <strong className="text-lg font-black">MetroPick AI</strong>
-          <Menu aria-hidden="true" className="ml-auto text-slate-500" size={20} />
-        </div>
-
-        <nav aria-label="상권 분석 사이드 메뉴" className="mt-5 grid gap-2">
-          {sideMenuItems.map((item) => {
-            const Icon = item.icon
-
-            return (
-              <Link
-                aria-current={item.active ? 'page' : undefined}
-                className={`flex h-[52px] items-center gap-3.5 rounded-lg px-3.5 text-base font-extrabold ${
-                  item.active
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-                key={item.label}
-                to={item.href}
-              >
-                <Icon aria-hidden="true" size={21} />
-                {item.label}
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
-
-      <div className="grid gap-3">
-        <div className="flex min-h-[72px] items-center gap-3 rounded-[10px] border border-slate-200 bg-white px-3.5 py-3">
-          <ShieldCheck aria-hidden="true" className="text-teal-600" size={25} />
-          <div>
-            <strong className="block text-xs">데이터 업데이트</strong>
-            <p className="m-0 mt-1 text-xs text-slate-500">2024.05.18 기준</p>
-          </div>
-        </div>
-        <div className="flex min-h-[72px] items-center gap-3 rounded-[10px] border border-slate-200 bg-white px-3.5 py-3">
-          <CircleHelp aria-hidden="true" className="text-slate-600" size={25} />
-          <div>
-            <strong className="block text-xs">도움말 및 문의</strong>
-            <p className="m-0 mt-1 text-xs text-slate-500">FAQ · 고객센터</p>
-          </div>
-        </div>
-      </div>
-    </aside>
-  )
 }
 
 function SelectBox({
@@ -683,8 +601,11 @@ export function CommercialAnalysisPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-[#eef4fb] text-slate-900">
       <TopNavigation activeHref="/commercial-analysis" />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[276px_1fr] max-lg:grid-cols-1">
-        <Sidebar />
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
+        <AppSidebar
+          activeHref="/commercial-analysis"
+          ariaLabel="상권 분석 사이드 메뉴"
+        />
 
         <main className="overflow-hidden px-6 py-7 pb-20 max-md:px-3.5">
           <section className="mb-5 flex items-end gap-3 max-md:block">

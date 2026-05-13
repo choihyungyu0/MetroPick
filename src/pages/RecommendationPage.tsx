@@ -1,25 +1,20 @@
 import { useMemo, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
-  BarChart3,
   Bookmark,
   CalendarDays,
   ChevronDown,
   CircleUserRound,
-  FileText,
-  Home,
   Info,
-  LineChart,
   MapPin,
   PiggyBank,
-  Settings,
   SlidersHorizontal,
   Store,
-  Trophy,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppSidebar } from '@/shared/components/AppSidebar'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { recommendationAssets } from '@/shared/assets/recommendationAssets'
 import {
@@ -61,21 +56,6 @@ const defaultFilters: RecommendationFilters = {
   preferredArea: '광주 2호선 전체',
   riskTolerance: '보통 (중간 위험)',
 }
-
-const sideMenuItems: Array<{
-  active?: boolean
-  href: string
-  icon: LucideIcon
-  label: string
-}> = [
-  { label: '대시보드', icon: Home, href: '/dashboard' },
-  { label: '상권 분석', icon: BarChart3, href: '/commercial-analysis' },
-  { label: 'AI 예측', icon: LineChart, href: '/ai-prediction' },
-  { label: '입지 추천', icon: MapPin, href: '/recommendation', active: true },
-  { label: '리포트', icon: FileText, href: '/report' },
-  { label: '관심 지역', icon: Bookmark, href: '/dashboard' },
-  { label: '설정', icon: Settings, href: '/dashboard' },
-]
 
 const metricKeys = ['growth', 'stability', 'competition', 'accessibility'] as const
 
@@ -151,63 +131,6 @@ function appendInterestLocation(item: SavedInterestLocation) {
   }
 
   window.localStorage.setItem(key, JSON.stringify([...existing, item]))
-}
-
-function Sidebar() {
-  return (
-    <aside className="relative w-[260px] shrink-0 border-r border-blue-100 bg-white px-[18px] py-8 max-xl:w-full max-xl:py-6">
-      <div className="mb-9 flex items-center gap-3 pl-2.5">
-        <img
-          alt="MetroPick AI 로고"
-          className="h-8 w-9 object-contain"
-          draggable={false}
-          src={landingAssets.logo}
-        />
-        <strong className="text-xl font-black text-slate-900">MetroPick AI</strong>
-      </div>
-
-      <nav
-        aria-label="입지 추천 사이드 메뉴"
-        className="grid gap-2 max-xl:grid-cols-4 max-md:grid-cols-2"
-      >
-        {sideMenuItems.map((item) => {
-          const Icon = item.icon
-
-          return (
-            <Link
-              aria-current={item.active ? 'page' : undefined}
-              className={`flex h-[50px] items-center gap-4 rounded-[10px] px-4 text-[15px] font-extrabold ${
-                item.active
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-slate-700 hover:bg-slate-50'
-              }`}
-              key={item.label}
-              to={item.href}
-            >
-              <Icon aria-hidden="true" size={20} />
-              {item.label}
-            </Link>
-          )
-        })}
-      </nav>
-
-      <div className="absolute right-6 bottom-10 left-6 min-h-[274px] rounded-[10px] border border-blue-100 bg-gradient-to-b from-blue-50 to-white px-4 py-7 text-center max-xl:static max-xl:mt-6 max-xl:min-h-0">
-        <Trophy aria-hidden="true" className="mx-auto mb-3 text-amber-500" size={45} />
-        <strong className="block text-[15px] leading-6 font-black text-slate-900">
-          창업 성공률을 높이는 AI 입지 추천
-        </strong>
-        <p className="my-4 text-xs leading-7 font-bold text-slate-500">
-          데이터 기반 최적의 입지를 찾아보세요.
-        </p>
-        <button
-          className="h-9 w-32 rounded-lg border border-blue-200 bg-white text-sm font-black text-blue-600"
-          type="button"
-        >
-          자세히 보기
-        </button>
-      </div>
-    </aside>
-  )
 }
 
 function TopControls() {
@@ -610,8 +533,8 @@ export function RecommendationPage() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,101,255,0.08),transparent_28%),linear-gradient(180deg,#f8fbff_0%,#f2f7ff_100%)] text-slate-900">
       <TopNavigation activeHref="/recommendation" />
 
-      <div className="flex min-h-[calc(100vh-var(--app-topbar-height))] max-xl:flex-col">
-        <Sidebar />
+      <div className="flex min-h-[calc(100vh-var(--app-topbar-height))] max-lg:flex-col">
+        <AppSidebar activeHref="/recommendation" ariaLabel="입지 추천 사이드 메뉴" />
 
         <main className="min-w-0 flex-1 px-8 py-8 max-md:px-4">
           <div className="mb-6 flex items-center justify-between gap-4 max-lg:flex-col max-lg:items-start">

@@ -1,25 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { LucideIcon } from 'lucide-react'
 import {
-  BarChart3,
   Bell,
   BellRing,
-  Bookmark,
   CalendarClock,
   ChartNoAxesCombined,
   CheckCircle2,
   ChevronDown,
   CircleUserRound,
   FileText,
-  Home,
-  LineChart,
   Mail,
-  MapPin,
   MessageSquare,
   MoreVertical,
   RefreshCw,
   Search,
-  Settings,
   Share2,
   Sparkles,
   Trash2,
@@ -30,6 +23,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppSidebar } from '@/shared/components/AppSidebar'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { myPageAssets } from '@/shared/assets/myPageAssets'
 import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
@@ -149,16 +143,6 @@ type StoredPredictionResult = {
   id?: string
   stationArea?: string
 }
-
-const sidebarMenus: Array<{ href: string; icon: LucideIcon; label: string }> = [
-  { icon: Home, label: '대시보드', href: '/dashboard' },
-  { icon: BarChart3, label: '상권 분석', href: '/commercial-analysis' },
-  { icon: LineChart, label: 'AI 예측', href: '/ai-prediction' },
-  { icon: MapPin, label: '입지 추천', href: '/recommendation' },
-  { icon: FileText, label: '리포트', href: '/report' },
-  { icon: Bookmark, label: '관심 역세권', href: '/mypage' },
-  { icon: Settings, label: '설정', href: '/mypage' },
-]
 
 const tabs: Array<{ id: MyPageTab; label: string }> = [
   { id: 'reports', label: '저장한 리포트' },
@@ -615,62 +599,6 @@ function getReportRoute(category: ReportCategory): string {
   }
 
   return '/recommendation'
-}
-
-function Logo({ small = false }: { small?: boolean }) {
-  return (
-    <Link
-      aria-label="MetroPick AI 홈"
-      className={`flex items-center gap-3.5 ${small ? '' : 'min-w-[360px]'}`}
-      to="/"
-    >
-      <img
-        alt="MetroPick AI 로고"
-        className={small ? 'h-8 w-9 object-contain' : 'h-9 w-11 object-contain'}
-        draggable={false}
-        src={landingAssets.logo}
-      />
-      <span>
-        <span
-          className={`block font-black leading-tight tracking-[-0.7px] ${
-            small ? 'text-[22px] text-slate-900' : 'text-[26px] text-white'
-          }`}
-        >
-          MetroPick AI
-        </span>
-        {!small ? (
-          <span className="mt-1.5 block text-[13px] font-semibold text-white/80">
-            광주 2호선 개통에 따른 AI 상권 분석 예측 서비스
-          </span>
-        ) : null}
-      </span>
-    </Link>
-  )
-}
-
-function Sidebar() {
-  return (
-    <aside className="border-r border-blue-100 bg-white/95 px-5 py-8 max-lg:hidden">
-      <Logo small />
-
-      <nav aria-label="마이페이지 사이드 메뉴" className="mt-10 grid gap-3.5">
-        {sidebarMenus.map((menu) => {
-          const Icon = menu.icon
-
-          return (
-            <Link
-              className="flex h-[46px] items-center gap-[18px] rounded-[10px] px-1 text-left text-[17px] font-bold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
-              key={menu.label}
-              to={menu.href}
-            >
-              <Icon aria-hidden="true" className="text-slate-700" size={22} />
-              {menu.label}
-            </Link>
-          )
-        })}
-      </nav>
-    </aside>
-  )
 }
 
 function ProfileCard({ profile }: { profile: UserProfile }) {
@@ -1435,8 +1363,8 @@ export function MyPage() {
         sticky
       />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[275px_1fr] max-lg:grid-cols-1">
-        <Sidebar />
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
+        <AppSidebar activeHref="/mypage" ariaLabel="마이페이지 사이드 메뉴" />
 
         <main className="min-w-0 px-[68px] py-9 max-xl:px-8 max-md:px-4">
           <div className="mb-6">

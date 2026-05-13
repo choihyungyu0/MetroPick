@@ -1,21 +1,15 @@
 import { useState, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
-  BarChart3,
   Bell,
-  Bookmark,
   Building2,
   ChevronDown,
   ChevronRight,
   FileText,
-  HelpCircle,
-  Home,
   Info,
-  LineChart as LineChartIcon,
   Map,
   MapPin,
   RefreshCw,
-  Settings,
   ShieldAlert,
   Store,
   Target,
@@ -26,7 +20,8 @@ import {
 } from 'lucide-react'
 
 import { dashboardAssets } from '@/shared/assets/dashboardAssets'
-import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppSidebar } from '@/shared/components/AppSidebar'
+import { TopNavigation } from '@/shared/components/TopNavigation'
 import {
   businessPotentials,
   dashboardInsights,
@@ -54,21 +49,6 @@ type StoredNotificationSetup = {
 type StoredOnboardingSummary = {
   completedAt?: string
 }
-
-const menuItems: Array<{
-  active?: boolean
-  href: string
-  icon: LucideIcon
-  label: string
-}> = [
-  { label: '대시보드', icon: Home, href: '/dashboard', active: true },
-  { label: '상권 분석', icon: BarChart3, href: '/commercial-analysis' },
-  { label: 'AI 예측', icon: LineChartIcon, href: '/ai-prediction' },
-  { label: '입지 추천', icon: MapPin, href: '/recommendation' },
-  { label: '리포트', icon: FileText, href: '/report' },
-  { label: '저장함', icon: Bookmark, href: '/dashboard' },
-  { label: '설정', icon: Settings, href: '/dashboard' },
-]
 
 const kpiIcons = {
   alert: ShieldAlert,
@@ -110,77 +90,7 @@ function safeParseStorage<T>(key: string): T | null {
   }
 }
 
-function Sidebar() {
-  return (
-    <aside className="sticky top-0 flex min-h-screen w-[330px] shrink-0 flex-col bg-[radial-gradient(circle_at_40%_0%,rgba(37,118,255,0.28),transparent_30%),linear-gradient(180deg,#061a3b_0%,#04132b_48%,#020b19_100%)] px-[18px] py-7 text-white max-lg:relative max-lg:min-h-0 max-lg:w-full">
-      <div className="flex items-center gap-3.5 px-3.5 pb-8">
-        <img
-          alt="MetroPick AI 로고"
-          className="h-11 w-11 rounded-xl object-contain"
-          draggable={false}
-          src={landingAssets.logo}
-        />
-        <div>
-          <h2 className="m-0 text-2xl font-black leading-tight tracking-[-0.5px]">
-            MetroPick AI
-          </h2>
-          <p className="mt-1.5 text-sm text-slate-300">상권 분석 & AI 예측 플랫폼</p>
-        </div>
-      </div>
-
-      <nav
-        aria-label="대시보드 메뉴"
-        className="grid gap-2.5 max-lg:grid-cols-4 max-sm:grid-cols-2"
-      >
-        {menuItems.map((item) => {
-          const Icon = item.icon
-
-          return (
-            <a
-              aria-current={item.active ? 'page' : undefined}
-              className={`flex items-center gap-[18px] rounded-[10px] px-[22px] py-[18px] text-lg font-extrabold transition focus:outline-none focus:ring-2 focus:ring-white/70 ${
-                item.active
-                  ? 'bg-gradient-to-r from-[#123d83] to-[#0d3471] text-white shadow-[0_14px_36px_rgba(28,111,255,0.18)]'
-                  : 'text-slate-300 hover:bg-white/10'
-              }`}
-              href={item.href}
-              key={item.label}
-            >
-              <Icon aria-hidden="true" size={22} />
-              <span>{item.label}</span>
-            </a>
-          )
-        })}
-      </nav>
-
-      <div className="mt-auto grid gap-7 max-lg:hidden">
-        <div className="rounded-xl border border-slate-400/35 bg-[#092046]/80 p-[18px]">
-          <span className="text-sm font-extrabold">프로 플랜</span>
-          <p className="my-3 text-sm text-slate-300">월간 분석 1,000건 / 1,000건</p>
-          <div className="h-[7px] overflow-hidden rounded-full bg-slate-400/25">
-            <div className="h-full w-[92%] rounded-full bg-gradient-to-r from-blue-500 to-blue-300" />
-          </div>
-          <button
-            className="mt-3.5 w-full rounded-lg bg-white/10 py-2.5 font-extrabold text-slate-100"
-            type="button"
-          >
-            플랜 관리
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3.5 rounded-xl border border-slate-400/35 bg-[#092046]/80 p-[18px]">
-          <HelpCircle aria-hidden="true" size={28} />
-          <div>
-            <strong className="mb-1 block text-sm">도움이 필요하신가요?</strong>
-            <p className="m-0 text-sm text-slate-300">1:1 문의하기</p>
-          </div>
-        </div>
-      </div>
-    </aside>
-  )
-}
-
-function Topbar({
+function DashboardControls({
   notificationCount,
   stationCount,
 }: {
@@ -188,52 +98,48 @@ function Topbar({
   stationCount: number
 }) {
   return (
-    <header className="flex min-h-[var(--app-topbar-height)] items-center justify-between bg-[radial-gradient(circle_at_50%_0%,rgba(0,107,255,0.22),transparent_40%),linear-gradient(90deg,#061f44,#04142e)] px-8 text-white shadow-[0_1px_0_rgba(255,255,255,0.08)] max-lg:px-4">
-      <div />
+    <div className="flex flex-wrap items-center justify-end gap-3 text-slate-700">
+      <button
+        aria-label={`광주광역시 전체 지역 필터, 선택 역세권 ${stationCount}개`}
+        className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold shadow-sm"
+        type="button"
+      >
+        <MapPin aria-hidden="true" size={16} />
+        광주광역시 전체
+        <ChevronDown aria-hidden="true" size={15} />
+      </button>
 
-      <div className="flex flex-wrap items-center justify-end gap-4">
-        <button
-          aria-label={`광주광역시 전체 지역 필터, 선택 역세권 ${stationCount}개`}
-          className="flex h-11 items-center gap-2.5 rounded-lg border border-slate-300/35 bg-slate-950/40 px-4 text-sm font-extrabold"
-          type="button"
-        >
-          <MapPin aria-hidden="true" size={17} />
-          광주광역시 전체
-          <ChevronDown aria-hidden="true" size={16} />
-        </button>
+      <button
+        className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold shadow-sm"
+        type="button"
+      >
+        <Map aria-hidden="true" size={16} />
+        시나리오: 기본 시나리오
+        <ChevronDown aria-hidden="true" size={15} />
+      </button>
 
-        <button
-          className="flex h-11 items-center gap-2.5 rounded-lg border border-slate-300/35 bg-slate-950/40 px-4 text-sm font-extrabold"
-          type="button"
-        >
-          <Map aria-hidden="true" size={17} />
-          시나리오: 기본 시나리오
-          <ChevronDown aria-hidden="true" size={16} />
-        </button>
+      <button
+        aria-label={`알림 ${notificationCount}개`}
+        className="relative grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white shadow-sm"
+        type="button"
+      >
+        <Bell aria-hidden="true" size={21} />
+        <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white">
+          {notificationCount}
+        </span>
+      </button>
 
-        <button
-          aria-label={`알림 ${notificationCount}개`}
-          className="relative h-11 w-11"
-          type="button"
-        >
-          <Bell aria-hidden="true" className="mx-auto" size={24} />
-          <span className="absolute right-0 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-xs font-black">
-            {notificationCount}
-          </span>
-        </button>
-
-        <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-slate-300 text-slate-900">
-            <User aria-hidden="true" size={25} />
-          </div>
-          <div>
-            <strong className="block text-sm">김지훈</strong>
-            <p className="m-0 mt-1 text-xs text-slate-300">프로 플랜</p>
-          </div>
-          <ChevronDown aria-hidden="true" size={17} />
+      <div className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 shadow-sm">
+        <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-700">
+          <User aria-hidden="true" size={18} />
         </div>
+        <div>
+          <strong className="block text-xs">김지훈</strong>
+          <p className="m-0 text-[11px] text-slate-500">프로 플랜</p>
+        </div>
+        <ChevronDown aria-hidden="true" size={15} />
       </div>
-    </header>
+    </div>
   )
 }
 
@@ -719,22 +625,31 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-slate-50 text-slate-950 max-lg:flex-col">
-      <Sidebar />
+    <div className="min-h-screen w-full bg-slate-50 text-slate-950">
+      <TopNavigation activeHref="/dashboard" sticky />
 
-      <main className="min-w-0 flex-1">
-        <Topbar notificationCount={notificationCount} stationCount={stationCount} />
+      <div className="grid min-h-[calc(100vh-var(--app-topbar-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
+        <AppSidebar activeHref="/dashboard" ariaLabel="대시보드 사이드 메뉴" />
 
+        <main className="min-w-0">
         <section className="px-10 py-7 max-lg:px-4">
           <span className="sr-only">{completedLabel}</span>
 
-          <div className="mb-5 flex items-center justify-between gap-4 max-md:flex-col max-md:items-start">
-            <h1 className="m-0 text-[31px] font-black tracking-[-0.8px] text-slate-950">
-              광주 2호선 상권 변화 대시보드
-            </h1>
+          <div className="mb-5 flex items-start justify-between gap-4 max-xl:flex-col">
+            <div>
+              <h1 className="m-0 text-[31px] font-black tracking-[-0.8px] text-slate-950">
+                광주 2호선 상권 변화 대시보드
+              </h1>
+              <p className="m-0 mt-2 text-sm font-bold text-slate-500">
+                데이터 업데이트: {lastUpdated}
+              </p>
+            </div>
 
-            <div className="flex items-center gap-4 text-sm font-bold text-slate-500">
-              <span>데이터 업데이트: {lastUpdated}</span>
+            <div className="flex flex-col items-end gap-3 max-xl:items-start">
+              <DashboardControls
+                notificationCount={notificationCount}
+                stationCount={stationCount}
+              />
               <button
                 className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 font-extrabold text-slate-700"
                 onClick={handleRefresh}
@@ -766,6 +681,7 @@ export function DashboardPage() {
           </div>
         </section>
       </main>
+      </div>
     </div>
   )
 }

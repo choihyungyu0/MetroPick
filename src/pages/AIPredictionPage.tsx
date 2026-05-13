@@ -1,19 +1,12 @@
 import { useMemo, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
-  BarChart3,
   Bell,
-  Bookmark,
   BrainCircuit,
-  CircleHelp,
   CircleUserRound,
   Coins,
-  FileText,
-  Home,
   Info,
-  MapPin,
   Play,
-  Settings,
   ShieldCheck,
   ShieldQuestion,
   Target,
@@ -21,10 +14,10 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
 
 import { aiPredictionAssets } from '@/shared/assets/aiPredictionAssets'
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { AppSidebar } from '@/shared/components/AppSidebar'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 
 type PredictionFilters = {
@@ -74,21 +67,6 @@ const defaultFilters: PredictionFilters = {
   region: '광주광역시 전체',
   date: '2026년 4월 18일',
 }
-
-const sideMenuItems: Array<{
-  active?: boolean
-  href: string
-  icon: LucideIcon
-  label: string
-}> = [
-  { label: '대시보드', icon: Home, href: '/dashboard' },
-  { label: '상권 분석', icon: BarChart3, href: '/commercial-analysis' },
-  { label: 'AI 예측', icon: BrainCircuit, href: '/ai-prediction', active: true },
-  { label: '입지 추천', icon: MapPin, href: '/recommendation' },
-  { label: '리포트', icon: FileText, href: '/report' },
-  { label: '관심 지역', icon: Bookmark, href: '/dashboard' },
-  { label: '설정', icon: Settings, href: '/dashboard' },
-]
 
 const scenarioOptions = ['광주 2호선 2단계 개통 - 2026년 예정']
 const businessTypeOptions = ['커피전문점', '편의점', '음식점', '베이커리']
@@ -171,63 +149,6 @@ function appendPredictionResult(result: PredictionResult) {
   const key = 'metropick-ai-prediction-results'
   const existing = safeParseStorage<PredictionResult[]>(key) ?? []
   window.localStorage.setItem(key, JSON.stringify([...existing, result]))
-}
-
-function Sidebar() {
-  return (
-    <aside className="relative w-[260px] shrink-0 border-r border-blue-100 bg-white px-5 py-8 max-lg:w-full max-lg:border-r-0 max-lg:py-5">
-      <div className="mb-9 flex items-center gap-3 pl-3 text-slate-900">
-        <img
-          alt="MetroPick AI 로고"
-          className="h-8 w-9 object-contain"
-          draggable={false}
-          src={landingAssets.logo}
-        />
-        <strong className="text-lg font-black">MetroPick AI</strong>
-      </div>
-
-      <nav
-        aria-label="AI 예측 사이드 메뉴"
-        className="grid gap-3 max-lg:grid-cols-4 max-md:grid-cols-2"
-      >
-        {sideMenuItems.map((item) => {
-          const Icon = item.icon
-
-          return (
-            <Link
-              aria-current={item.active ? 'page' : undefined}
-              className={`flex h-[46px] items-center gap-3.5 rounded-xl px-3.5 text-[15px] font-bold ${
-                item.active
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-slate-700 hover:bg-slate-50'
-              }`}
-              key={item.label}
-              to={item.href}
-            >
-              <Icon aria-hidden="true" size={21} />
-              {item.label}
-            </Link>
-          )
-        })}
-      </nav>
-
-      <div className="absolute right-8 bottom-20 left-8 rounded-xl border border-blue-100 bg-gradient-to-b from-white to-blue-50 p-5 max-lg:static max-lg:mt-5">
-        <div className="flex items-center gap-2 text-[15px] font-black text-slate-800">
-          <CircleHelp aria-hidden="true" className="text-blue-600" size={22} />
-          AI 예측 가이드
-        </div>
-        <p className="my-4 text-xs leading-7 font-semibold text-slate-500">
-          시뮬레이션 활용 방법과 예측 데이터 해석 팁을 확인해보세요.
-        </p>
-        <button
-          className="h-9 w-full rounded-lg border border-blue-200 bg-white text-sm font-extrabold text-blue-700"
-          type="button"
-        >
-          자세히 보기
-        </button>
-      </div>
-    </aside>
-  )
 }
 
 function FilterSelect({
@@ -591,7 +512,7 @@ export function AIPredictionPage() {
       <TopNavigation activeHref="/ai-prediction" />
 
       <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-104px)] max-lg:flex-col">
-        <Sidebar />
+        <AppSidebar activeHref="/ai-prediction" ariaLabel="AI 예측 사이드 메뉴" />
 
         <main className="min-w-0 flex-1 overflow-hidden px-9 py-7 max-md:px-4">
           <div className="mb-4 flex items-center justify-between gap-4 max-lg:flex-col max-lg:items-start">
