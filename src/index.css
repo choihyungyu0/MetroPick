@@ -47,6 +47,12 @@ body {
     width: calc(100% / var(--app-density-scale));
     zoom: var(--app-density-scale);
   }
+
+  #root:has(.report-page-original) {
+    width: 100%;
+    min-height: 100vh;
+    zoom: 1;
+  }
 }
 
 @media (min-width: 1600px) and (min-height: 850px) {
