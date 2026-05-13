@@ -192,7 +192,7 @@ function FilterBar({
   onRun: () => void
 }) {
   return (
-    <section className="mb-5 grid min-h-20 grid-cols-[1.15fr_1fr_0.95fr_220px] items-center gap-8 rounded-xl border border-blue-100 bg-white px-7 py-4 shadow-[0_10px_24px_rgba(23,72,137,0.08)] max-xl:grid-cols-2 max-lg:grid-cols-1">
+    <section className="mb-4 grid min-h-20 grid-cols-[1.15fr_1fr_0.95fr_220px] items-center gap-8 rounded-xl border border-blue-100 bg-white px-7 py-4 shadow-[0_10px_24px_rgba(23,72,137,0.08)] max-xl:grid-cols-2 max-lg:grid-cols-1">
       <FilterSelect
         label="개통 시나리오"
         onChange={(scenario) => onChange({ ...filters, scenario })}
@@ -230,12 +230,12 @@ function FilterBar({
 
 function SalesForecastChartCard() {
   return (
-    <section className="min-h-[360px] rounded-xl border border-blue-100 bg-white p-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
+    <section className="h-[360px] rounded-xl border border-blue-100 bg-white p-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="sr-only">개통 전·후 매출 전망</h3>
-      <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white">
+      <div className="h-full overflow-hidden rounded-xl border border-slate-100 bg-white">
         <img
           alt="개통 전후 매출 전망 예측 차트"
-          className="h-auto w-full min-w-[760px] object-contain"
+          className="h-full w-full object-contain"
           draggable={false}
           src={aiPredictionAssets.salesForecastChart}
         />
@@ -246,13 +246,13 @@ function SalesForecastChartCard() {
 
 function GrowthRateCard() {
   return (
-    <section className="min-h-[360px] rounded-xl border border-blue-100 bg-white p-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
+    <section className="h-[360px] rounded-xl border border-blue-100 bg-white p-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="text-lg font-black text-slate-900">
         업종별 매출 상승률{' '}
         <span className="text-xs text-slate-500">(개통 후 24개월 기준)</span>
       </h3>
 
-      <div className="mt-9 grid gap-5">
+      <div className="mt-8 grid gap-4">
         {growthRates.map((item, index) => (
           <div
             className="grid grid-cols-[90px_1fr_70px] items-center gap-3"
@@ -278,7 +278,7 @@ function GrowthRateCard() {
         ))}
       </div>
 
-      <p className="mt-5 text-xs leading-relaxed font-semibold text-slate-500">
+      <p className="mt-4 text-xs leading-relaxed font-semibold text-slate-500">
         ※ 선택 업종을 포함한 주요 업종의 예상 매출 상승률입니다.
       </p>
     </section>
@@ -287,7 +287,7 @@ function GrowthRateCard() {
 
 function SummaryCard({ stationArea }: { stationArea: string }) {
   return (
-    <aside className="min-h-[492px] rounded-xl border border-blue-100 bg-white p-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
+    <aside className="min-h-[488px] self-start rounded-xl border border-blue-100 bg-white p-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="text-lg font-black text-slate-900">선택 역세권 예측 요약</h3>
 
       <div className="mt-6 grid grid-cols-[48px_1fr_98px] items-center gap-2.5 border-b border-slate-100 pb-5">
@@ -353,7 +353,7 @@ function SummaryCard({ stationArea }: { stationArea: string }) {
 
 function ConfidenceSection() {
   return (
-    <section className="mt-4">
+    <section className="mt-3">
       <h3 className="mb-2.5 ml-5 text-[17px] font-black text-slate-900">
         AI 예측 신뢰도
       </h3>
@@ -363,18 +363,18 @@ function ConfidenceSection() {
 
           return (
             <div
-              className="flex items-center gap-3.5 rounded-xl border border-blue-100 bg-white p-4 shadow-[0_8px_22px_rgba(22,72,140,0.05)]"
+              className="flex items-center gap-3 rounded-xl border border-blue-100 bg-white p-3 shadow-[0_8px_22px_rgba(22,72,140,0.05)]"
               key={item.label}
             >
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-600">
-                <Icon aria-hidden="true" size={21} />
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-600">
+                <Icon aria-hidden="true" size={19} />
               </div>
               <div className="flex-1">
                 <p className="m-0 text-xs font-extrabold text-slate-700">{item.label}</p>
-                <strong className="mt-1 block text-[22px] font-black leading-none text-blue-600">
+                <strong className="mt-1 block text-xl font-black leading-none text-blue-600">
                   {item.score}% <span className="text-xs">{item.level}</span>
                 </strong>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
                     className="h-full rounded-full bg-blue-600"
                     style={{ width: `${item.score}%` }}
@@ -391,14 +391,14 @@ function ConfidenceSection() {
 
 function EvidenceSection() {
   return (
-    <section className="rounded-xl border border-blue-100 bg-white px-7 py-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-white px-6 py-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="flex items-center gap-1 text-lg font-black text-slate-900">
         예측 근거 <Info aria-hidden="true" className="text-slate-400" size={16} />
       </h3>
-      <div className="mt-5 grid grid-cols-4 gap-3.5 max-lg:grid-cols-2 max-sm:grid-cols-1">
+      <div className="mt-4 grid grid-cols-4 gap-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
         {evidenceItems.map((item) => (
           <div
-            className="grid min-h-[66px] place-items-center rounded-lg border border-blue-100 bg-white px-3 text-center"
+            className="grid min-h-[58px] place-items-center rounded-lg border border-blue-100 bg-white px-3 text-center"
             key={item.title}
           >
             <p className="m-0 text-xs font-black text-blue-600">{item.title}</p>
@@ -406,7 +406,7 @@ function EvidenceSection() {
           </div>
         ))}
       </div>
-      <p className="mt-5 text-xs leading-relaxed font-semibold text-slate-500">
+      <p className="mt-4 text-xs leading-relaxed font-semibold text-slate-500">
         ※ 예측 근거는 주요 데이터 기반 인사이트를 요약한 것입니다.
       </p>
     </section>
@@ -415,12 +415,12 @@ function EvidenceSection() {
 
 function CommentSection() {
   return (
-    <section className="rounded-xl border border-blue-100 bg-gradient-to-b from-white to-blue-50 px-6 py-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
+    <section className="rounded-xl border border-blue-100 bg-gradient-to-b from-white to-blue-50 px-6 py-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="flex items-center gap-2 text-lg font-black text-indigo-600">
         <BrainCircuit aria-hidden="true" size={20} />
         AI 요약 코멘트
       </h3>
-      <p className="my-4 text-sm leading-7 font-bold text-slate-700">
+      <p className="my-3 text-sm leading-6 font-bold text-slate-700">
         상무역(2호선) 일대는 개통 이후 유동인구 증가와 20~30대 생활인구 비중 확대가
         예상되어 커피전문점의 매출 성장이 두드러질 것으로 보입니다. 특히 개통 후 6개월부터
         유의미한 상승 전환이 예상되며, 24개월 후에는 현재 대비 약 47.6%의 매출 상승이
@@ -436,7 +436,7 @@ function CommentSection() {
 
 function Footer() {
   return (
-    <footer className="grid min-h-[104px] grid-cols-[320px_1fr_420px_170px] items-center gap-7 bg-[linear-gradient(90deg,#001a3d,#001f4f)] px-16 py-5 text-white max-2xl:grid-cols-1 max-md:px-5">
+    <footer className="grid min-h-[96px] grid-cols-[320px_1fr_420px_170px] items-center gap-7 bg-[linear-gradient(90deg,#001a3d,#001f4f)] px-16 py-4 text-white max-2xl:grid-cols-1 max-md:px-5">
       <div className="flex items-center gap-3">
         <img
           alt="MetroPick AI 로고"
@@ -508,13 +508,13 @@ export function AIPredictionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(14,100,255,0.08),transparent_28%),#f5f9ff] text-slate-900">
+    <div className="ai-prediction-page min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(14,100,255,0.08),transparent_28%),#f5f9ff] text-slate-900">
       <TopNavigation activeHref="/ai-prediction" />
 
-      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-104px)] max-lg:flex-col">
+      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-96px)] max-lg:flex-col">
         <AppSidebar activeHref="/ai-prediction" ariaLabel="AI 예측 사이드 메뉴" />
 
-        <main className="min-w-0 flex-1 overflow-hidden px-9 py-7 max-md:px-4">
+        <main className="min-w-0 flex-1 overflow-hidden px-9 py-6 max-md:px-4">
           <div className="mb-4 flex items-center justify-between gap-4 max-lg:flex-col max-lg:items-start">
             <div>
               <h1 className="m-0 flex items-center gap-2 text-3xl font-black tracking-[-0.8px] text-slate-950">
@@ -574,14 +574,14 @@ export function AIPredictionPage() {
               </div>
 
               <ConfidenceSection />
-
-              <div className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(420px,1.25fr)] gap-4 max-xl:grid-cols-1">
-                <EvidenceSection />
-                <CommentSection />
-              </div>
             </div>
 
             <SummaryCard stationArea={stationSummary} />
+          </div>
+
+          <div className="mt-4 grid grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] gap-4 max-xl:grid-cols-1">
+            <EvidenceSection />
+            <CommentSection />
           </div>
         </main>
       </div>

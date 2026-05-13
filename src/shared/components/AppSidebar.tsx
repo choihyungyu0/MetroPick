@@ -38,7 +38,7 @@ export function AppSidebar({
   ariaLabel = '사이드 메뉴',
 }: AppSidebarProps) {
   return (
-    <aside className="flex min-h-[calc(100vh-var(--app-topbar-height))] w-[252px] shrink-0 flex-col justify-between border-r border-blue-100 bg-white/90 px-3 py-6 max-lg:hidden">
+    <aside className="app-sidebar flex min-h-[calc(100vh-var(--app-topbar-height))] w-[252px] shrink-0 flex-col justify-between border-r border-blue-100 bg-white/90 px-3 py-6 max-lg:hidden">
       <div>
         <Link
           aria-label="MetroPick AI 홈"

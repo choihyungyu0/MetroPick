@@ -48,6 +48,15 @@ body {
   #root {
     zoom: var(--app-density-scale);
   }
+
+  #root:has(.ai-prediction-page) {
+    min-height: 100vh;
+    zoom: 1;
+  }
+
+  .ai-prediction-page .app-sidebar {
+    min-height: calc(100vh - var(--app-topbar-height) - 96px);
+  }
 }
 
 @media (min-width: 1600px) and (min-height: 850px) {
