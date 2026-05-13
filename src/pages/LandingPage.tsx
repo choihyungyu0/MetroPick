@@ -136,7 +136,7 @@ function DashboardPreview() {
   return (
     <section
       id="dashboard-preview"
-      className="grid overflow-hidden rounded-[22px] border border-[#cad9eb] bg-white/95 shadow-[0_22px_60px_rgba(15,44,82,0.15)] lg:grid-cols-[138px_minmax(0,1fr)]"
+      className="grid min-w-0 overflow-hidden rounded-[22px] border border-[#cad9eb] bg-white/95 shadow-[0_22px_60px_rgba(15,44,82,0.15)] lg:grid-cols-[138px_minmax(0,1fr)]"
       aria-label="MetroPick AI 대시보드 미리보기"
     >
       <aside className="hidden border-r border-[#e6edf5] bg-gradient-to-b from-white to-[#f8fbff] p-3.5 lg:block">
@@ -200,11 +200,11 @@ function DashboardPreview() {
             </p>
           </div>
 
-          <div className="grid gap-3 xl:grid-cols-[minmax(260px,1.08fr)_minmax(360px,1.55fr)]">
+          <div className="grid gap-3 min-[1500px]:grid-cols-[minmax(260px,1.08fr)_minmax(360px,1.55fr)]">
             <MapMockup />
 
             <div className="grid min-w-0 gap-3">
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-3 min-[1500px]:grid-cols-3">
                 {summaryCards.map((card) => (
                   <article
                     key={card.label}
@@ -213,7 +213,7 @@ function DashboardPreview() {
                     <p className="text-[10px] font-extrabold text-[#556475]">
                       {card.label}
                     </p>
-                    <strong className="mt-2 block whitespace-nowrap text-[17px] font-black tracking-[-0.03em] text-[#111d31]">
+                    <strong className="mt-2 block text-[17px] leading-tight font-black tracking-[-0.03em] text-[#111d31]">
                       {card.value}
                     </strong>
                     <span className="mt-1 block text-[10px] font-bold text-[#10b79a]">
@@ -286,8 +286,8 @@ function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-white" />
       </div>
 
-      <div className="relative z-10 mx-auto grid w-[min(1720px,calc(100%-32px))] items-center gap-10 xl:grid-cols-[540px_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[590px_minmax(760px,1fr)] 2xl:gap-16">
-        <div className="pt-4">
+      <div className="relative z-10 mx-auto grid w-[min(1720px,calc(100%-32px))] items-start gap-10 xl:grid-cols-[540px_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[590px_minmax(760px,1fr)] 2xl:gap-16">
+        <div>
           <p className="inline-flex min-h-9 items-center rounded-full border border-[#0c71ff]/25 bg-[#eff8ff]/95 px-5 text-sm font-extrabold text-[#046bff] shadow-sm">
             광주 2호선 개통 · 2026년 예정
           </p>
