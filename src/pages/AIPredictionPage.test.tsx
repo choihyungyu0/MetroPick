@@ -27,10 +27,13 @@ describe('AIPredictionPage', () => {
   })
 
   it('renders the AI prediction layout with the sales forecast chart image', () => {
-    const { container } = renderAIPredictionPage()
+    renderAIPredictionPage()
 
-    expect(container.querySelector('.ai-prediction-page')).toBeInTheDocument()
-    expect(container.querySelector('img')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /AI 매출 변동 시뮬레이션/ }),
+    ).toBeInTheDocument()
+    expect(screen.getByAltText('개통 전후 매출 전망 예측 차트')).toBeInTheDocument()
+    expect(screen.getByText('선택 역세권 예측 요약')).toBeInTheDocument()
     expect(screen.getAllByText('+47.6%').length).toBeGreaterThan(0)
   })
 
@@ -47,15 +50,19 @@ describe('AIPredictionPage', () => {
     const raw = window.localStorage.getItem('metropick-ai-prediction-results')
     const results = JSON.parse(raw ?? '[]') as Array<{
       predictedSalesGrowthRate: number
+      predictedSalesIncrease: string
+      riskLevel: string
     }>
 
     expect(results).toHaveLength(1)
     expect(results[0]).toMatchObject({
       predictedSalesGrowthRate: 47.6,
+      predictedSalesIncrease: '+1,280만원',
+      riskLevel: '보통',
     })
   })
 
-  it('saves a FastAPI prediction result to localStorage when available', async () => {
+  it('saves and renders a FastAPI startup suitability result separately', async () => {
     const user = userEvent.setup()
     vi.stubGlobal(
       'fetch',
@@ -76,17 +83,22 @@ describe('AIPredictionPage', () => {
     await waitFor(() => {
       const raw = window.localStorage.getItem('metropick-ai-prediction-results')
       const results = JSON.parse(raw ?? '[]') as Array<{
+        backendStartupSuitability?: { predicted_score: number }
+        predictedSalesGrowthRate: number
         predicted_score?: number
-        recommendation_label?: string
-        risk_level?: string
       }>
 
       expect(results[0]).toMatchObject({
+        predictedSalesGrowthRate: 47.6,
         predicted_score: 83.4,
-        recommendation_label: '창업 적합도 높음',
-        risk_level: '낮음',
+        backendStartupSuitability: {
+          predicted_score: 83.4,
+        },
       })
     })
+
     expect(screen.getByText('FastAPI 예측 결과 연결됨')).toBeInTheDocument()
+    expect(screen.getByText('창업 적합도 점수')).toBeInTheDocument()
+    expect(screen.getByText('83.4점')).toBeInTheDocument()
   })
 })

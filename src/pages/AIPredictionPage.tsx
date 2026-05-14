@@ -38,6 +38,7 @@ type PredictionFilters = {
 }
 
 type PredictionResult = {
+  backendStartupSuitability?: BackendStartupSuitabilityResponse
   businessType: string
   createdAt: string
   id: string
@@ -47,10 +48,10 @@ type PredictionResult = {
   predicted_score?: number
   recommendation_label?: string
   risk_level?: string
-  top_reasons?: string[]
   riskLevel: '낮음' | '보통' | '높음'
   scenario: string
   stationArea: string
+  top_reasons?: string[]
 }
 
 type GrowthRateItem = {
@@ -78,38 +79,44 @@ type BackendStatus = 'connected' | 'fallback' | 'loading'
 const defaultFilters: PredictionFilters = {
   scenario: '광주 2호선 2단계 개통 - 2026년 예정',
   businessType: '커피전문점',
-  stationArea: '상무역 (2호선)',
+  stationArea: '상무역(2호선)',
   region: '광주광역시 전체',
   date: '2026년 4월 18일',
 }
 
 const scenarioOptions = ['광주 2호선 2단계 개통 - 2026년 예정']
-const businessTypeOptions = ['커피전문점', '편의점', '음식점', '베이커리']
-const stationOptions = ['상무역 (2호선)', '광주역', '전남대역']
+const businessTypeOptions = ['커피전문점', '편의점', '외식업', '베이커리']
+const stationOptions = ['상무역(2호선)', '광주역', '전남대역']
 const regionOptions = ['광주광역시 전체']
 const dateOptions = ['2026년 4월 18일']
 
 const growthRates: GrowthRateItem[] = [
   { label: '커피전문점', value: 47.6 },
   { label: '편의점', value: 38.2 },
-  { label: '음식점', value: 34.7 },
+  { label: '외식업', value: 34.7 },
   { label: '베이커리', value: 31.5 },
-  { label: '헬스·피트니스', value: 28.4 },
+  { label: '스포츠·피트니스', value: 28.4 },
 ]
 
 const confidenceMetrics: ConfidenceMetric[] = [
   { label: '종합 예측 신뢰도', score: 82, level: '높음', icon: ShieldCheck },
   { label: '데이터 기반 신뢰도', score: 87, level: '높음', icon: Coins },
-  { label: '모델 예측 정확도', score: 79, level: '높음', icon: BrainCircuit },
+  { label: '모델 점검 수준', score: 79, level: '높음', icon: BrainCircuit },
   { label: '유사 상권 적합도', score: 81, level: '높음', icon: Target },
 ]
 
 const evidenceItems = [
   { title: '버스 승하차 증가', value: '+28.6%' },
   { title: '20~30대 생활인구 비중', value: '+6.8%p' },
-  { title: '경쟁 점포 수', value: '적정 수준 유지' },
-  { title: '기존 상권 성장률', value: '연평균 +3.7%' },
+  { title: '경쟁 점포 수', value: '적정 수준 예상' },
+  { title: '기존 상권 성장률', value: '평균 +3.7%' },
 ] as const
+
+const defaultRiskReasons = [
+  '반경 500m 내 경쟁 점포 증가 가능성',
+  '신규 상업시설 공급 계획 존재',
+  '주말 유동인구 변동성 높음',
+]
 
 const sampleStartupSuitabilityPayload: BackendStartupSuitabilityInput = {
   radius_m: 500,
@@ -137,12 +144,12 @@ const sampleStartupSuitabilityPayload: BackendStartupSuitabilityInput = {
 }
 
 function normalizeBusinessType(label: string) {
-  if (label.includes('카페')) {
+  if (label.includes('카페') || label.includes('커피')) {
     return '커피전문점'
   }
 
-  if (label.includes('음식')) {
-    return '음식점'
+  if (label.includes('외식') || label.includes('음식')) {
+    return '외식업'
   }
 
   if (label.includes('편의')) {
@@ -186,7 +193,7 @@ function buildMockPredictionResult(filters: PredictionFilters): PredictionResult
     businessType: filters.businessType,
     stationArea: filters.stationArea,
     predictedSalesGrowthRate: 47.6,
-    predictedSalesIncrease: '+1,280留뚯썝',
+    predictedSalesIncrease: '+1,280만원',
     predictedFloatingPopulationGrowthRate: 42.3,
     riskLevel: '보통',
   }
@@ -198,8 +205,7 @@ function buildBackendPredictionResult(
 ): PredictionResult {
   return {
     ...buildMockPredictionResult(filters),
-    predictedSalesGrowthRate: prediction.predicted_score,
-    predictedSalesIncrease: `${prediction.predicted_score.toFixed(1)}점`,
+    backendStartupSuitability: prediction,
     predicted_score: prediction.predicted_score,
     risk_level: prediction.risk_level,
     recommendation_label: prediction.recommendation_label,
@@ -302,13 +308,13 @@ function FilterBar({
 function SalesForecastChartCard() {
   return (
     <section className="h-[360px] rounded-xl border border-blue-100 bg-white p-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
-      <h3 className="sr-only">개통 전·후 매출 전망</h3>
+      <h3 className="sr-only">개통 전후 매출 전망</h3>
       <div className="h-full overflow-hidden rounded-xl border border-slate-100 bg-white">
         <ImageWithFallback
           alt="개통 전후 매출 전망 예측 차트"
           className="h-full w-full object-contain"
           draggable={false}
-          fallbackText="매출 전망 차트를 불러올 수 없습니다."
+          fallbackText="매출 전망 차트를 불러오지 못했습니다."
           src={aiPredictionAssets.salesForecastChart}
         />
       </div>
@@ -351,7 +357,7 @@ function GrowthRateCard() {
       </div>
 
       <p className="mt-4 text-xs leading-relaxed font-semibold text-slate-500">
-        ※ 선택 업종을 포함한 주요 업종의 예상 매출 상승률입니다.
+        선택 업종을 포함한 주요 업종의 예상 매출 상승률입니다.
       </p>
     </section>
   )
@@ -364,23 +370,6 @@ function SummaryCard({
   backendPrediction: BackendStartupSuitabilityResponse | null
   stationArea: string
 }) {
-  const predictedFloatingDisplay = backendPrediction
-    ? `${backendPrediction.predicted_score.toFixed(1)}점`
-    : '+42.3%'
-  const salesPotentialDisplay = backendPrediction
-    ? backendPrediction.recommendation_label
-    : '+47.6%'
-  const salesPotentialDetail = backendPrediction ? 'FastAPI 샘플 결과' : '(+1,280留뚯썝)'
-  const riskLevelDisplay = backendPrediction?.risk_level ?? '보통'
-  const riskReasons =
-    backendPrediction?.top_reasons.length && backendPrediction.top_reasons.length > 0
-      ? backendPrediction.top_reasons
-      : [
-          '諛섍꼍 500m ??寃쎌웳 ?먰룷 利앷? 媛?μ꽦',
-          '?좉퇋 ?곸뾽?쒖꽕 怨듦툒 怨꾪쉷 議댁옱',
-          '二쇰쭚 ?좊룞?멸뎄 蹂?숈꽦 ?믪쓬',
-        ]
-
   return (
     <aside className="min-h-[488px] self-start rounded-xl border border-blue-100 bg-white p-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="text-lg font-black text-slate-900">선택 역세권 예측 요약</h3>
@@ -405,9 +394,7 @@ function SummaryCard({
             예상 유동인구 증가율
           </p>
         </div>
-        <strong className="text-2xl font-black text-blue-600">
-          {predictedFloatingDisplay}
-        </strong>
+        <strong className="text-2xl font-black text-blue-600">+42.3%</strong>
         <small className="col-start-2 text-xs font-bold text-slate-500">
           (개통 후 24개월 기준)
         </small>
@@ -420,13 +407,46 @@ function SummaryCard({
             예상 매출 잠재력 변화
           </p>
         </div>
-        <strong className="text-2xl font-black text-blue-600">
-          {salesPotentialDisplay}
-        </strong>
+        <strong className="text-2xl font-black text-blue-600">+47.6%</strong>
         <small className="col-start-2 text-xs font-bold text-slate-500">
-          {salesPotentialDetail}
+          (+1,280만원)
         </small>
       </div>
+
+      {backendPrediction ? (
+        <div className="border-b border-slate-100 py-5">
+          <h4 className="mb-3 text-sm font-black text-slate-900">
+            FastAPI 창업 적합도 결과
+          </h4>
+          <dl className="grid gap-2 text-xs font-bold text-slate-600">
+            <div className="flex items-center justify-between gap-3">
+              <dt>창업 적합도 점수</dt>
+              <dd className="font-black text-blue-600">
+                {backendPrediction.predicted_score.toFixed(1)}점
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt>위험 수준</dt>
+              <dd className="font-black text-slate-800">{backendPrediction.risk_level}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt>추천 판단</dt>
+              <dd className="font-black text-slate-800">
+                {backendPrediction.recommendation_label}
+              </dd>
+            </div>
+          </dl>
+
+          <strong className="mt-4 block text-xs font-black text-slate-700">
+            주요 예측 근거
+          </strong>
+          <ul className="mt-2 list-disc space-y-2 pl-5 text-xs leading-relaxed font-bold text-slate-500">
+            {backendPrediction.top_reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="pt-5">
         <div className="flex items-center gap-2.5">
@@ -435,24 +455,16 @@ function SummaryCard({
           <em className="ml-auto rounded-lg bg-amber-50 px-3 py-1 text-xs font-black not-italic text-amber-600">
             보통
           </em>
-          {backendPrediction ? (
-            <span className="rounded-lg bg-blue-50 px-3 py-1 text-xs font-black text-blue-600">
-              {riskLevelDisplay}
-            </span>
-          ) : null}
         </div>
         <ul className="mt-4 list-disc space-y-2 pl-5 text-xs leading-relaxed font-bold text-slate-500">
-          {backendPrediction
-            ? riskReasons.map((reason) => <li key={reason}>{reason}</li>)
-            : null}
-          <li>반경 500m 내 경쟁 점포 증가 가능성</li>
-          <li>신규 상업시설 공급 계획 존재</li>
-          <li>주말 유동인구 변동성 높음</li>
+          {defaultRiskReasons.map((reason) => (
+            <li key={reason}>{reason}</li>
+          ))}
         </ul>
       </div>
 
       <p className="mt-5 text-xs leading-relaxed font-semibold text-slate-500">
-        ※ 예측 결과는 실제 상황과 다를 수 있으며, 참고용으로 활용해주세요.
+        이 예측 결과는 실제 상황과 다를 수 있으며 참고용으로 사용해 주세요.
       </p>
     </aside>
   )
@@ -514,7 +526,7 @@ function EvidenceSection() {
         ))}
       </div>
       <p className="mt-4 text-xs leading-relaxed font-semibold text-slate-500">
-        ※ 예측 근거는 주요 데이터 기반 인사이트를 요약한 것입니다.
+        이 예측 근거는 주요 데이터 기반 인사이트를 요약한 것입니다.
       </p>
     </section>
   )
@@ -528,14 +540,15 @@ function CommentSection() {
         AI 요약 코멘트
       </h3>
       <p className="my-3 text-sm leading-5 font-bold text-slate-700">
-        상무역(2호선) 일대는 개통 이후 유동인구 증가와 20~30대 생활인구 비중 확대가
-        예상되어 커피전문점의 매출 성장이 두드러질 것으로 보입니다. 특히 개통 후 6개월부터
-        유의미한 상승 전환이 예상되며, 24개월 후에는 현재 대비 약 47.6%의 매출 상승이
-        기대됩니다. 경쟁 점포 수와 신규 상업시설 공급 변수를 지속적으로 모니터링하는 것을
-        권장합니다.
+        상무역(2호선) 일대는 개통 이후 유동인구 증가와 20~30대 생활인구
+        비중 확대가 예상되어 커피전문점의 매출 성장 잠재력이 높게 보입니다.
+        특히 개통 후 6개월부터 의미 있는 상승 전환이 예상되며, 24개월
+        뒤에는 현재 대비 약 47.6%의 매출 상승을 참고 시나리오로 볼 수
+        있습니다. 다만 경쟁 점포 증가와 신규 상업시설 공급 변화를 지속적으로
+        모니터링하는 것이 좋습니다.
       </p>
       <small className="text-xs font-semibold text-slate-500">
-        ※ AI가 생성한 요약으로 실제 결과와 다를 수 있습니다.
+        이 내용은 AI가 생성한 요약으로 실제 결과와 다를 수 있습니다.
       </small>
     </section>
   )
@@ -574,19 +587,7 @@ export function AIPredictionPage() {
       setBackendPrediction(null)
     }
 
-    const result: PredictionResult = {
-      id: `ai-prediction-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      scenario: filters.scenario,
-      businessType: filters.businessType,
-      stationArea: filters.stationArea,
-      predictedSalesGrowthRate: 47.6,
-      predictedSalesIncrease: '+1,280만원',
-      predictedFloatingPopulationGrowthRate: 42.3,
-      riskLevel: '보통',
-    }
-
-    appendPredictionResult(result)
+    appendPredictionResult(buildMockPredictionResult(filters))
     setSaveMessage('시뮬레이션 결과가 저장되었습니다.')
     setLastSimulated(
       new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
