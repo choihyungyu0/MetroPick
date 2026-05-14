@@ -37,6 +37,13 @@ body {
   font-family: var(--font-sans);
 }
 
+.landing-hero-train {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 9rem, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 9rem, #000 100%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
 #root {
   min-height: calc(100vh / var(--app-density-scale));
 }

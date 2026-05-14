@@ -275,15 +275,16 @@ function DashboardPreview() {
 
 function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#f3fbff] to-white py-8 lg:py-10">
+    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#eef8ff_0%,#fbfdff_64%,#fff_100%)] py-8 lg:py-10">
       <div className="absolute inset-0 opacity-80 lg:opacity-100">
         <img
-          className="absolute left-0 top-6 h-full w-full object-cover object-left-bottom opacity-60 lg:opacity-75"
+          className="landing-hero-train absolute -left-14 top-0 h-[calc(100%+72px)] w-[calc(100%+112px)] max-w-none object-cover object-left-bottom opacity-55 lg:-left-20 lg:h-[calc(100%+92px)] lg:w-[calc(100%+160px)] lg:opacity-70"
           src={landingAssets.heroTrainBg}
           alt="광주 도시철도와 도시 배경 이미지"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-white/35 via-white/75 to-white/95" />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/20 to-white" />
+        <div className="absolute inset-y-0 left-0 w-44 bg-gradient-to-r from-[#eef8ff] via-[#f6fbff]/75 to-transparent lg:w-64" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.22)_0%,rgba(255,255,255,0.66)_43%,rgba(255,255,255,0.96)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(243,251,255,0)_0%,rgba(255,255,255,0.18)_58%,#fff_100%)]" />
       </div>
 
       <div className="relative z-10 mx-auto grid w-[min(1720px,calc(100%-32px))] items-start gap-10 xl:grid-cols-[540px_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[590px_minmax(760px,1fr)] 2xl:gap-16">
