@@ -6,10 +6,11 @@ import {
   Home,
   LineChart,
   MapPin,
+  Settings,
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
 
@@ -31,6 +32,8 @@ const sidebarItems: readonly AppSidebarItem[] = [
   { label: '입지 추천', icon: MapPin, href: '/recommendation' },
   { label: '리포트', icon: FileText, href: '/report' },
   { label: '마이페이지', icon: UserRound, href: '/mypage' },
+  { label: '관심 역세권', icon: MapPin, href: '/mypage?tab=interest-locations' },
+  { label: '설정', icon: Settings, href: '/mypage?tab=notifications' },
 ]
 
 const sidebarStatusCards: readonly AppSidebarItem[] = [
@@ -72,6 +75,9 @@ export function AppSidebar({
   activeHref,
   ariaLabel = '사이드 메뉴',
 }: AppSidebarProps) {
+  const location = useLocation()
+  const currentHref = `${location.pathname}${location.search}`
+
   return (
     <aside className="app-sidebar flex min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] w-[252px] shrink-0 flex-col justify-between border-r border-blue-100 bg-white/90 px-3 py-6 max-[1121px]:hidden">
       <div>
@@ -92,7 +98,14 @@ export function AppSidebar({
         <nav aria-label={ariaLabel} className="grid gap-1.5">
           {sidebarItems.map((item) => {
             const Icon = item.icon
-            const isActive = item.href === activeHref
+            const matchesPath =
+              !item.href.includes('?') &&
+              location.search === '' &&
+              item.href === location.pathname
+            const isActive =
+              (location.search === '' && item.href === activeHref) ||
+              item.href === currentHref ||
+              matchesPath
 
             return (
               <Link

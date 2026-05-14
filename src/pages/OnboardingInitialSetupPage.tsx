@@ -423,15 +423,6 @@ export function OnboardingInitialSetupPage() {
   }
 
   const handleComplete = () => {
-    window.localStorage.setItem(
-      'metropick-onboarding-initial',
-      JSON.stringify({
-        alertSettings,
-        selectedIndustries,
-        selectedRegion,
-        selectedStations,
-      }),
-    )
     navigate('/onboarding/stations')
   }
 

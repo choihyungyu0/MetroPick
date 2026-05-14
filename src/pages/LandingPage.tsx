@@ -5,7 +5,7 @@ import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 
 const navItems = [
-  { label: '서비스 소개', href: '#service-intro' },
+  { label: '서비스 소개', href: '/' },
   { label: '상권 분석', href: '/commercial-analysis' },
   { label: 'AI 예측', href: '/ai-prediction' },
   { label: '입지 추천', href: '/recommendation' },
@@ -276,14 +276,14 @@ function DashboardPreview() {
 function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#f3fbff] to-white py-8 lg:py-10">
-      <div className="absolute inset-0 opacity-65 lg:opacity-90">
+      <div className="absolute inset-0 opacity-80 lg:opacity-100">
         <img
-          className="absolute left-0 top-10 h-full w-full object-cover object-left-bottom opacity-30 lg:opacity-45"
+          className="absolute left-0 top-6 h-full w-full object-cover object-left-bottom opacity-60 lg:opacity-75"
           src={landingAssets.heroTrainBg}
           alt="광주 도시철도와 도시 배경 이미지"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/50" />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-white" />
+        <div className="absolute inset-0 bg-gradient-to-r from-white/35 via-white/75 to-white/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/20 to-white" />
       </div>
 
       <div className="relative z-10 mx-auto grid w-[min(1720px,calc(100%-32px))] items-start gap-10 xl:grid-cols-[540px_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[590px_minmax(760px,1fr)] 2xl:gap-16">
@@ -303,7 +303,7 @@ function HeroSection() {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link
               className="inline-flex min-h-14 items-center justify-center rounded-xl bg-[#086bff] px-8 text-base font-black text-white shadow-[0_16px_32px_rgba(0,97,255,0.22)] transition hover:bg-[#0054e8] focus-visible:ring-2 focus-visible:ring-[#086bff] focus-visible:ring-offset-2 focus-visible:outline-none"
-              to="/onboarding"
+              to="/signup"
             >
               지금 분석 시작
             </Link>
@@ -364,7 +364,7 @@ function FeatureSection() {
             </div>
             <Link
               className="grid h-9 w-9 place-items-center rounded-full bg-[#edf6ff] text-xl font-black text-[#006dff] focus-visible:ring-2 focus-visible:ring-[#086bff] focus-visible:outline-none"
-              to="/onboarding"
+              to="/signup"
               aria-label={`${card.title} 화면으로 이동`}
             >
               ›
@@ -461,7 +461,7 @@ function FeatureSection() {
         </div>
         <Link
           className="inline-flex min-h-12 items-center justify-center rounded-lg bg-white px-8 text-base font-black text-[#0b2850] shadow-lg transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-          to="/onboarding"
+          to="/signup"
         >
           지금 무료로 시작하기
         </Link>
@@ -473,7 +473,7 @@ function FeatureSection() {
 export function LandingPage() {
   return (
     <div className="landing-page min-h-screen overflow-x-clip bg-gradient-to-b from-[#f7fcff] via-white to-[#f7fbff] text-[#071936]">
-      <TopNavigation ctaHref="/onboarding" navItems={navItems} sticky />
+      <TopNavigation ctaHref="/signup" navItems={navItems} sticky />
       <main>
         <HeroSection />
         <FeatureSection />

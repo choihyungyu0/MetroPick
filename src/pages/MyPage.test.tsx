@@ -37,6 +37,20 @@ describe('MyPage', () => {
     expect(screen.getByText('남구 백운동 · 카페/커피전문점')).toBeInTheDocument()
   })
 
+  it('opens a mypage tab from the query parameter', () => {
+    render(
+      <MemoryRouter initialEntries={['/mypage?tab=interest-locations']}>
+        <MyPage />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('tab', { name: '관심 역세권' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    expect(screen.getByText('백운광장역')).toBeInTheDocument()
+  })
+
   it('shows notification settings and saves them to localStorage', async () => {
     const user = userEvent.setup()
     renderMyPage()

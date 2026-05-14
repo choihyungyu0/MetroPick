@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom'
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
+import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
 type BusinessTypeId =
   | 'cafe-dessert'
@@ -196,16 +197,7 @@ function sanitizeSavedSetup(value: unknown): BusinessTypeSetup {
 }
 
 function loadInitialSetup(): BusinessTypeSetup {
-  if (typeof window === 'undefined') {
-    return defaultSetup
-  }
-
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY)
-    return saved ? sanitizeSavedSetup(JSON.parse(saved)) : defaultSetup
-  } catch {
-    return defaultSetup
-  }
+  return sanitizeSavedSetup(safeParseStorage<unknown>(STORAGE_KEY))
 }
 
 function Stepper() {
@@ -627,7 +619,7 @@ export function OnboardingBusinessTypePage() {
       reportType: setup.reportType,
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(savedShape))
+    writeStorage(STORAGE_KEY, savedShape)
     navigate('/onboarding/notifications')
   }
 

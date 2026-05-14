@@ -2,6 +2,24 @@ import { z } from 'zod'
 
 import { businessTypeSchema } from './station'
 
+export type RecommendationScoreBreakdown = {
+  growth: number
+  stability: number
+  competition: number
+  accessibility: number
+}
+
+export type LocationRecommendation = {
+  id: string
+  rank: number
+  stationId: string
+  businessTypeId: string
+  score: number
+  riskLevel: '위험 낮음' | '위험 보통' | '위험 높음'
+  reason: string
+  scoreBreakdown: RecommendationScoreBreakdown
+}
+
 export const recommendationSchema = z.object({
   stationId: z.string().min(1),
   businessType: businessTypeSchema,

@@ -6,12 +6,14 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
+import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { loginAssets } from '@/shared/assets/loginAssets'
+import { writeStorage } from '@/shared/lib/storage'
 
 function PreviewImage({
   alt,
@@ -25,7 +27,14 @@ function PreviewImage({
   src: string
 }) {
   return (
-    <img alt={alt} className={className} draggable={false} loading={loading} src={src} />
+    <ImageWithFallback
+      alt={alt}
+      className={className}
+      draggable={false}
+      fallbackText="미리보기 이미지를 불러올 수 없습니다."
+      loading={loading}
+      src={src}
+    />
   )
 }
 
@@ -74,6 +83,11 @@ function LoginCard() {
   const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     window.localStorage.setItem('metropick-authenticated', 'true')
+    writeStorage('metropick-user', {
+      email: 'demo@metropick.ai',
+      name: '데모 사용자',
+      role: '예비 창업자',
+    })
     navigate('/onboarding')
   }
 
@@ -134,9 +148,9 @@ function LoginCard() {
             <input className="h-5 w-5 accent-[#0b6cff]" type="checkbox" />
             <span>로그인 상태 유지</span>
           </label>
-          <a className="text-sm font-extrabold text-[#0b6cff]" href="/login">
+          <Link className="text-sm font-extrabold text-[#0b6cff]" to="/login">
             비밀번호를 잊으셨나요?
-          </a>
+          </Link>
         </div>
 
         <button
@@ -154,9 +168,9 @@ function LoginCard() {
 
         <p className="mt-2 text-center text-base font-semibold text-[#738096]">
           아직 계정이 없나요?{' '}
-          <a className="font-black text-[#0b6cff]" href="/signup">
+          <Link className="font-black text-[#0b6cff]" to="/signup">
             회원가입
-          </a>
+          </Link>
         </p>
       </form>
     </section>

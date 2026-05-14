@@ -14,6 +14,7 @@ import { landingAssets } from '@/shared/assets/landingAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { signupAssets } from '@/shared/assets/signupAssets'
+import { writeStorage } from '@/shared/lib/storage'
 
 const userTypes = [
   { Icon: UserRound, label: '예비 창업자', active: true },
@@ -154,6 +155,11 @@ function SignupForm() {
   const handleSignupSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     window.localStorage.setItem('metropick-authenticated', 'true')
+    writeStorage('metropick-user', {
+      email: 'founder@metropick.ai',
+      name: '예비 창업자',
+      role: '예비 창업자',
+    })
     navigate('/onboarding')
   }
 

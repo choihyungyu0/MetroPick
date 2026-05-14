@@ -14,8 +14,10 @@ import {
 import { useNavigate } from 'react-router-dom'
 
 import { AppFooter } from '@/shared/components/AppFooter'
+import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
+import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
 type RadiusOption = '300m' | '500m' | '1km'
 
@@ -84,20 +86,7 @@ function sanitizeSavedSetup(value: unknown): OnboardingStationSetup {
 }
 
 function loadInitialSetup(): OnboardingStationSetup {
-  if (typeof window === 'undefined') {
-    return defaultSetup
-  }
-
-  const saved = window.localStorage.getItem(STORAGE_KEY)
-  if (!saved) {
-    return defaultSetup
-  }
-
-  try {
-    return sanitizeSavedSetup(JSON.parse(saved) as unknown)
-  } catch {
-    return defaultSetup
-  }
+  return sanitizeSavedSetup(safeParseStorage<unknown>(STORAGE_KEY))
 }
 
 function Stepper() {
@@ -229,10 +218,11 @@ function SelectedStationMap() {
       </h2>
 
       <div className="mt-4 h-[168px] overflow-hidden rounded-xl border border-[#dbe7f4] bg-white shadow-sm max-lg:h-auto">
-        <img
+        <ImageWithFallback
           alt="선택한 광주 2호선 역세권 미리보기 지도"
           className="block h-full w-full object-cover"
           draggable={false}
+          fallbackText="역세권 미리보기 지도를 불러올 수 없습니다."
           src={onboardingAssets.stationPreviewMap}
         />
       </div>
@@ -372,7 +362,7 @@ export function OnboardingStationPage() {
       return
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(setup))
+    writeStorage(STORAGE_KEY, setup)
     navigate(ONBOARDING_BUSINESS_TYPE_ROUTE)
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Bell,
   BellRing,
@@ -20,10 +20,11 @@ import {
   UserCog,
   Zap,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { myPageAssets } from '@/shared/assets/myPageAssets'
 import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
@@ -150,6 +151,10 @@ const tabs: Array<{ id: MyPageTab; label: string }> = [
   { id: 'notifications', label: '알림 설정' },
   { id: 'activity', label: '최근 활동' },
 ]
+
+function isMyPageTab(value: string | null): value is MyPageTab {
+  return tabs.some((tab) => tab.id === value)
+}
 
 const categoryFilters: Array<{
   count: number
@@ -716,10 +721,11 @@ function AlertCard({ notifications }: { notifications: RecentNotification[] }) {
 function ReportThumbnail({ report }: { report: SavedReport }) {
   return (
     <div className="h-[76px] w-[120px] overflow-hidden rounded-[9px] border border-blue-50 bg-slate-100 max-[1400px]:w-[140px] max-lg:h-[150px] max-lg:w-full">
-      <img
+      <ImageWithFallback
         alt={`${report.title} 썸네일`}
         className="h-full w-full object-cover"
         draggable={false}
+        fallbackText="리포트 썸네일을 불러올 수 없습니다."
         src={report.thumbnailSrc}
       />
     </div>
@@ -908,6 +914,21 @@ function InterestLocationsTab({
   onDelete: (location: InterestLocation) => void
   onView: () => void
 }) {
+  if (locations.length === 0) {
+    return (
+      <div className="grid min-h-[220px] place-items-center px-5 py-5">
+        <div className="rounded-xl border border-dashed border-blue-100 bg-slate-50 px-6 py-8 text-center">
+          <p className="m-0 text-sm font-black text-slate-700">
+            저장된 관심 역세권이 없습니다.
+          </p>
+          <p className="m-0 mt-2 text-sm font-bold text-slate-500">
+            입지 추천에서 관심 지역을 저장하면 이곳에 표시됩니다.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="grid gap-3 px-5 py-5">
       {locations.map((location) => (
@@ -1201,11 +1222,13 @@ function UpgradeBanner() {
 
 export function MyPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [profile] = useState<UserProfile>(() => buildProfile())
   const [interestLocations, setInterestLocations] = useState<InterestLocation[]>(() =>
     normalizeInterestLocations(),
   )
-  const [activeTab, setActiveTab] = useState<MyPageTab>('reports')
+  const requestedTab = searchParams.get('tab')
+  const activeTab: MyPageTab = isMyPageTab(requestedTab) ? requestedTab : 'reports'
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<SortOrder>('latest')
@@ -1218,9 +1241,9 @@ export function MyPage() {
     [interestLocations],
   )
 
-  useEffect(() => {
-    safeParseStorage<boolean>('metropick-authenticated')
-  }, [])
+  const handleTabChange = (tab: MyPageTab) => {
+    setSearchParams(tab === 'reports' ? {} : { tab })
+  }
 
   const filteredReports = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase('ko-KR')
@@ -1351,7 +1374,7 @@ export function MyPage() {
               onSetNotificationSettings={setNotificationSettings}
               onShareReport={handleShareReport}
               onSortChange={setSortOrder}
-              onTabChange={setActiveTab}
+              onTabChange={handleTabChange}
               onViewInterest={() => navigate('/recommendation')}
               searchQuery={searchQuery}
               sortOrder={sortOrder}

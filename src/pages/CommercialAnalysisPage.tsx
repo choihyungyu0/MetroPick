@@ -18,7 +18,9 @@ import {
 import { commercialAnalysisAssets } from '@/shared/assets/commercialAnalysisAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
+import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
 type RadiusOption = '300m' | '500m' | '1km'
 
@@ -161,19 +163,6 @@ const layerLabels: Record<PopulationLayerKey, string> = {
   floatingNight: '유동인구 (야간)',
 }
 
-function safeParseStorage<T>(key: string): T | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  try {
-    const raw = window.localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : null
-  } catch {
-    return null
-  }
-}
-
 function buildInitialFilters(): CommercialAnalysisFilters {
   const stationSetup = safeParseStorage<StoredStationSetup>(
     'metropick-onboarding-stations',
@@ -201,7 +190,7 @@ function buildInitialFilters(): CommercialAnalysisFilters {
 function appendSavedReport(report: SavedCommercialAnalysisReport) {
   const key = 'metropick-saved-commercial-analysis-reports'
   const existing = safeParseStorage<SavedCommercialAnalysisReport[]>(key) ?? []
-  window.localStorage.setItem(key, JSON.stringify([...existing, report]))
+  writeStorage(key, [...existing, report])
 }
 
 function SelectBox({
@@ -371,10 +360,11 @@ function MapCard() {
   return (
     <section className="h-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
       <div className="h-full overflow-x-auto">
-        <img
+        <ImageWithFallback
           alt="광주 2호선 역세권 상권 밀집도 지도"
           className="h-full min-h-[560px] w-full min-w-[760px] object-cover"
           draggable={false}
+          fallbackText="상권 밀집도 지도를 불러올 수 없습니다."
           src={commercialAnalysisAssets.commercialDensityMap}
         />
       </div>

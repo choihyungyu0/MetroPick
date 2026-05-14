@@ -18,7 +18,10 @@ import {
 import { aiPredictionAssets } from '@/shared/assets/aiPredictionAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
+import { SimulationDisclaimer } from '@/shared/components/SimulationDisclaimer'
 import { TopNavigation } from '@/shared/components/TopNavigation'
+import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
 type PredictionFilters = {
   businessType: string
@@ -96,19 +99,6 @@ const evidenceItems = [
   { title: '기존 상권 성장률', value: '연평균 +3.7%' },
 ] as const
 
-function safeParseStorage<T>(key: string): T | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  try {
-    const raw = window.localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : null
-  } catch {
-    return null
-  }
-}
-
 function normalizeBusinessType(label: string) {
   if (label.includes('카페')) {
     return '커피전문점'
@@ -148,7 +138,7 @@ function buildInitialFilters(): PredictionFilters {
 function appendPredictionResult(result: PredictionResult) {
   const key = 'metropick-ai-prediction-results'
   const existing = safeParseStorage<PredictionResult[]>(key) ?? []
-  window.localStorage.setItem(key, JSON.stringify([...existing, result]))
+  writeStorage(key, [...existing, result])
 }
 
 function FilterSelect({
@@ -233,10 +223,11 @@ function SalesForecastChartCard() {
     <section className="h-[360px] rounded-xl border border-blue-100 bg-white p-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="sr-only">개통 전·후 매출 전망</h3>
       <div className="h-full overflow-hidden rounded-xl border border-slate-100 bg-white">
-        <img
+        <ImageWithFallback
           alt="개통 전후 매출 전망 예측 차트"
           className="h-full w-full object-contain"
           draggable={false}
+          fallbackText="매출 전망 차트를 불러올 수 없습니다."
           src={aiPredictionAssets.salesForecastChart}
         />
       </div>
@@ -519,6 +510,10 @@ export function AIPredictionPage() {
             onChange={setFilters}
             onRun={handleRunSimulation}
           />
+
+          <div className="mb-4">
+            <SimulationDisclaimer />
+          </div>
 
           <div className="grid grid-cols-[minmax(0,1fr)_390px] gap-4 max-2xl:grid-cols-1">
             <div className="min-w-0">

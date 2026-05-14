@@ -1,0 +1,58 @@
+import type { PublicDataSource } from '@/shared/types/publicData'
+
+export const publicDataSources: PublicDataSource[] = [
+  {
+    id: 'gwangju-bigdata-platform',
+    name: '광주 빅데이터 통합플랫폼',
+    provider: '광주광역시',
+    sourceType: 'platform',
+    purpose: '광주 지역 생활·상권·교통 데이터 탐색',
+    plannedUsage: ['상권 지표 후보 탐색', '지역 단위 생활인구 및 행정 데이터 확인'],
+    status: 'planned',
+  },
+  {
+    id: 'data-go-kr',
+    name: '공공데이터포털 data.go.kr',
+    provider: '행정안전부 및 공공기관',
+    sourceType: 'open-api',
+    purpose: '공공 OpenAPI 및 파일 데이터 연계 후보 관리',
+    plannedUsage: ['사업체·인허가 데이터 조회', '교통·행정 통계 파일 수집'],
+    status: 'planned',
+  },
+  {
+    id: 'gwangju-transit-ridership',
+    name: '광주 도시철도/버스 이용객 데이터',
+    provider: '광주교통공사 및 광주광역시',
+    sourceType: 'file-data',
+    purpose: '역·정류장 단위 승하차 수요 변화 확인',
+    plannedUsage: ['유동인구 지표 보정', '개통 전후 환승 수요 시나리오 구성'],
+    status: 'mocked',
+  },
+  {
+    id: 'small-business-store',
+    name: '소상공인 상가업소 정보',
+    provider: '소상공인시장진흥공단',
+    sourceType: 'file-data',
+    purpose: '상가 업소 위치와 업종 분포 확인',
+    plannedUsage: ['역세권 점포 밀도 산출', '업종별 경쟁도 계산'],
+    status: 'planned',
+  },
+  {
+    id: 'business-license-open-close',
+    name: '지방행정 인허가 개폐업 데이터',
+    provider: '지방행정 인허가 데이터 개방 시스템',
+    sourceType: 'open-api',
+    purpose: '업종별 개업·폐업 흐름 확인',
+    plannedUsage: ['폐업 리스크 지표 보정', '신규 창업 수요 흐름 분석'],
+    status: 'planned',
+  },
+  {
+    id: 'commercial-growth-indicators',
+    name: '성장상권/상권 지표 데이터',
+    provider: '공공 및 지자체 상권 분석 데이터',
+    sourceType: 'manual',
+    purpose: '성장 상권 후보와 변화 지표 검토',
+    plannedUsage: ['추천 점수 근거 데이터 정리', '리포트 설명 변수 후보화'],
+    status: 'mocked',
+  },
+]

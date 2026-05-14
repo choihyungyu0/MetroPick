@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, type RouteObject } from 'react-router-dom'
 
 import { AIPredictionPage } from '@/pages/AIPredictionPage'
 import { CommercialAnalysisPage } from '@/pages/CommercialAnalysisPage'
@@ -15,7 +15,7 @@ import { RecommendationPage } from '@/pages/RecommendationPage'
 import { ReportPage } from '@/pages/ReportPage'
 import { SignupPage } from '@/pages/SignupPage'
 
-export const router = createBrowserRouter([
+export const appRoutes = [
   {
     path: '/',
     element: <LandingPage />,
@@ -72,4 +72,6 @@ export const router = createBrowserRouter([
     path: '*',
     element: <NotFoundPage />,
   },
-])
+] satisfies RouteObject[]
+
+export const router = createBrowserRouter(appRoutes)

@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router-dom'
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
+import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
 type NotificationId =
   | 'opening-schedule'
@@ -223,21 +224,8 @@ function sanitizeSavedSetup(value: unknown): NotificationSetup {
   }
 }
 
-function readStorageValue(key: string): unknown | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  try {
-    const saved = window.localStorage.getItem(key)
-    return saved ? JSON.parse(saved) : null
-  } catch {
-    return null
-  }
-}
-
 function loadInitialSetup(): NotificationSetup {
-  return sanitizeSavedSetup(readStorageValue(NOTIFICATION_STORAGE_KEY))
+  return sanitizeSavedSetup(safeParseStorage<unknown>(NOTIFICATION_STORAGE_KEY))
 }
 
 function Stepper() {
@@ -705,20 +693,17 @@ export function OnboardingNotificationsPage() {
     }
 
     const notifications = buildPayload(setup)
-    const stations = readStorageValue(STATION_STORAGE_KEY)
-    const businessTypes = readStorageValue(BUSINESS_TYPE_STORAGE_KEY)
+    const stations = safeParseStorage<unknown>(STATION_STORAGE_KEY)
+    const businessTypes = safeParseStorage<unknown>(BUSINESS_TYPE_STORAGE_KEY)
 
-    window.localStorage.setItem(NOTIFICATION_STORAGE_KEY, JSON.stringify(notifications))
-    window.localStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true')
-    window.localStorage.setItem(
-      ONBOARDING_SUMMARY_KEY,
-      JSON.stringify({
-        completedAt: new Date().toISOString(),
-        stations,
-        businessTypes,
-        notifications,
-      }),
-    )
+    writeStorage(NOTIFICATION_STORAGE_KEY, notifications)
+    writeStorage(ONBOARDING_COMPLETED_KEY, true)
+    writeStorage(ONBOARDING_SUMMARY_KEY, {
+      completedAt: new Date().toISOString(),
+      stations,
+      businessTypes,
+      notifications,
+    })
 
     navigate('/dashboard')
   }

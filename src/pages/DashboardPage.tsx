@@ -22,6 +22,8 @@ import {
 import { dashboardAssets } from '@/shared/assets/dashboardAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
+import { SimulationDisclaimer } from '@/shared/components/SimulationDisclaimer'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import {
   businessPotentials,
@@ -34,6 +36,7 @@ import {
   type DashboardKpi,
   type DashboardKpiTone,
 } from '@/shared/data/mockDashboard'
+import { safeParseStorage } from '@/shared/lib/storage'
 
 type StoredStationSetup = {
   selectedStations?: string[]
@@ -77,19 +80,6 @@ const sparklineToneClasses = {
   orange: 'text-teal-500',
   red: 'text-rose-500',
 } satisfies Record<DashboardKpiTone, string>
-
-function safeParseStorage<T>(key: string): T | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  try {
-    const raw = window.localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : null
-  } catch {
-    return null
-  }
-}
 
 function DashboardControls({
   notificationCount,
@@ -251,10 +241,11 @@ function MapPanel() {
       </div>
 
       <div className="relative mt-3.5 h-[440px] overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50 max-sm:h-[320px]">
-        <img
+        <ImageWithFallback
           alt="광주 2호선 상권 변화 지도"
           className="h-full w-full object-cover"
           draggable={false}
+          fallbackText="상권 변화 지도를 불러올 수 없습니다."
           src={dashboardAssets.commercialChangeMap}
         />
         <div className="absolute bottom-5 right-3.5 grid gap-2">
@@ -663,6 +654,16 @@ export function DashboardPage() {
               </button>
             </div>
           </div>
+
+          <div className="mb-3">
+            <SimulationDisclaimer />
+          </div>
+
+          {!onboardingSummary ? (
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+              온보딩 정보가 없어 기본 데모 설정으로 대시보드를 표시합니다.
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-4 gap-4 max-[1880px]:grid-cols-2 max-sm:grid-cols-1">
             {dashboardKpis.map((kpi) => (

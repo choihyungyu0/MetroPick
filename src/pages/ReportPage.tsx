@@ -25,7 +25,10 @@ import {
 import { reportAssets } from '@/shared/assets/reportAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
+import { SimulationDisclaimer } from '@/shared/components/SimulationDisclaimer'
 import { TopNavigation } from '@/shared/components/TopNavigation'
+import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
 type ReportMetric = {
   caption: string
@@ -227,19 +230,6 @@ const mapStats = [
   { label: '경쟁 카페 수', value: '24개' },
 ] as const
 
-function safeParseStorage<T>(key: string): T | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  try {
-    const raw = window.localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : null
-  } catch {
-    return null
-  }
-}
-
 function buildCurrentReport(): FutureSalesReport {
   return {
     id: `future-sales-report-${Date.now()}`,
@@ -256,14 +246,7 @@ function buildCurrentReport(): FutureSalesReport {
 }
 
 function saveCurrentReport() {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  window.localStorage.setItem(
-    'metropick-current-report',
-    JSON.stringify(buildCurrentReport()),
-  )
+  writeStorage('metropick-current-report', buildCurrentReport())
 }
 
 function CardTitle({ children, icon: Icon }: { children: ReactNode; icon?: LucideIcon }) {
@@ -326,10 +309,11 @@ function HeroCard() {
   return (
     <section className="mb-3 grid min-h-[166px] min-w-0 grid-cols-[250px_minmax(0,1fr)_410px] items-center gap-5 rounded-xl border border-blue-100 bg-white/95 p-4 shadow-[0_10px_30px_rgba(25,55,90,0.06)] max-2xl:grid-cols-[250px_minmax(0,1fr)] max-lg:grid-cols-1">
       <div className="h-[136px] overflow-hidden rounded-xl bg-slate-200 max-lg:h-[210px]">
-        <img
+        <ImageWithFallback
           alt="백운광장역 개통 예정 상권 대표 이미지"
           className="h-full w-full object-cover"
           draggable={false}
+          fallbackText="상권 대표 이미지를 불러올 수 없습니다."
           src={reportAssets.stationHero}
         />
       </div>
@@ -418,10 +402,11 @@ function SalesTrendCard() {
     <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle>연도별 예상 매출 추이</CardTitle>
       <div className="h-[190px] overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <img
+        <ImageWithFallback
           alt="연도별 예상 매출 추이 차트"
           className="h-full w-full object-contain"
           draggable={false}
+          fallbackText="예상 매출 추이 차트를 불러올 수 없습니다."
           src={reportAssets.salesTrendChart}
         />
       </div>
@@ -437,10 +422,11 @@ function MapSnapshotCard() {
     <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle>상권 지도 스냅샷</CardTitle>
       <div className="h-[190px] overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <img
+        <ImageWithFallback
           alt="백운광장역 500m 상권 지도 스냅샷"
           className="h-full w-full object-contain"
           draggable={false}
+          fallbackText="상권 지도 스냅샷을 불러올 수 없습니다."
           src={reportAssets.areaMap}
         />
       </div>
@@ -717,10 +703,9 @@ export function ReportPage() {
             <StrategySection />
           </div>
 
-          <p className="m-0 mt-3 text-center text-xs font-bold text-slate-400">
-            본 예측 리포트는 AI 분석과 다양한 공공 및 민간 데이터를 기반으로 산출된
-            예측치이며, 실제 결과는 시장 상황에 따라 달라질 수 있습니다.
-          </p>
+          <div className="mt-3">
+            <SimulationDisclaimer />
+          </div>
         </main>
       </div>
 

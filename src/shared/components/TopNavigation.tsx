@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
 import { cn } from '@/shared/lib/cn'
@@ -44,34 +44,37 @@ function NavigationLink({
   item: TopNavigationItem
   variant?: 'desktop' | 'menu'
 }) {
-  const isActive = item.active ?? item.href === activeHref
-  const linkClasses = cn(
-    'inline-flex items-center px-3 text-base font-extrabold transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none',
-    variant === 'desktop' &&
-      'relative h-11 rounded-none text-white/90 hover:text-white',
-    variant === 'menu' &&
-      'h-10 rounded-md text-slate-800 hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-[#086bff]',
-    isActive &&
+  const buildLinkClasses = (isRouteActive: boolean) => {
+    const isActive = item.active ?? (item.href === activeHref || isRouteActive)
+
+    return cn(
+      'inline-flex items-center px-3 text-base font-extrabold transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none',
       variant === 'desktop' &&
-      'text-white after:absolute after:right-3 after:-bottom-2 after:left-3 after:h-[3px] after:rounded-full after:bg-blue-500',
-    isActive && variant === 'menu' && 'bg-blue-50 text-blue-700',
-    className,
-  )
+        'relative h-11 rounded-none text-white/90 hover:text-white',
+      variant === 'menu' &&
+        'h-10 rounded-md text-slate-800 hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-[#086bff]',
+      isActive &&
+        variant === 'desktop' &&
+        'text-white after:absolute after:right-3 after:-bottom-2 after:left-3 after:h-[3px] after:rounded-full after:bg-blue-500',
+      isActive && variant === 'menu' && 'bg-blue-50 text-blue-700',
+      className,
+    )
+  }
 
   if (item.href.startsWith('/')) {
     return (
-      <Link
-        aria-current={isActive ? 'page' : undefined}
-        className={linkClasses}
+      <NavLink
+        className={({ isActive }) => buildLinkClasses(isActive)}
+        end={item.href === '/'}
         to={item.href}
       >
         {item.label}
-      </Link>
+      </NavLink>
     )
   }
 
   return (
-    <a className={linkClasses} href={item.href}>
+    <a className={buildLinkClasses(false)} href={item.href}>
       {item.label}
     </a>
   )

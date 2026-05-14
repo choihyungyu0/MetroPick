@@ -15,12 +15,15 @@ import { useNavigate } from 'react-router-dom'
 
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
+import { SimulationDisclaimer } from '@/shared/components/SimulationDisclaimer'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { recommendationAssets } from '@/shared/assets/recommendationAssets'
 import {
   mockLocationRecommendations,
   type LocationRecommendationItem,
 } from '@/shared/data/mockRecommendations'
+import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
 type RecommendationFilters = {
   budgetRange: string
@@ -81,19 +84,6 @@ const stationColorClasses = [
   'bg-cyan-400',
 ] as const
 
-function safeParseStorage<T>(key: string): T | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  try {
-    const raw = window.localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : null
-  } catch {
-    return null
-  }
-}
-
 function buildInitialFilters(): RecommendationFilters {
   const businessSetup = safeParseStorage<StoredBusinessSetup>(
     'metropick-onboarding-business-types',
@@ -126,11 +116,11 @@ function appendInterestLocation(item: SavedInterestLocation) {
   )
 
   if (isDuplicate) {
-    window.localStorage.setItem(key, JSON.stringify(existing))
+    writeStorage(key, existing)
     return
   }
 
-  window.localStorage.setItem(key, JSON.stringify([...existing, item]))
+  writeStorage(key, [...existing, item])
 }
 
 function TopControls() {
@@ -391,10 +381,11 @@ function MapCard() {
       </div>
 
       <div className="h-[390px] overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <img
+        <ImageWithFallback
           alt="광주 2호선 창업 유망 지점 추천 지도"
           className="h-full w-full object-cover"
           draggable={false}
+          fallbackText="추천 지역 지도를 불러올 수 없습니다."
           src={recommendationAssets.recommendedLocationsMap}
         />
       </div>
@@ -482,15 +473,12 @@ export function RecommendationPage() {
   }
 
   const handleViewReport = (item: LocationRecommendationItem) => {
-    window.localStorage.setItem(
-      'metropick-selected-recommendation',
-      JSON.stringify({
-        station: item.station,
-        businessType: filters.businessType,
-        score: item.score,
-        createdAt: new Date().toISOString(),
-      }),
-    )
+    writeStorage('metropick-selected-recommendation', {
+      station: item.station,
+      businessType: filters.businessType,
+      score: item.score,
+      createdAt: new Date().toISOString(),
+    })
     navigate('/report')
   }
 
@@ -512,6 +500,10 @@ export function RecommendationPage() {
               </p>
             </div>
             <TopControls />
+          </div>
+
+          <div className="mb-5">
+            <SimulationDisclaimer />
           </div>
 
           <div className="grid grid-cols-[minmax(760px,1fr)_minmax(520px,600px)] gap-5 max-[1640px]:grid-cols-1">
