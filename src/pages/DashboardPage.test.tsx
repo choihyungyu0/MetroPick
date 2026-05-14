@@ -31,20 +31,11 @@ describe('DashboardPage', () => {
     expect(screen.getByText('최근 저장한 리포트')).toBeInTheDocument()
   })
 
-  it('links sidebar mypage sections to the correct tabs', () => {
+  it('links the sidebar mypage route without separate mypage section shortcuts', () => {
     renderDashboardPage()
 
-    expect(screen.getByRole('link', { name: '마이페이지' })).toHaveAttribute(
-      'href',
-      '/mypage',
-    )
-    expect(screen.getByRole('link', { name: '관심 역세권' })).toHaveAttribute(
-      'href',
-      '/mypage?tab=interest-locations',
-    )
-    expect(screen.getByRole('link', { name: '설정' })).toHaveAttribute(
-      'href',
-      '/mypage?tab=notifications',
-    )
+    expect(screen.getByRole('link', { name: '마이페이지' })).toHaveAttribute('href', '/mypage')
+    expect(screen.queryByRole('link', { name: '관심 역세권' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '설정' })).not.toBeInTheDocument()
   })
 })

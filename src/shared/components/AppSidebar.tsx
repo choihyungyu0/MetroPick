@@ -6,7 +6,6 @@ import {
   Home,
   LineChart,
   MapPin,
-  Settings,
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
@@ -32,8 +31,6 @@ const sidebarItems: readonly AppSidebarItem[] = [
   { label: '입지 추천', icon: MapPin, href: '/recommendation' },
   { label: '리포트', icon: FileText, href: '/report' },
   { label: '마이페이지', icon: UserRound, href: '/mypage' },
-  { label: '관심 역세권', icon: MapPin, href: '/mypage?tab=interest-locations' },
-  { label: '설정', icon: Settings, href: '/mypage?tab=notifications' },
 ]
 
 const sidebarStatusCards: readonly AppSidebarItem[] = [
