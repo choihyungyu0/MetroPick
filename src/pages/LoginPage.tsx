@@ -34,13 +34,13 @@ function HeroVisual() {
     <div className="relative mt-8 min-h-[640px] overflow-visible md:min-h-[520px] xl:mt-[-14px] xl:h-[430px] xl:min-h-0 min-[1700px]:!mt-8 min-[1700px]:!h-[540px]">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-[-120px] left-[-280px] z-0 hidden h-[560px] w-[1280px] overflow-hidden [mask-image:linear-gradient(90deg,black_0%,black_72%,transparent_100%)] md:block xl:bottom-[-140px] xl:left-[-320px] xl:h-[620px] xl:w-[1600px] min-[1700px]:!bottom-[-170px] min-[1700px]:!left-[-360px] min-[1700px]:!h-[700px] min-[1700px]:!w-[2050px]"
+        className="pointer-events-none absolute right-0 bottom-[-160px] left-[-300px] z-0 hidden h-[630px] overflow-hidden [mask-image:linear-gradient(90deg,black_0%,black_72%,transparent_100%)] md:block xl:bottom-[-180px] xl:left-[-250px] xl:h-[720px] min-[1700px]:!bottom-[-210px] min-[1700px]:!left-[-320px] min-[1700px]:!h-[844px]"
       >
         <img
           alt=""
-          className="h-full w-full object-contain object-left-bottom opacity-85 mix-blend-multiply [mask-image:linear-gradient(180deg,transparent_0%,black_14%,black_82%,transparent_100%)]"
+          className="h-full w-full object-cover object-left-bottom opacity-90 mix-blend-multiply [mask-image:linear-gradient(180deg,transparent_0%,black_18%,black_78%,transparent_100%)]"
           draggable={false}
-          src={loginAssets.trainBackground}
+          src={landingAssets.heroTrainBg}
         />
       </div>
 
