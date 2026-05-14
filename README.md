@@ -171,6 +171,13 @@ npm run validate
 
 `npm run validate` runs linting, TypeScript checking, unit/component tests, and the production build.
 
+## CI
+
+GitHub Actions workflows run on `push` and `pull_request`.
+
+- Frontend CI installs Node dependencies with `npm ci` and runs `npm run validate`.
+- Python ML CI installs `requirements.txt`, runs `python -m ml.train_startup_suitability`, and runs `pytest`.
+
 ## Mock Data Disclaimer
 
 All station-area metrics, recommendation scores, charts, report text, and map markers are realistic mock placeholders. They are suitable for MVP demos and UX validation only. They must not be presented as actual revenue forecasts, official station-area predictions, or final public-data analysis.
