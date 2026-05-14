@@ -1,0 +1,10 @@
+station_id,station_name,line,phase,district,longitude,latitude,opening_scenario
+GJ-S001,시청역,2호선,phase_1,서구,126.8515,35.1601,line_2_phase_1_planned
+GJ-S002,상무역,1호선,existing,서구,126.8485,35.1468,existing_line_1_transfer_candidate
+GJ-S003,백운광장역,2호선,phase_1,남구,126.9024,35.1330,line_2_phase_1_planned
+GJ-S004,남광주역,1호선,existing,동구,126.9212,35.1393,existing_line_1_transfer_candidate
+GJ-S005,운천역,1호선,existing,서구,126.8588,35.1508,existing_line_1_transfer_candidate
+GJ-S006,금남로5가역,1호선,existing,북구,126.9136,35.1548,existing_line_1
+GJ-S007,광주역,2호선,phase_1,북구,126.9103,35.1641,line_2_phase_1_planned
+GJ-S008,첨단지구역,2호선,phase_2,광산구,126.8434,35.2141,line_2_phase_2_planned
+GJ-S009,효천역,2호선,phase_2,남구,126.8872,35.0962,line_2_phase_2_planned
