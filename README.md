@@ -118,6 +118,36 @@ npm run validate
 npm run preview
 ```
 
+## Frontend and FastAPI local integration
+
+Create a local frontend environment file:
+
+```bash
+# .env.local
+VITE_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+```
+
+Do not put real public data API keys in frontend env files. `VITE_` variables
+are visible in browser bundles.
+
+Terminal 1:
+
+```bash
+python -m ml.train_startup_suitability
+.\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Terminal 2:
+
+```bash
+npm run dev
+```
+
+The FastAPI backend currently uses sample fixture data from `data/raw`. The
+frontend attempts to use the local backend first and falls back to existing mock
+data when the backend is unavailable. No real public data APIs or API keys are
+connected yet.
+
 ## Vercel Routing
 
 The app uses React Router with browser history, so Vercel rewrites all unmatched

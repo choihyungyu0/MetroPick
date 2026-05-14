@@ -16,8 +16,11 @@ import {
 } from 'lucide-react'
 
 import { commercialAnalysisAssets } from '@/shared/assets/commercialAnalysisAssets'
+import type { BackendCommercialAnalysisSummary } from '@/shared/api/backendCommercialAnalysisApi'
+import { useBackendCommercialAnalysisSummary } from '@/shared/api/hooks/useBackendCommercialAnalysisSummary'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
@@ -66,6 +69,15 @@ type SavedCommercialAnalysisReport = {
   selectedBusinessTypes: string[]
   selectedStations: string[]
   title: string
+}
+
+type BackendStatus = 'connected' | 'fallback' | 'loading'
+
+type SummaryCardItem = {
+  title: string
+  value: string
+  change: string
+  desc: string
 }
 
 const defaultFilters: CommercialAnalysisFilters = {
@@ -191,6 +203,63 @@ function appendSavedReport(report: SavedCommercialAnalysisReport) {
   const key = 'metropick-saved-commercial-analysis-reports'
   const existing = safeParseStorage<SavedCommercialAnalysisReport[]>(key) ?? []
   writeStorage(key, [...existing, report])
+}
+
+function formatBackendIndex(value: number): string {
+  return Number.isFinite(value) ? value.toFixed(1) : '0.0'
+}
+
+function buildBackendSummaryCards(
+  summary: BackendCommercialAnalysisSummary,
+): SummaryCardItem[] {
+  return [
+    {
+      title: '분석 역세권',
+      value: `${summary.station_count.toLocaleString()}개`,
+      change: `적합도 ${formatBackendIndex(summary.average_startup_suitability_score)}`,
+      desc: summary.top_station?.station_name
+        ? `상위 ${summary.top_station.station_name}`
+        : 'FastAPI 샘플',
+    },
+    {
+      title: '평균 창업 적합도',
+      value: `${formatBackendIndex(summary.average_startup_suitability_score)}점`,
+      change: '샘플 기준',
+      desc: '규칙 기반',
+    },
+    {
+      title: '평균 유동 수요 지표',
+      value: `${formatBackendIndex(summary.average_floating_demand_index)}점`,
+      change: 'FastAPI',
+      desc: '샘플 데이터',
+    },
+    {
+      title: '평균 경쟁 지표',
+      value: `${formatBackendIndex(summary.average_competition_index)}점`,
+      change: '참고용',
+      desc: '목업 대체',
+    },
+  ]
+}
+
+function getBackendStatus({
+  isError,
+  isLoading,
+  isSuccess,
+}: {
+  isError: boolean
+  isLoading: boolean
+  isSuccess: boolean
+}): BackendStatus {
+  if (isLoading) {
+    return 'loading'
+  }
+
+  if (isSuccess && !isError) {
+    return 'connected'
+  }
+
+  return 'fallback'
 }
 
 function SelectBox({
@@ -372,7 +441,17 @@ function MapCard() {
   )
 }
 
-function SummaryPanel({ radius }: { radius: RadiusOption }) {
+function SummaryPanel({
+  backendSummary,
+  radius,
+}: {
+  backendSummary: BackendCommercialAnalysisSummary | null
+  radius: RadiusOption
+}) {
+  const cards: readonly SummaryCardItem[] = backendSummary
+    ? buildBackendSummaryCards(backendSummary)
+    : summaryCards
+
   return (
     <aside className="min-w-0 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
       <div className="flex items-start justify-between gap-3">
@@ -391,7 +470,7 @@ function SummaryPanel({ radius }: { radius: RadiusOption }) {
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-2.5 max-xl:grid-cols-4 max-md:grid-cols-2">
-        {summaryCards.map((card) => (
+        {cards.map((card) => (
           <div
             className="min-h-[94px] rounded-[10px] border border-slate-200 bg-white p-3 shadow-sm"
             key={card.title}
@@ -559,8 +638,15 @@ export function CommercialAnalysisPage() {
     buildInitialFilters(),
   )
   const [saveMessage, setSaveMessage] = useState('')
+  const backendSummaryQuery = useBackendCommercialAnalysisSummary()
 
   const summaryRadius = useMemo(() => filters.radius, [filters.radius])
+  const backendSummary = backendSummaryQuery.isSuccess ? backendSummaryQuery.data : null
+  const backendStatus = getBackendStatus({
+    isError: backendSummaryQuery.isError,
+    isLoading: backendSummaryQuery.isLoading,
+    isSuccess: backendSummaryQuery.isSuccess,
+  })
 
   const handleLayerToggle = (key: PopulationLayerKey) => {
     setFilters((current) => ({
@@ -603,6 +689,12 @@ export function CommercialAnalysisPage() {
             <h1 className="m-0 text-[32px] font-black tracking-[-1px] text-slate-950">
               역세권 상권 분석
             </h1>
+            <BackendStatusBadge
+              connectedLabel="FastAPI 샘플 데이터 연결됨"
+              fallbackLabel="백엔드 미연결 · 목업 데이터 표시"
+              loadingLabel="FastAPI 연결 확인 중"
+              status={backendStatus}
+            />
             <p className="mb-1.5 text-sm font-bold text-slate-500">
               광주 2호선 예정 역세권의 상권 특성을 지도와 데이터로 분석하세요.
             </p>
@@ -619,7 +711,7 @@ export function CommercialAnalysisPage() {
 
             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(280px,320px)] items-stretch gap-4 max-[1380px]:grid-cols-1">
               <MapCard />
-              <SummaryPanel radius={summaryRadius} />
+              <SummaryPanel backendSummary={backendSummary} radius={summaryRadius} />
               <div className="col-span-2 min-w-0 max-[1380px]:col-span-1">
                 <ComparisonTable />
               </div>

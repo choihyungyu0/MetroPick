@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { Providers } from './providers'
 import { appRoutes } from './router'
 
 const routeSmokeCases = [
@@ -21,10 +22,18 @@ const routeSmokeCases = [
 ] as const
 
 describe('app router', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+  })
+
   it.each(routeSmokeCases)('renders $path', async ({ heading, path }) => {
     const router = createMemoryRouter(appRoutes, { initialEntries: [path] })
 
-    render(<RouterProvider router={router} />)
+    render(
+      <Providers>
+        <RouterProvider router={router} />
+      </Providers>,
+    )
 
     expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
   })

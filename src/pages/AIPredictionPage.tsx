@@ -15,9 +15,15 @@ import {
   Wallet,
 } from 'lucide-react'
 
+import type {
+  BackendStartupSuitabilityInput,
+  BackendStartupSuitabilityResponse,
+} from '@/shared/api/backendPredictionApi'
+import { useBackendStartupSuitability } from '@/shared/api/hooks/useBackendStartupSuitability'
 import { aiPredictionAssets } from '@/shared/assets/aiPredictionAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { SimulationDisclaimer } from '@/shared/components/SimulationDisclaimer'
 import { TopNavigation } from '@/shared/components/TopNavigation'
@@ -38,6 +44,10 @@ type PredictionResult = {
   predictedFloatingPopulationGrowthRate: number
   predictedSalesGrowthRate: number
   predictedSalesIncrease: string
+  predicted_score?: number
+  recommendation_label?: string
+  risk_level?: string
+  top_reasons?: string[]
   riskLevel: '낮음' | '보통' | '높음'
   scenario: string
   stationArea: string
@@ -62,6 +72,8 @@ type StoredStationSetup = {
 type StoredBusinessSetup = {
   selectedBusinessLabels?: string[]
 }
+
+type BackendStatus = 'connected' | 'fallback' | 'loading'
 
 const defaultFilters: PredictionFilters = {
   scenario: '광주 2호선 2단계 개통 - 2026년 예정',
@@ -98,6 +110,31 @@ const evidenceItems = [
   { title: '경쟁 점포 수', value: '적정 수준 유지' },
   { title: '기존 상권 성장률', value: '연평균 +3.7%' },
 ] as const
+
+const sampleStartupSuitabilityPayload: BackendStartupSuitabilityInput = {
+  radius_m: 500,
+  total_store_count: 120,
+  same_business_count_by_type: 28,
+  cafe_count: 28,
+  restaurant_count: 42,
+  convenience_count: 9,
+  pharmacy_count: 4,
+  beauty_count: 13,
+  academy_count: 8,
+  retail_count: 16,
+  business_type_count: 7,
+  business_diversity_index: 78,
+  bus_boarding_count: 850,
+  bus_alighting_count: 920,
+  bus_total_count: 1770,
+  nearby_bus_stop_count: 9,
+  subway_pattern_score: 72,
+  competition_index: 58,
+  floating_demand_index: 81,
+  sales_potential_index: 76,
+  closure_risk_index: 35,
+  accessibility_score: 84,
+}
 
 function normalizeBusinessType(label: string) {
   if (label.includes('카페')) {
@@ -139,6 +176,49 @@ function appendPredictionResult(result: PredictionResult) {
   const key = 'metropick-ai-prediction-results'
   const existing = safeParseStorage<PredictionResult[]>(key) ?? []
   writeStorage(key, [...existing, result])
+}
+
+function buildMockPredictionResult(filters: PredictionFilters): PredictionResult {
+  return {
+    id: `ai-prediction-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    scenario: filters.scenario,
+    businessType: filters.businessType,
+    stationArea: filters.stationArea,
+    predictedSalesGrowthRate: 47.6,
+    predictedSalesIncrease: '+1,280留뚯썝',
+    predictedFloatingPopulationGrowthRate: 42.3,
+    riskLevel: '보통',
+  }
+}
+
+function buildBackendPredictionResult(
+  filters: PredictionFilters,
+  prediction: BackendStartupSuitabilityResponse,
+): PredictionResult {
+  return {
+    ...buildMockPredictionResult(filters),
+    predictedSalesGrowthRate: prediction.predicted_score,
+    predictedSalesIncrease: `${prediction.predicted_score.toFixed(1)}점`,
+    predicted_score: prediction.predicted_score,
+    risk_level: prediction.risk_level,
+    recommendation_label: prediction.recommendation_label,
+    top_reasons: prediction.top_reasons,
+  }
+}
+
+function getPredictionBackendStatus({
+  backendPrediction,
+  isPending,
+}: {
+  backendPrediction: BackendStartupSuitabilityResponse | null
+  isPending: boolean
+}): BackendStatus {
+  if (isPending) {
+    return 'loading'
+  }
+
+  return backendPrediction ? 'connected' : 'fallback'
 }
 
 function FilterSelect({
@@ -207,6 +287,7 @@ function FilterBar({
         value={filters.stationArea}
       />
       <button
+        aria-label="시뮬레이션 실행"
         className="inline-flex h-[46px] w-full min-w-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-base font-black whitespace-nowrap text-white shadow-[0_8px_20px_rgba(0,101,255,0.25)]"
         onClick={onRun}
         type="button"
@@ -276,7 +357,30 @@ function GrowthRateCard() {
   )
 }
 
-function SummaryCard({ stationArea }: { stationArea: string }) {
+function SummaryCard({
+  backendPrediction,
+  stationArea,
+}: {
+  backendPrediction: BackendStartupSuitabilityResponse | null
+  stationArea: string
+}) {
+  const predictedFloatingDisplay = backendPrediction
+    ? `${backendPrediction.predicted_score.toFixed(1)}점`
+    : '+42.3%'
+  const salesPotentialDisplay = backendPrediction
+    ? backendPrediction.recommendation_label
+    : '+47.6%'
+  const salesPotentialDetail = backendPrediction ? 'FastAPI 샘플 결과' : '(+1,280留뚯썝)'
+  const riskLevelDisplay = backendPrediction?.risk_level ?? '보통'
+  const riskReasons =
+    backendPrediction?.top_reasons.length && backendPrediction.top_reasons.length > 0
+      ? backendPrediction.top_reasons
+      : [
+          '諛섍꼍 500m ??寃쎌웳 ?먰룷 利앷? 媛?μ꽦',
+          '?좉퇋 ?곸뾽?쒖꽕 怨듦툒 怨꾪쉷 議댁옱',
+          '二쇰쭚 ?좊룞?멸뎄 蹂?숈꽦 ?믪쓬',
+        ]
+
   return (
     <aside className="min-h-[488px] self-start rounded-xl border border-blue-100 bg-white p-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="text-lg font-black text-slate-900">선택 역세권 예측 요약</h3>
@@ -301,7 +405,9 @@ function SummaryCard({ stationArea }: { stationArea: string }) {
             예상 유동인구 증가율
           </p>
         </div>
-        <strong className="text-2xl font-black text-blue-600">+42.3%</strong>
+        <strong className="text-2xl font-black text-blue-600">
+          {predictedFloatingDisplay}
+        </strong>
         <small className="col-start-2 text-xs font-bold text-slate-500">
           (개통 후 24개월 기준)
         </small>
@@ -314,9 +420,11 @@ function SummaryCard({ stationArea }: { stationArea: string }) {
             예상 매출 잠재력 변화
           </p>
         </div>
-        <strong className="text-2xl font-black text-blue-600">+47.6%</strong>
+        <strong className="text-2xl font-black text-blue-600">
+          {salesPotentialDisplay}
+        </strong>
         <small className="col-start-2 text-xs font-bold text-slate-500">
-          (+1,280만원)
+          {salesPotentialDetail}
         </small>
       </div>
 
@@ -327,8 +435,16 @@ function SummaryCard({ stationArea }: { stationArea: string }) {
           <em className="ml-auto rounded-lg bg-amber-50 px-3 py-1 text-xs font-black not-italic text-amber-600">
             보통
           </em>
+          {backendPrediction ? (
+            <span className="rounded-lg bg-blue-50 px-3 py-1 text-xs font-black text-blue-600">
+              {riskLevelDisplay}
+            </span>
+          ) : null}
         </div>
         <ul className="mt-4 list-disc space-y-2 pl-5 text-xs leading-relaxed font-bold text-slate-500">
+          {backendPrediction
+            ? riskReasons.map((reason) => <li key={reason}>{reason}</li>)
+            : null}
           <li>반경 500m 내 경쟁 점포 증가 가능성</li>
           <li>신규 상업시설 공급 계획 존재</li>
           <li>주말 유동인구 변동성 높음</li>
@@ -429,10 +545,35 @@ export function AIPredictionPage() {
   const [filters, setFilters] = useState<PredictionFilters>(() => buildInitialFilters())
   const [saveMessage, setSaveMessage] = useState('')
   const [lastSimulated, setLastSimulated] = useState('')
+  const [backendPrediction, setBackendPrediction] =
+    useState<BackendStartupSuitabilityResponse | null>(null)
+  const startupSuitabilityMutation = useBackendStartupSuitability()
 
   const stationSummary = useMemo(() => filters.stationArea, [filters.stationArea])
+  const backendStatus = getPredictionBackendStatus({
+    backendPrediction,
+    isPending: startupSuitabilityMutation.isPending,
+  })
 
-  const handleRunSimulation = () => {
+  const handleRunSimulation = async () => {
+    try {
+      const prediction = await startupSuitabilityMutation.mutateAsync(
+        sampleStartupSuitabilityPayload,
+      )
+      setBackendPrediction(prediction)
+      appendPredictionResult(buildBackendPredictionResult(filters, prediction))
+      setSaveMessage('FastAPI 예측 결과가 저장되었습니다.')
+      setLastSimulated(
+        new Date().toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      )
+      return
+    } catch {
+      setBackendPrediction(null)
+    }
+
     const result: PredictionResult = {
       id: `ai-prediction-${Date.now()}`,
       createdAt: new Date().toISOString(),
@@ -466,6 +607,14 @@ export function AIPredictionPage() {
                 AI 매출 변동 시뮬레이션
                 <Info aria-hidden="true" className="text-slate-400" size={17} />
               </h1>
+              <div className="mt-2">
+                <BackendStatusBadge
+                  connectedLabel="FastAPI 예측 결과 연결됨"
+                  fallbackLabel="백엔드 미연결 · 목업 예측 결과 표시"
+                  loadingLabel="FastAPI 예측 요청 중"
+                  status={backendStatus}
+                />
+              </div>
               {lastSimulated ? (
                 <p className="m-0 mt-2 text-xs font-bold text-blue-600">
                   마지막 실행: {lastSimulated}
@@ -525,7 +674,10 @@ export function AIPredictionPage() {
               <ConfidenceSection />
             </div>
 
-            <SummaryCard stationArea={stationSummary} />
+            <SummaryCard
+              backendPrediction={backendPrediction}
+              stationArea={stationSummary}
+            />
           </div>
 
           <div className="mt-4 grid grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] gap-4 max-xl:grid-cols-1">

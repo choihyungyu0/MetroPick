@@ -13,8 +13,10 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
+import { useBackendRecommendations } from '@/shared/api/hooks/useBackendRecommendations'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { SimulationDisclaimer } from '@/shared/components/SimulationDisclaimer'
 import { TopNavigation } from '@/shared/components/TopNavigation'
@@ -52,6 +54,8 @@ type StoredStationSetup = {
 type StoredOnboardingSummary = {
   completedAt?: string
 }
+
+type BackendStatus = 'connected' | 'fallback' | 'loading'
 
 const defaultFilters: RecommendationFilters = {
   businessType: '카페/디저트',
@@ -121,6 +125,72 @@ function appendInterestLocation(item: SavedInterestLocation) {
   }
 
   writeStorage(key, [...existing, item])
+}
+
+function clampRecommendationScore(score: number): number {
+  if (!Number.isFinite(score)) {
+    return 0
+  }
+
+  return Math.max(0, Math.min(100, Math.round(score)))
+}
+
+function buildRecommendationItems(
+  backendItems:
+    | {
+        station_name: string
+        recommendation_label: string
+        startup_suitability_score: number
+        floating_demand_index: number
+        competition_index: number
+        business_diversity_index: number
+      }[]
+    | undefined,
+): LocationRecommendationItem[] {
+  if (!backendItems?.length) {
+    return mockLocationRecommendations
+  }
+
+  const mergedItems = backendItems.slice(0, 5).map((backendItem, index) => {
+    const fallbackItem = mockLocationRecommendations[index] ?? mockLocationRecommendations[0]
+
+    if (!fallbackItem) {
+      return null
+    }
+
+    return {
+      ...fallbackItem,
+      rank: index + 1,
+      station: backendItem.station_name,
+      score: clampRecommendationScore(backendItem.startup_suitability_score),
+      growth: clampRecommendationScore(backendItem.floating_demand_index),
+      stability: clampRecommendationScore(backendItem.business_diversity_index),
+      competition: clampRecommendationScore(backendItem.competition_index),
+      reason: `${backendItem.recommendation_label} · FastAPI 샘플 추천 기준입니다.`,
+    } satisfies LocationRecommendationItem
+  })
+
+  return mergedItems.filter((item): item is LocationRecommendationItem => item !== null)
+}
+
+function getBackendStatus({
+  isError,
+  isLoading,
+  isSuccess,
+}: {
+  isError: boolean
+  isLoading: boolean
+  isSuccess: boolean
+}): BackendStatus {
+  if (isLoading) {
+    return 'loading'
+  }
+
+  if (isSuccess && !isError) {
+    return 'connected'
+  }
+
+  return 'fallback'
 }
 
 function TopControls() {
@@ -339,10 +409,12 @@ function RecommendationCard({
 
 function RecommendationList({
   filters,
+  items,
   onSaveInterest,
   onViewReport,
 }: {
   filters: RecommendationFilters
+  items: LocationRecommendationItem[]
   onSaveInterest: (item: LocationRecommendationItem) => void
   onViewReport: (item: LocationRecommendationItem) => void
 }) {
@@ -354,7 +426,7 @@ function RecommendationList({
       </div>
 
       <div className="grid gap-2">
-        {mockLocationRecommendations.map((item) => (
+        {items.map((item) => (
           <RecommendationCard
             filters={filters}
             item={item}
@@ -393,13 +465,13 @@ function MapCard() {
   )
 }
 
-function CompareChart() {
+function CompareChart({ items }: { items: LocationRecommendationItem[] }) {
   return (
     <section className="rounded-xl border border-blue-100 bg-white px-5 py-4 shadow-[0_10px_24px_rgba(18,65,120,0.06)]">
       <h2 className="m-0 text-[19px] font-black text-slate-900">Top 5 지역 지표 비교</h2>
 
       <div className="my-4 flex flex-wrap justify-center gap-5">
-        {mockLocationRecommendations.map((item, index) => (
+        {items.map((item, index) => (
           <span
             className="flex items-center gap-1.5 text-xs font-black text-slate-700"
             key={item.station}
@@ -428,7 +500,7 @@ function CompareChart() {
             key={key}
           >
             <div className="flex h-[164px] items-end gap-2">
-              {mockLocationRecommendations.map((item, index) => (
+              {items.map((item, index) => (
                 <div
                   className={`w-3.5 rounded-t ${stationColorClasses[index] ?? 'bg-slate-400'} shadow-sm`}
                   key={`${key}-${item.station}`}
@@ -454,6 +526,17 @@ export function RecommendationPage() {
   const navigate = useNavigate()
   const [filters] = useState<RecommendationFilters>(() => buildInitialFilters())
   const [message, setMessage] = useState('')
+  const backendRecommendationsQuery = useBackendRecommendations(5)
+  const recommendationItems = buildRecommendationItems(
+    backendRecommendationsQuery.isSuccess
+      ? backendRecommendationsQuery.data.items
+      : undefined,
+  )
+  const backendStatus = getBackendStatus({
+    isError: backendRecommendationsQuery.isError,
+    isLoading: backendRecommendationsQuery.isLoading,
+    isSuccess: backendRecommendationsQuery.isSuccess,
+  })
 
   const firstStationName = useMemo(
     () => mockLocationRecommendations[0]?.station ?? '상무역',
@@ -495,6 +578,12 @@ export function RecommendationPage() {
               <h1 className="m-0 text-[32px] font-black tracking-[-1.1px] text-slate-950">
                 창업 유망 지점 추천
               </h1>
+              <BackendStatusBadge
+                connectedLabel="FastAPI 샘플 추천 연결됨"
+                fallbackLabel="백엔드 미연결 · 목업 추천 표시"
+                loadingLabel="FastAPI 추천 확인 중"
+                status={backendStatus}
+              />
               <p className="mb-1.5 text-[15px] font-bold text-slate-500">
                 AI가 분석한 최적의 창업 입지를 추천해드립니다.
               </p>
@@ -511,6 +600,7 @@ export function RecommendationPage() {
               <FilterPanel filters={filters} />
               <RecommendationList
                 filters={filters}
+                items={recommendationItems}
                 onSaveInterest={handleSaveInterest}
                 onViewReport={handleViewReport}
               />
@@ -518,7 +608,7 @@ export function RecommendationPage() {
 
             <div className="grid gap-4 max-[1600px]:grid-cols-2 max-lg:grid-cols-1">
               <MapCard />
-              <CompareChart />
+              <CompareChart items={recommendationItems} />
             </div>
           </div>
 
