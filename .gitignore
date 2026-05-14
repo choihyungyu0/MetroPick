@@ -36,3 +36,8 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+
+# Large local public-data downloads and generated extracts
+data/raw/public_store_data/*.csv
+data/raw/public_store_data/*.xlsx
+data/processed/public_store_data/*.csv

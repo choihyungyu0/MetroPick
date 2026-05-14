@@ -148,6 +148,33 @@ frontend attempts to use the local backend first and falls back to existing mock
 data when the backend is unavailable. No real public data APIs or API keys are
 connected yet.
 
+## Public store CSV ingestion
+
+To test the first real public-data ingestion path, place a downloaded
+`소상공인시장진흥공단_상가(상권)정보` CSV under:
+
+```text
+data/raw/public_store_data/
+```
+
+Large local CSV/XLSX files in that folder are gitignored, so real public-data
+downloads should stay local. Then build the processed station-area summary:
+
+```bash
+python scripts/build_public_store_summary.py
+```
+
+The script writes:
+
+```text
+data/processed/public_store_data/station_area_store_summary.csv
+```
+
+FastAPI uses this processed summary for commercial-analysis responses when it
+exists. If no real CSV is present, the script and backend fall back to the
+committed sample fixture data. No external public-data API calls or API keys are
+used in this ingestion path.
+
 ## Vercel Routing
 
 The app uses React Router with browser history, so Vercel rewrites all unmatched

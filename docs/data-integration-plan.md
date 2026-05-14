@@ -72,6 +72,21 @@ Prediction:
 - `src/shared/data/mockNotifications.ts`
 - `src/shared/data/publicDataSources.ts`
 
+## First real public-data CSV ingestion
+
+Source: `소상공인시장진흥공단_상가(상권)정보`.
+
+The current integration is a local CSV ingestion path. Downloaded public store
+CSV files should be placed under `data/raw/public_store_data/`, then processed
+with `python scripts/build_public_store_summary.py`. The generated station-area
+summary is written to `data/processed/public_store_data/station_area_store_summary.csv`
+and is used by the FastAPI commercial-analysis service when present.
+
+No external public-data API calls or API keys are connected yet. The next step
+is to download a real CSV export, verify provider field names and encodings, and
+compare summary outputs against manually checked station areas before expanding
+the ingestion path.
+
 ## API adapter strategy
 
 Page and feature components should read from `src/shared/api/*` functions or
