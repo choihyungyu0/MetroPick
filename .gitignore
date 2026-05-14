@@ -41,3 +41,6 @@ venv/
 data/raw/public_store_data/*.csv
 data/raw/public_store_data/*.xlsx
 data/processed/public_store_data/*.csv
+!data/raw/public_store_data/.gitkeep
+!data/raw/public_store_data/README.md
+!data/raw/public_store_data/example_public_store_template.csv

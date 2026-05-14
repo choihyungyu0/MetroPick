@@ -36,7 +36,11 @@ def _find_first_public_store_csv() -> Path | None:
     if not config.PUBLIC_STORE_RAW_DIR.exists():
         return None
 
-    csv_files = sorted(config.PUBLIC_STORE_RAW_DIR.glob("*.csv"))
+    csv_files = sorted(
+        path
+        for path in config.PUBLIC_STORE_RAW_DIR.glob("*.csv")
+        if path.name != config.PUBLIC_STORE_TEMPLATE_FILENAME
+    )
     return csv_files[0] if csv_files else None
 
 

@@ -118,6 +118,13 @@ npm run validate
 npm run preview
 ```
 
+## Project operation documents
+
+- [Data handoff checklist](docs/data-handoff-checklist.md)
+- [Demo QA checklist](docs/demo-qa-checklist.md)
+- [Local validation commands](docs/local-validation-commands.md)
+- [Data integration plan](docs/data-integration-plan.md)
+
 ## Frontend and FastAPI local integration
 
 Create a local frontend environment file:
