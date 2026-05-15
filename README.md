@@ -193,6 +193,18 @@ rewrite with the backend origin as the `destination`. Do not leave the
 destination dynamic or undefined, because Vercel validates the rewrite schema
 before deployment.
 
+For Vercel frontend deployments, configure `VITE_PUBLIC_API_BASE_URL` to the
+deployed FastAPI backend origin, for example:
+
+```text
+VITE_PUBLIC_API_BASE_URL=https://your-fastapi-backend.example.com
+```
+
+Do not point deployed frontend builds at `http://127.0.0.1:8000`; that address
+only works for local browser-to-local-backend testing. FastAPI allows the
+production MetroPick Vercel domain and MetroPick preview deployment origins via
+CORS.
+
 ## Quality Commands
 
 ```bash

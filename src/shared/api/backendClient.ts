@@ -1,5 +1,13 @@
-const API_BASE_URL =
-  import.meta.env.VITE_PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:8000'
+const LOCAL_API_BASE_URL = 'http://127.0.0.1:8000'
+
+export function getBackendApiBaseUrl(): string | null {
+  const configuredUrl = import.meta.env.VITE_PUBLIC_API_BASE_URL?.trim()
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/$/, '')
+  }
+
+  return import.meta.env.DEV ? LOCAL_API_BASE_URL : null
+}
 
 function buildJsonHeaders(headers?: HeadersInit): Headers {
   const nextHeaders = new Headers(headers)
@@ -13,7 +21,13 @@ export async function fetchBackendJson<T>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const apiBaseUrl = getBackendApiBaseUrl()
+  if (!apiBaseUrl) {
+    throw new Error('Backend API base URL is not configured.')
+  }
+
+  const requestPath = path.startsWith('/') ? path : `/${path}`
+  const response = await fetch(`${apiBaseUrl}${requestPath}`, {
     ...options,
     headers: buildJsonHeaders(options?.headers),
   })
