@@ -7,6 +7,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores([
+    '.pytest_cache/**',
     '.venv/**',
     'coverage/**',
     'dist/**',
