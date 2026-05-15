@@ -176,3 +176,35 @@ class NotificationSettingsResponse(BaseModel):
 class NotificationSettingsListResponse(BaseModel):
     data_status: str
     settings: list[NotificationSettingsResponse]
+
+
+class OnboardingSettingsCreate(BaseModel):
+    region: str | None = None
+    selected_stations: list[str] = Field(default_factory=list)
+    selected_business_types: list[str] = Field(default_factory=list)
+    radius: str = "500m"
+    notification_settings: dict[str, object] = Field(default_factory=dict)
+
+
+class OnboardingSettingsUpdate(BaseModel):
+    region: str | None = None
+    selected_stations: list[str] | None = None
+    selected_business_types: list[str] | None = None
+    radius: str | None = None
+    notification_settings: dict[str, object] | None = None
+
+
+class OnboardingSettingsResponse(BaseModel):
+    id: str
+    user_id: str | None = None
+    region: str | None = None
+    selected_stations: list[str] = Field(default_factory=list)
+    selected_business_types: list[str] = Field(default_factory=list)
+    radius: str
+    notification_settings: dict[str, object] = Field(default_factory=dict)
+    created_at: str
+
+
+class OnboardingSettingsListResponse(BaseModel):
+    data_status: str
+    settings: list[OnboardingSettingsResponse]

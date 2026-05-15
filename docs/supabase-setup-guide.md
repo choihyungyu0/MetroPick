@@ -242,3 +242,59 @@ Delete notification settings:
 ```bash
 curl -X DELETE http://127.0.0.1:8000/api/notification-settings/<setting_id>
 ```
+
+## Onboarding settings API
+
+Use these endpoints after the `onboarding_settings` table is available. These calls store onboarding page state through FastAPI while keeping Supabase service credentials on the backend only.
+
+List onboarding settings:
+
+```bash
+curl http://127.0.0.1:8000/api/onboarding-settings
+```
+
+Create onboarding settings:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/onboarding-settings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "region": "광주",
+    "selected_stations": [
+      "상무역",
+      "금남로4가역"
+    ],
+    "selected_business_types": [
+      "카페",
+      "음식점"
+    ],
+    "radius": "500m",
+    "notification_settings": {
+      "prediction_updates": true,
+      "saved_location_alerts": true
+    }
+  }'
+```
+
+Update onboarding settings:
+
+```bash
+curl -X PATCH http://127.0.0.1:8000/api/onboarding-settings/<setting_id> \
+  -H "Content-Type: application/json" \
+  -d '{
+    "region": "서울",
+    "selected_stations": [
+      "강남역"
+    ],
+    "radius": "750m",
+    "notification_settings": {
+      "prediction_updates": false
+    }
+  }'
+```
+
+Delete onboarding settings:
+
+```bash
+curl -X DELETE http://127.0.0.1:8000/api/onboarding-settings/<setting_id>
+```
