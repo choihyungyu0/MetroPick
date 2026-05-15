@@ -118,3 +118,32 @@ class SavedLocationResponse(BaseModel):
 class SavedLocationListResponse(BaseModel):
     data_status: str
     locations: list[SavedLocationResponse]
+
+
+class PredictionResultCreate(BaseModel):
+    station_area: str
+    business_type: str | None = None
+    predicted_score: float | None = None
+    result_payload: dict[str, object] = Field(default_factory=dict)
+
+
+class PredictionResultUpdate(BaseModel):
+    station_area: str | None = None
+    business_type: str | None = None
+    predicted_score: float | None = None
+    result_payload: dict[str, object] | None = None
+
+
+class PredictionResultResponse(BaseModel):
+    id: str
+    user_id: str | None = None
+    station_area: str
+    business_type: str | None = None
+    predicted_score: float | None = None
+    result_payload: dict[str, object] = Field(default_factory=dict)
+    created_at: str
+
+
+class PredictionResultListResponse(BaseModel):
+    data_status: str
+    results: list[PredictionResultResponse]

@@ -9,6 +9,7 @@ from backend.app.routers import (
     commercial_analysis,
     db_health,
     prediction,
+    prediction_results,
     profiles,
     recommendation,
     saved_locations,
@@ -38,6 +39,7 @@ app.add_middleware(
 app.include_router(commercial_analysis.router)
 app.include_router(db_health.router)
 app.include_router(prediction.router)
+app.include_router(prediction_results.router)
 app.include_router(profiles.router)
 app.include_router(recommendation.router)
 app.include_router(saved_locations.router)

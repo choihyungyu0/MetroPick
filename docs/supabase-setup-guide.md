@@ -147,3 +147,49 @@ Delete a saved location:
 ```bash
 curl -X DELETE http://127.0.0.1:8000/api/saved-locations/<location_id>
 ```
+
+## Prediction results API
+
+Use these endpoints after the `prediction_results` table is available. These calls store AI prediction outputs through FastAPI while keeping Supabase service credentials on the backend only.
+
+List prediction results:
+
+```bash
+curl http://127.0.0.1:8000/api/prediction-results
+```
+
+Create a prediction result:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/prediction-results \
+  -H "Content-Type: application/json" \
+  -d '{
+    "station_area": "상무역(2호선)",
+    "business_type": "커피전문점",
+    "predicted_score": 83.4,
+    "result_payload": {
+      "risk_level": "낮음",
+      "recommendation_label": "창업 적합도 높음"
+    }
+  }'
+```
+
+Update a prediction result:
+
+```bash
+curl -X PATCH http://127.0.0.1:8000/api/prediction-results/<result_id> \
+  -H "Content-Type: application/json" \
+  -d '{
+    "predicted_score": 88.2,
+    "result_payload": {
+      "risk_level": "보통",
+      "source": "updated_payload"
+    }
+  }'
+```
+
+Delete a prediction result:
+
+```bash
+curl -X DELETE http://127.0.0.1:8000/api/prediction-results/<result_id>
+```
