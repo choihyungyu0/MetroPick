@@ -22,8 +22,11 @@ import {
 } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
+import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
+import { useBackendSavedReports } from '@/shared/api/hooks/useBackendSavedReports'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { myPageAssets } from '@/shared/assets/myPageAssets'
@@ -68,6 +71,8 @@ type ActivityItem = {
 type CategoryFilter = 'all' | 'commercial-analysis' | 'ai-prediction' | 'recommendation'
 
 type SortOrder = 'latest' | 'oldest'
+
+type BackendReportStatus = 'connected' | 'fallback'
 
 type NotificationFrequency = '실시간' | '매일' | '매주'
 
@@ -523,6 +528,102 @@ function buildSavedReports(locations: InterestLocation[]): SavedReport[] {
   return Array.from(byKey.values())
 }
 
+function readPayloadString(
+  payload: Record<string, unknown> | undefined,
+  keys: string[],
+): string | undefined {
+  for (const key of keys) {
+    const value = readString(payload?.[key])
+    if (value) {
+      return value
+    }
+  }
+
+  return undefined
+}
+
+function resolveBackendReportCategory(
+  reportType: string | undefined,
+  title: string,
+): ReportCategory {
+  const normalizedType = reportType
+    ?.trim()
+    .toLocaleLowerCase('en-US')
+    .replaceAll('-', '_')
+
+  if (
+    normalizedType?.includes('ai') ||
+    normalizedType?.includes('prediction') ||
+    title.includes('예측')
+  ) {
+    return 'AI 예측'
+  }
+
+  if (
+    normalizedType?.includes('recommendation') ||
+    normalizedType?.includes('location') ||
+    title.includes('추천') ||
+    title.includes('입지')
+  ) {
+    return '입지 추천'
+  }
+
+  return '상권 분석'
+}
+
+function getReportThumbnailSrc(category: ReportCategory): string {
+  if (category === 'AI 예측') {
+    return myPageAssets.aiPredictionChart
+  }
+
+  if (category === '입지 추천') {
+    return myPageAssets.recommendationMap
+  }
+
+  return myPageAssets.commercialMap
+}
+
+function normalizeBackendSavedReports(
+  reports: BackendSavedReport[],
+): SavedReport[] {
+  return reports.map((report, index) => {
+    const payload = isRecord(report.payload) ? report.payload : undefined
+    const stationArea =
+      readString(report.station_area) ??
+      readPayloadString(payload, ['stationArea', 'station_area', 'station']) ??
+      '선택 역세권'
+    const businessType =
+      readString(report.business_type) ??
+      readPayloadString(payload, ['businessType', 'business_type']) ??
+      '업종 미지정'
+    const title =
+      readString(report.title) ??
+      readPayloadString(payload, ['title']) ??
+      `${stationArea} 리포트`
+    const reportType =
+      readString(report.report_type) ??
+      readPayloadString(payload, ['reportType', 'report_type', 'type', 'category'])
+    const category = resolveBackendReportCategory(reportType, title)
+    const createdAt =
+      readString(report.created_at) ??
+      readPayloadString(payload, ['createdAt', 'created_at', 'savedAt']) ??
+      new Date().toISOString()
+
+    return {
+      id:
+        readString(report.id) ??
+        readPayloadString(payload, ['id']) ??
+        `backend-saved-report-${index}`,
+      title,
+      category,
+      businessType,
+      stationArea,
+      savedAt: createdAt,
+      thumbnailSrc: getReportThumbnailSrc(category),
+    }
+  })
+}
+
 function buildNotificationSettings(): NotificationSettings {
   const stored = safeParseStorage<unknown>('metropick-onboarding-notifications')
 
@@ -804,6 +905,7 @@ function ReportsTab({
   onSearchChange,
   onShare,
   onSortChange,
+  reportSourceStatus,
   reports,
   searchQuery,
   sortOrder,
@@ -814,6 +916,7 @@ function ReportsTab({
   onSearchChange: (value: string) => void
   onShare: (report: SavedReport) => void
   onSortChange: (value: SortOrder) => void
+  reportSourceStatus: BackendReportStatus
   reports: SavedReport[]
   searchQuery: string
   sortOrder: SortOrder
@@ -840,6 +943,12 @@ function ReportsTab({
               <span className="ml-2 text-blue-600">{filter.count}</span>
             </button>
           ))}
+          <BackendStatusBadge
+            connectedLabel="Supabase 리포트 연결됨"
+            fallbackLabel="백엔드 미연결 · 로컬 저장 리포트 표시"
+            loadingLabel="백엔드 미연결 · 로컬 저장 리포트 표시"
+            status={reportSourceStatus}
+          />
         </div>
 
         <div className="flex items-center gap-3 max-md:flex-col max-md:items-stretch">
@@ -1117,6 +1226,7 @@ function ReportPanel({
   onSortChange,
   onTabChange,
   onViewInterest,
+  reportSourceStatus,
   searchQuery,
   sortOrder,
 }: {
@@ -1136,6 +1246,7 @@ function ReportPanel({
   onSortChange: (value: SortOrder) => void
   onTabChange: (tab: MyPageTab) => void
   onViewInterest: () => void
+  reportSourceStatus: BackendReportStatus
   searchQuery: string
   sortOrder: SortOrder
 }) {
@@ -1172,6 +1283,7 @@ function ReportPanel({
           onSearchChange={onSearchChange}
           onShare={onShareReport}
           onSortChange={onSortChange}
+          reportSourceStatus={reportSourceStatus}
           reports={filteredReports}
           searchQuery={searchQuery}
           sortOrder={sortOrder}
@@ -1236,10 +1348,25 @@ export function MyPage() {
     useState<NotificationSettings>(() => buildNotificationSettings())
   const [message, setMessage] = useState('')
   const activities = useMemo(() => buildActivities(), [])
-  const savedReports = useMemo(
+  const localSavedReports = useMemo(
     () => buildSavedReports(interestLocations),
     [interestLocations],
   )
+  const backendSavedReportsQuery = useBackendSavedReports()
+  const isBackendSavedReportsConnected =
+    backendSavedReportsQuery.data?.data_status === 'supabase_connected'
+  const backendSavedReports = useMemo(() => {
+    const response = backendSavedReportsQuery.data
+    return response?.data_status === 'supabase_connected'
+      ? normalizeBackendSavedReports(response.reports)
+      : []
+  }, [backendSavedReportsQuery.data])
+  const savedReports = isBackendSavedReportsConnected
+    ? backendSavedReports
+    : localSavedReports
+  const reportSourceStatus: BackendReportStatus = isBackendSavedReportsConnected
+    ? 'connected'
+    : 'fallback'
 
   const handleTabChange = (tab: MyPageTab) => {
     setSearchParams(tab === 'reports' ? {} : { tab })
@@ -1376,6 +1503,7 @@ export function MyPage() {
               onSortChange={setSortOrder}
               onTabChange={handleTabChange}
               onViewInterest={() => navigate('/recommendation')}
+              reportSourceStatus={reportSourceStatus}
               searchQuery={searchQuery}
               sortOrder={sortOrder}
             />
