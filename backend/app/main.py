@@ -7,6 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.routers import commercial_analysis, db_health, prediction, profiles, recommendation
 
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://metro-pick.vercel.app",
+]
+
 app = FastAPI(
     title="MetroPick AI Backend",
     version="0.1.0",
@@ -15,7 +21,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
