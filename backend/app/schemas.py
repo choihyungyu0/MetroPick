@@ -43,3 +43,15 @@ class StartupSuitabilityResponse(BaseModel):
     risk_level: str
     recommendation_label: str
     top_reasons: list[str]
+
+
+class ProfileCreate(BaseModel):
+    email: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    role: str = Field(min_length=1)
+    plan: str = Field(default="free", min_length=1)
+
+
+class ProfileResponse(ProfileCreate):
+    id: str
+    created_at: str
