@@ -5,7 +5,14 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.routers import commercial_analysis, db_health, prediction, profiles, recommendation
+from backend.app.routers import (
+    commercial_analysis,
+    db_health,
+    prediction,
+    profiles,
+    recommendation,
+    saved_reports,
+)
 
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
@@ -32,6 +39,7 @@ app.include_router(db_health.router)
 app.include_router(prediction.router)
 app.include_router(profiles.router)
 app.include_router(recommendation.router)
+app.include_router(saved_reports.router)
 
 
 @app.get("/health")

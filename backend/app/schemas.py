@@ -55,3 +55,34 @@ class ProfileCreate(BaseModel):
 class ProfileResponse(ProfileCreate):
     id: str
     created_at: str
+
+
+class SavedReportCreate(BaseModel):
+    report_type: str
+    title: str
+    station_area: str | None = None
+    business_type: str | None = None
+    payload: dict[str, object] = Field(default_factory=dict)
+
+
+class SavedReportUpdate(BaseModel):
+    title: str | None = None
+    station_area: str | None = None
+    business_type: str | None = None
+    payload: dict[str, object] | None = None
+
+
+class SavedReportResponse(BaseModel):
+    id: str
+    user_id: str | None = None
+    report_type: str
+    title: str
+    station_area: str | None = None
+    business_type: str | None = None
+    payload: dict[str, object] = Field(default_factory=dict)
+    created_at: str
+
+
+class SavedReportListResponse(BaseModel):
+    data_status: str
+    reports: list[SavedReportResponse]
