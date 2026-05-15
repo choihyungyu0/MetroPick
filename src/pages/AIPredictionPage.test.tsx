@@ -26,11 +26,14 @@ describe('AIPredictionPage', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
   })
 
-  it('renders the AI prediction layout with the sales forecast chart image', () => {
+  it('renders the AI prediction layout with the sales forecast chart image', async () => {
     renderAIPredictionPage()
 
     expect(
       screen.getByRole('heading', { name: /AI 매출 변동 시뮬레이션/ }),
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: '리포트 다운로드' }),
     ).toBeInTheDocument()
     expect(screen.getByAltText('개통 전후 매출 전망 예측 차트')).toBeInTheDocument()
     expect(screen.getByText('선택 역세권 예측 요약')).toBeInTheDocument()

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   Bell,
@@ -75,6 +75,10 @@ type StoredBusinessSetup = {
 }
 
 type BackendStatus = 'connected' | 'fallback' | 'loading'
+
+const PredictionReportDownloadButton = lazy(
+  () => import('@/features/prediction/PredictionReportDownloadButton'),
+)
 
 const defaultFilters: PredictionFilters = {
   scenario: '광주 2호선 2단계 개통 - 2026년 예정',
@@ -567,6 +571,15 @@ export function AIPredictionPage() {
     backendPrediction,
     isPending: startupSuitabilityMutation.isPending,
   })
+  const predictionReportGeneratedAt = useMemo(
+    () =>
+      new Date().toLocaleDateString('ko-KR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }),
+    [],
+  )
 
   const handleRunSimulation = async () => {
     try {
@@ -646,6 +659,26 @@ export function AIPredictionPage() {
                   <option key={option}>{option}</option>
                 ))}
               </select>
+              <Suspense
+                fallback={
+                  <button
+                    className="inline-flex h-9 items-center justify-center rounded-md border border-blue-200 bg-white px-3 text-xs font-black whitespace-nowrap text-blue-600"
+                    type="button"
+                  >
+                    리포트 준비 중
+                  </button>
+                }
+              >
+                <PredictionReportDownloadButton
+                  backendPrediction={backendPrediction}
+                  businessType={filters.businessType}
+                  confidenceMetrics={confidenceMetrics}
+                  generatedAt={predictionReportGeneratedAt}
+                  growthRates={growthRates}
+                  scenario={filters.scenario}
+                  stationArea={filters.stationArea}
+                />
+              </Suspense>
               <button aria-label="알림" className="text-slate-500" type="button">
                 <Bell size={21} />
               </button>
