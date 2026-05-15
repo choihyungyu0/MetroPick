@@ -2,16 +2,16 @@ import {
   BarChart3,
   BadgeHelp,
   ChartNoAxesCombined,
+  ChevronsLeft,
+  ChevronsRight,
   FileText,
   Home,
   LineChart,
   MapPin,
-  PanelLeftClose,
-  PanelLeftOpen,
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { type MouseEvent, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
@@ -111,6 +111,12 @@ export function AppSidebar({
   const currentHref = `${location.pathname}${location.search}`
   const [isCollapsed, setIsCollapsed] = useState(getInitialCollapsedState)
 
+  const handleToggleSidebar = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    setIsCollapsed((current) => !current)
+  }
+
   useEffect(() => {
     window.localStorage.setItem(
       SIDEBAR_COLLAPSED_STORAGE_KEY,
@@ -152,14 +158,14 @@ export function AppSidebar({
             className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-blue-100 bg-white text-slate-600 shadow-sm hover:bg-blue-50 ${
               isCollapsed ? '' : 'ml-auto'
             }`}
-            onClick={() => setIsCollapsed((current) => !current)}
+            onClick={handleToggleSidebar}
             title={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
             type="button"
           >
             {isCollapsed ? (
-              <PanelLeftOpen aria-hidden="true" size={17} />
+              <ChevronsRight aria-hidden="true" size={18} />
             ) : (
-              <PanelLeftClose aria-hidden="true" size={17} />
+              <ChevronsLeft aria-hidden="true" size={18} />
             )}
           </button>
         </div>

@@ -622,10 +622,10 @@ export function DashboardPage() {
     <div className="dashboard-page min-h-screen w-full bg-slate-50 text-slate-950">
       <TopNavigation activeHref="/dashboard" />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] grid-cols-[252px_minmax(0,1fr)] max-[1121px]:grid-cols-1">
+      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] max-[1121px]:flex-col">
         <AppSidebar activeHref="/dashboard" ariaLabel="대시보드 사이드 메뉴" />
 
-        <main className="min-w-0">
+        <main className="min-w-0 flex-1">
         <section className="px-10 py-7 max-lg:px-4">
           <span className="sr-only">{completedLabel}</span>
 

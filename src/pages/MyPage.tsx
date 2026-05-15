@@ -1340,10 +1340,10 @@ export function MyPage() {
         sticky
       />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] grid-cols-[252px_minmax(0,1fr)] max-[1121px]:grid-cols-1">
+      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] max-[1121px]:flex-col">
         <AppSidebar activeHref="/mypage" ariaLabel="마이페이지 사이드 메뉴" />
 
-        <main className="min-w-0 px-[58px] pt-7 pb-4 max-2xl:px-8 max-md:px-4">
+        <main className="min-w-0 flex-1 px-[58px] pt-7 pb-4 max-2xl:px-8 max-md:px-4">
           <div className="mb-4">
             <h1 className="m-0 mb-2 text-[31px] font-black tracking-[-0.8px]">
               마이페이지

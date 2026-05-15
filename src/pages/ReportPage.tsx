@@ -637,10 +637,10 @@ export function ReportPage() {
     <div className="report-page-compact min-h-screen overflow-x-clip bg-[radial-gradient(circle_at_top_right,rgba(0,117,255,0.08),transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f6f9fe_100%)] text-slate-900">
       <TopNavigation activeHref="/report" sticky />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] min-w-0 grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
+      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] min-w-0 max-lg:flex-col">
         <AppSidebar activeHref="/report" ariaLabel="리포트 사이드 메뉴" />
 
-        <main className="min-w-0 px-8 pt-6 pb-2 max-2xl:px-6 max-md:px-4">
+        <main className="min-w-0 flex-1 px-8 pt-6 pb-2 max-2xl:px-6 max-md:px-4">
           <span className="sr-only">이전 설정 컨텍스트: {storageContextLabel}</span>
 
           <div className="mb-3 flex items-start justify-between gap-5 max-lg:flex-col">

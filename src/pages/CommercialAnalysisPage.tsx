@@ -678,13 +678,13 @@ export function CommercialAnalysisPage() {
     <div className="commercial-analysis-page min-h-screen bg-gradient-to-b from-slate-50 to-[#eef4fb] text-slate-900">
       <TopNavigation activeHref="/commercial-analysis" />
 
-      <div className="grid min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] grid-cols-[252px_minmax(0,1fr)] max-lg:grid-cols-1">
+      <div className="flex min-h-[calc(100vh-var(--app-topbar-height)-var(--app-footer-height))] max-lg:flex-col">
         <AppSidebar
           activeHref="/commercial-analysis"
           ariaLabel="상권 분석 사이드 메뉴"
         />
 
-        <main className="min-w-0 overflow-x-clip px-6 pt-7 pb-20 max-md:px-3.5">
+        <main className="min-w-0 flex-1 overflow-x-clip px-6 pt-7 pb-20 max-md:px-3.5">
           <section className="mb-5 flex items-end gap-3 max-md:block">
             <h1 className="m-0 text-[32px] font-black tracking-[-1px] text-slate-950">
               역세권 상권 분석
