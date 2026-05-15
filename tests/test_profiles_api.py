@@ -57,6 +57,12 @@ class FakeSupabaseClient:
         return FakeProfilesTable(self.rows)
 
 
+class FailingSupabaseClient:
+    def table(self, name: str) -> FakeProfilesTable:
+        assert name == "profiles"
+        raise RuntimeError("boom")
+
+
 def test_profiles_list_reports_missing_supabase(monkeypatch) -> None:
     monkeypatch.setattr("backend.app.routers.profiles.get_supabase_client", lambda: None)
 
@@ -87,7 +93,7 @@ def test_profiles_create_returns_profile(monkeypatch) -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert body["data_status"] == "supabase_ready"
+    assert body["data_status"] == "supabase_connected"
     assert body["profile"]["email"] == "test@example.com"
     assert body["profile"]["name"] == "\ud64d\uae38\ub3d9"
     assert body["profile"]["role"] == "\uc0c1\uad8c \ubd84\uc11d \uc804\ubb38\uac00"
@@ -106,7 +112,7 @@ def test_profiles_list_returns_profiles(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert response.json() == {
-        "data_status": "supabase_ready",
+        "data_status": "supabase_connected",
         "profiles": [PROFILE],
     }
 
@@ -121,3 +127,21 @@ def test_profiles_lookup_not_found(monkeypatch) -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Profile not found."}
+
+
+def test_profiles_supabase_exception_returns_safe_error(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "backend.app.routers.profiles.get_supabase_client",
+        lambda: FailingSupabaseClient(),
+    )
+
+    response = TestClient(app).get("/api/profiles")
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": {
+            "data_status": "supabase_error",
+            "message": "Supabase profiles query failed.",
+            "error_type": "RuntimeError",
+        },
+    }
