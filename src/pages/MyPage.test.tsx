@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { BackendOnboardingSetting } from '@/shared/api/backendOnboardingSettingsApi'
 import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
@@ -33,6 +34,8 @@ function mockBackendSavedReports(
 function mockBackendApis({
   locations = [],
   locationStatus = 'supabase_missing',
+  onboardingSettings = [],
+  onboardingStatus = 'supabase_missing',
   predictionResults = [],
   predictionStatus = 'supabase_missing',
   reports = [],
@@ -40,6 +43,8 @@ function mockBackendApis({
 }: {
   locations?: BackendSavedLocation[]
   locationStatus?: string
+  onboardingSettings?: BackendOnboardingSetting[]
+  onboardingStatus?: string
   predictionResults?: BackendPredictionResult[]
   predictionStatus?: string
   reports?: BackendSavedReport[]
@@ -56,6 +61,16 @@ function mockBackendApis({
           json: async () => ({
             data_status: reportStatus,
             reports,
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      if (url.includes('/api/onboarding-settings')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: onboardingStatus,
+            settings: onboardingSettings,
           }),
         } satisfies Pick<Response, 'json' | 'ok'>
       }
@@ -100,6 +115,61 @@ describe('MyPage', () => {
     expect(screen.getByText('상무역 상권 분석 리포트')).toBeInTheDocument()
     expect(
       screen.getByText('백엔드 미연결 · 로컬 저장 리포트 표시'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('백엔드 미연결 · 로컬 초기 설정 표시'),
+    ).toBeInTheDocument()
+  })
+
+  it('uses backend onboarding settings in the profile when connected', async () => {
+    mockBackendApis({
+      onboardingStatus: 'supabase_connected',
+      onboardingSettings: [
+        {
+          id: 'older-backend-onboarding-setting',
+          region: '북구',
+          selected_stations: ['양산역'],
+          selected_business_types: ['베이커리'],
+          radius: '500m',
+          notification_settings: {},
+          created_at: '2026-05-14T00:00:00+00:00',
+        },
+        {
+          id: 'backend-onboarding-setting',
+          region: '서구',
+          selected_stations: ['상무역', '운천역'],
+          selected_business_types: ['카페/디저트', '음식점'],
+          radius: '500m',
+          notification_settings: {},
+          created_at: '2026-05-15T00:00:00+00:00',
+        },
+      ],
+    })
+
+    renderMyPage()
+
+    expect(await screen.findByText('Supabase 초기 설정 연결됨')).toBeInTheDocument()
+    expect(screen.getByText('서구')).toBeInTheDocument()
+    expect(screen.getByText('카페/디저트, 음식점')).toBeInTheDocument()
+    expect(screen.queryByText('북구')).not.toBeInTheDocument()
+  })
+
+  it('falls back to local onboarding summary when backend onboarding fails', () => {
+    window.localStorage.setItem(
+      'metropick-onboarding-summary',
+      JSON.stringify({
+        completedAt: '2026-05-15T00:00:00+00:00',
+        stations: { selectedStations: ['양산역'] },
+        businessTypes: { selectedBusinessLabels: ['베이커리'] },
+      }),
+    )
+
+    renderMyPage()
+
+    expect(screen.getByText('양산역')).toBeInTheDocument()
+    expect(screen.getByText('베이커리')).toBeInTheDocument()
+    expect(
+      screen.getByText('백엔드 미연결 · 로컬 초기 설정 표시'),
     ).toBeInTheDocument()
   })
 

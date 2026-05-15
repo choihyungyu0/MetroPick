@@ -22,6 +22,8 @@ import {
 import { useNavigate } from 'react-router-dom'
 
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
+import type { BackendOnboardingSettingsCreateInput } from '@/shared/api/backendOnboardingSettingsApi'
+import { useCreateBackendOnboardingSettings } from '@/shared/api/hooks/useBackendOnboardingSettings'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
@@ -61,11 +63,26 @@ type NotificationPayload = NotificationSetup & {
   frequencyLabel: string
 }
 
+type StoredStationSetup = {
+  radius?: string
+  selectedStations?: string[]
+}
+
+type StoredBusinessSetup = {
+  selectedBusinessLabels?: string[]
+  selectedBusinessTypes?: string[]
+}
+
+type StoredOnboardingSummary = {
+  region?: string
+}
+
 const NOTIFICATION_STORAGE_KEY = 'metropick-onboarding-notifications'
 const ONBOARDING_COMPLETED_KEY = 'metropick-onboarding-completed'
 const ONBOARDING_SUMMARY_KEY = 'metropick-onboarding-summary'
 const STATION_STORAGE_KEY = 'metropick-onboarding-stations'
 const BUSINESS_TYPE_STORAGE_KEY = 'metropick-onboarding-business-types'
+const ONBOARDING_NAVIGATION_DELAY_MS = 300
 
 const notificationOptions: NotificationOption[] = [
   {
@@ -643,11 +660,61 @@ function buildPayload(setup: NotificationSetup): NotificationPayload {
   }
 }
 
+function readStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+}
+
+function buildOnboardingSettingsInput({
+  businessTypes,
+  notifications,
+  stations,
+}: {
+  businessTypes: unknown
+  notifications: NotificationPayload
+  stations: unknown
+}): BackendOnboardingSettingsCreateInput {
+  const stationSetup = isRecord(stations) ? (stations as StoredStationSetup) : null
+  const businessSetup = isRecord(businessTypes)
+    ? (businessTypes as StoredBusinessSetup)
+    : null
+  const previousSummary = safeParseStorage<StoredOnboardingSummary>(
+    ONBOARDING_SUMMARY_KEY,
+  )
+  const selectedBusinessTypes =
+    readStringArray(businessSetup?.selectedBusinessLabels).length > 0
+      ? readStringArray(businessSetup?.selectedBusinessLabels)
+      : readStringArray(businessSetup?.selectedBusinessTypes)
+
+  return {
+    region: previousSummary?.region ?? '광주광역시 전체',
+    selected_stations: readStringArray(stationSetup?.selectedStations),
+    selected_business_types: selectedBusinessTypes,
+    radius:
+      typeof stationSetup?.radius === 'string' ? stationSetup.radius : '500m',
+    notification_settings: {
+      channels: notifications.channels,
+      channel_labels: notifications.channelLabels,
+      frequency: notifications.frequency,
+      frequency_label: notifications.frequencyLabel,
+      quiet_hours: notifications.quietHours,
+      enabled_notifications: notifications.enabledNotificationLabels,
+      enabled_notification_ids: notifications.enabledNotificationIds,
+    },
+  }
+}
+
 export function OnboardingNotificationsPage() {
   const navigate = useNavigate()
   const [setup, setSetup] = useState<NotificationSetup>(loadInitialSetup)
   const [notificationError, setNotificationError] = useState('')
   const [channelError, setChannelError] = useState('')
+  const [saveMessage, setSaveMessage] = useState('')
+  const createOnboardingSettingsMutation = useCreateBackendOnboardingSettings()
 
   const handleToggleNotification = (id: NotificationId) => {
     setNotificationError('')
@@ -677,7 +744,7 @@ export function OnboardingNotificationsPage() {
     })
   }
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const nextNotificationError =
       setup.enabledNotificationIds.length === 0
         ? '최소 1개 이상의 알림을 활성화해 주세요.'
@@ -695,17 +762,36 @@ export function OnboardingNotificationsPage() {
     const notifications = buildPayload(setup)
     const stations = safeParseStorage<unknown>(STATION_STORAGE_KEY)
     const businessTypes = safeParseStorage<unknown>(BUSINESS_TYPE_STORAGE_KEY)
+    const completedAt = new Date().toISOString()
 
     writeStorage(NOTIFICATION_STORAGE_KEY, notifications)
     writeStorage(ONBOARDING_COMPLETED_KEY, true)
     writeStorage(ONBOARDING_SUMMARY_KEY, {
-      completedAt: new Date().toISOString(),
+      completedAt,
       stations,
       businessTypes,
       notifications,
     })
 
-    navigate('/dashboard')
+    try {
+      const response = await createOnboardingSettingsMutation.mutateAsync(
+        buildOnboardingSettingsInput({
+          businessTypes,
+          notifications,
+          stations,
+        }),
+      )
+
+      setSaveMessage(
+        response.data_status === 'supabase_connected'
+          ? 'Supabase에 초기 설정을 저장했어요.'
+          : '백엔드 미연결 · 로컬에 초기 설정을 저장했어요.',
+      )
+    } catch {
+      setSaveMessage('백엔드 미연결 · 로컬에 초기 설정을 저장했어요.')
+    }
+
+    window.setTimeout(() => navigate('/dashboard'), ONBOARDING_NAVIGATION_DELAY_MS)
   }
 
   return (
@@ -760,6 +846,15 @@ export function OnboardingNotificationsPage() {
       </main>
 
       <AppFooter />
+
+      {saveMessage ? (
+        <div
+          className="fixed right-5 bottom-5 z-50 rounded-lg border border-blue-100 bg-white px-4 py-2 text-sm font-black text-blue-700 shadow-lg"
+          role="status"
+        >
+          {saveMessage}
+        </div>
+      ) : null}
     </div>
   )
 }

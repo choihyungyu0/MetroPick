@@ -22,9 +22,11 @@ import {
 } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
+import type { BackendOnboardingSetting } from '@/shared/api/backendOnboardingSettingsApi'
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
 import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
+import { useBackendOnboardingSettings } from '@/shared/api/hooks/useBackendOnboardingSettings'
 import { useBackendPredictionResults } from '@/shared/api/hooks/useBackendPredictionResults'
 import {
   useBackendSavedLocations,
@@ -83,6 +85,8 @@ type CategoryFilter = 'all' | 'commercial-analysis' | 'ai-prediction' | 'recomme
 type SortOrder = 'latest' | 'oldest'
 
 type BackendReportStatus = 'connected' | 'fallback'
+
+type OnboardingSettingsStatus = BackendReportStatus
 
 type NotificationFrequency = '실시간' | '매일' | '매주'
 
@@ -354,6 +358,15 @@ function readNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
+function readStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+}
+
 function buildProfile(): UserProfile {
   const user = safeParseStorage<StoredUser>('metropick-user')
   const businessSetup = safeParseStorage<StoredBusinessSetup>(
@@ -377,6 +390,46 @@ function buildProfile(): UserProfile {
     preferredArea: user?.preferredArea ?? preferredArea ?? '광주광역시 전체',
     businessTypes: businessTypes ?? '카페, 음식점, 편의점',
   }
+}
+
+function buildBackendProfile(
+  localProfile: UserProfile,
+  setting: BackendOnboardingSetting | undefined,
+): UserProfile {
+  if (!setting) {
+    return localProfile
+  }
+
+  const selectedStations = readStringArray(setting.selected_stations)
+  const selectedBusinessTypes = readStringArray(setting.selected_business_types)
+
+  return {
+    ...localProfile,
+    preferredArea:
+      readString(setting.region) ??
+      (selectedStations.length ? selectedStations.join(', ') : localProfile.preferredArea),
+    businessTypes: selectedBusinessTypes.length
+      ? selectedBusinessTypes.join(', ')
+      : localProfile.businessTypes,
+  }
+}
+
+function getCreatedTime(value: string | null | undefined): number {
+  const time = Date.parse(value ?? '')
+  return Number.isFinite(time) ? time : 0
+}
+
+function selectLatestBackendOnboardingSetting(
+  settings: BackendOnboardingSetting[] | undefined,
+): BackendOnboardingSetting | undefined {
+  if (!settings?.length) {
+    return undefined
+  }
+
+  return [...settings].sort(
+    (current, next) =>
+      getCreatedTime(next.created_at) - getCreatedTime(current.created_at),
+  )[0]
 }
 
 function normalizeInterestLocations(): InterestLocation[] {
@@ -893,7 +946,13 @@ function getReportRoute(category: ReportCategory): string {
   return '/recommendation'
 }
 
-function ProfileCard({ profile }: { profile: UserProfile }) {
+function ProfileCard({
+  onboardingSettingsStatus,
+  profile,
+}: {
+  onboardingSettingsStatus: OnboardingSettingsStatus
+  profile: UserProfile
+}) {
   return (
     <section className="rounded-[15px] border border-blue-100 bg-white/95 px-7 py-7 shadow-[0_10px_30px_rgba(20,55,90,0.05)] max-sm:px-5">
       <div className="mb-5 flex items-center gap-4">
@@ -919,6 +978,14 @@ function ProfileCard({ profile }: { profile: UserProfile }) {
           <p className="m-0 mt-2 truncate text-[14px] font-semibold text-slate-500">
             {profile.email}
           </p>
+          <div className="mt-2">
+            <BackendStatusBadge
+              connectedLabel="Supabase 초기 설정 연결됨"
+              fallbackLabel="백엔드 미연결 · 로컬 초기 설정 표시"
+              loadingLabel="백엔드 미연결 · 로컬 초기 설정 표시"
+              status={onboardingSettingsStatus}
+            />
+          </div>
         </div>
       </div>
 
@@ -1577,7 +1644,7 @@ function UpgradeBanner() {
 export function MyPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [profile] = useState<UserProfile>(() => buildProfile())
+  const localProfile = useMemo(() => buildProfile(), [])
   const [interestLocations, setInterestLocations] = useState<InterestLocation[]>(() =>
     normalizeInterestLocations(),
   )
@@ -1592,6 +1659,20 @@ export function MyPage() {
     useState<NotificationSettings>(() => buildNotificationSettings())
   const [message, setMessage] = useState('')
   const activities = useMemo(() => buildActivities(), [])
+  const backendOnboardingSettingsQuery = useBackendOnboardingSettings()
+  const backendOnboardingSetting =
+    backendOnboardingSettingsQuery.data?.data_status === 'supabase_connected'
+      ? selectLatestBackendOnboardingSetting(
+          backendOnboardingSettingsQuery.data.settings,
+        )
+      : undefined
+  const onboardingSettingsStatus: OnboardingSettingsStatus = backendOnboardingSetting
+    ? 'connected'
+    : 'fallback'
+  const profile = useMemo(
+    () => buildBackendProfile(localProfile, backendOnboardingSetting),
+    [backendOnboardingSetting, localProfile],
+  )
   const backendSavedLocationsQuery = useBackendSavedLocations()
   const deleteBackendSavedLocationMutation = useDeleteBackendSavedLocation()
   const backendPredictionResultsQuery = useBackendPredictionResults()
@@ -1772,7 +1853,10 @@ export function MyPage() {
 
           <div className="grid grid-cols-[380px_minmax(0,1fr)] gap-7 max-[1740px]:grid-cols-[340px_minmax(0,1fr)] max-xl:grid-cols-1">
             <div className="grid content-start gap-5">
-              <ProfileCard profile={profile} />
+              <ProfileCard
+                onboardingSettingsStatus={onboardingSettingsStatus}
+                profile={profile}
+              />
               <AlertCard notifications={defaultNotifications} />
             </div>
 
