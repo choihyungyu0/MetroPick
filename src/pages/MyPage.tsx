@@ -22,10 +22,19 @@ import {
 } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
+import type {
+  BackendNotificationSetting,
+  BackendNotificationSettingsCreateInput,
+} from '@/shared/api/backendNotificationSettingsApi'
 import type { BackendOnboardingSetting } from '@/shared/api/backendOnboardingSettingsApi'
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
 import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
+import {
+  useBackendNotificationSettings,
+  useCreateBackendNotificationSettings,
+  useUpdateBackendNotificationSettings,
+} from '@/shared/api/hooks/useBackendNotificationSettings'
 import { useBackendOnboardingSettings } from '@/shared/api/hooks/useBackendOnboardingSettings'
 import { useBackendPredictionResults } from '@/shared/api/hooks/useBackendPredictionResults'
 import {
@@ -85,6 +94,8 @@ type CategoryFilter = 'all' | 'commercial-analysis' | 'ai-prediction' | 'recomme
 type SortOrder = 'latest' | 'oldest'
 
 type BackendReportStatus = 'connected' | 'fallback'
+
+type NotificationSettingsStatus = BackendReportStatus
 
 type OnboardingSettingsStatus = BackendReportStatus
 
@@ -903,6 +914,154 @@ function buildNotificationSettings(): NotificationSettings {
   }
 }
 
+function getNotificationChannelLabels(
+  channels: NotificationSettings['channels'],
+): string[] {
+  return [
+    channels.email ? '이메일' : null,
+    channels.webPush ? '웹 푸시' : null,
+    channels.sms ? '문자' : null,
+  ].filter((item): item is string => Boolean(item))
+}
+
+function getBackendNotificationChannels(
+  channels: NotificationSettings['channels'],
+): string[] {
+  return [
+    channels.email ? 'email' : null,
+    channels.webPush ? 'web-push' : null,
+    channels.sms ? 'sms' : null,
+  ].filter((item): item is string => Boolean(item))
+}
+
+function getBackendNotificationFrequency(
+  frequency: NotificationFrequency,
+): string {
+  if (frequency === '매일') {
+    return 'daily'
+  }
+
+  if (frequency === '매주') {
+    return 'weekly'
+  }
+
+  return 'realtime'
+}
+
+function getNotificationFrequencyLabel(
+  frequency: string | undefined,
+): NotificationFrequency | undefined {
+  if (frequency === 'daily' || frequency === '매일') {
+    return '매일'
+  }
+
+  if (frequency === 'weekly' || frequency === '매주') {
+    return '매주'
+  }
+
+  if (frequency === 'realtime' || frequency === '실시간') {
+    return '실시간'
+  }
+
+  return undefined
+}
+
+function buildQuietHoursPayload(quietHours: string): Record<string, unknown> {
+  const [start, end] = quietHours.split('~').map((item) => item.trim())
+
+  if (start && end) {
+    return { enabled: true, start, end }
+  }
+
+  return { enabled: true, label: quietHours }
+}
+
+function getQuietHoursLabel(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim()) {
+    return value
+  }
+
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  const label = readString(value.label)
+  if (label) {
+    return label
+  }
+
+  const start = readString(value.start)
+  const end = readString(value.end)
+
+  return start && end ? `${start} ~ ${end}` : undefined
+}
+
+function buildStoredNotificationSettings(settings: NotificationSettings) {
+  return {
+    channels: settings.channels,
+    channelLabels: getNotificationChannelLabels(settings.channels),
+    enabledNotificationLabels: settings.enabledNotifications,
+    frequency: settings.frequency,
+    quietHours: settings.quietHours,
+    savedAt: new Date().toISOString(),
+  }
+}
+
+function buildBackendNotificationSettingsInput(
+  settings: NotificationSettings,
+): BackendNotificationSettingsCreateInput {
+  return {
+    channels: getBackendNotificationChannels(settings.channels),
+    frequency: getBackendNotificationFrequency(settings.frequency),
+    quiet_hours: buildQuietHoursPayload(settings.quietHours),
+    enabled_notifications: settings.enabledNotifications,
+  }
+}
+
+function buildBackendNotificationSettings(
+  localSettings: NotificationSettings,
+  setting: BackendNotificationSetting | undefined,
+): NotificationSettings {
+  if (!setting) {
+    return localSettings
+  }
+
+  const channels = readStringArray(setting.channels)
+  const hasBackendChannels = Array.isArray(setting.channels)
+  const enabledNotifications = Array.isArray(setting.enabled_notifications)
+    ? readStringArray(setting.enabled_notifications)
+    : localSettings.enabledNotifications
+
+  return {
+    channels: hasBackendChannels
+      ? {
+          email: channels.includes('email'),
+          sms: channels.includes('sms'),
+          webPush: channels.includes('web-push') || channels.includes('webPush'),
+        }
+      : localSettings.channels,
+    frequency:
+      getNotificationFrequencyLabel(readString(setting.frequency)) ??
+      localSettings.frequency,
+    quietHours:
+      getQuietHoursLabel(setting.quiet_hours) ?? localSettings.quietHours,
+    enabledNotifications,
+  }
+}
+
+function selectLatestBackendNotificationSetting(
+  settings: BackendNotificationSetting[] | undefined,
+): BackendNotificationSetting | undefined {
+  if (!settings?.length) {
+    return undefined
+  }
+
+  return [...settings].sort(
+    (current, next) =>
+      getCreatedTime(next.created_at) - getCreatedTime(current.created_at),
+  )[0]
+}
+
 function buildActivities(): ActivityItem[] {
   const summary = safeParseStorage<StoredOnboardingSummary>(
     'metropick-onboarding-summary',
@@ -1386,10 +1545,12 @@ function InterestLocationsTab({
 }
 
 function NotificationsTab({
+  notificationSourceStatus,
   onChange,
   onSave,
   settings,
 }: {
+  notificationSourceStatus: NotificationSettingsStatus
   onChange: (settings: NotificationSettings) => void
   onSave: () => void
   settings: NotificationSettings
@@ -1406,6 +1567,15 @@ function NotificationsTab({
 
   return (
     <div className="grid gap-5 px-5 py-5">
+      <div>
+        <BackendStatusBadge
+          connectedLabel="Supabase 알림 설정 연결됨"
+          fallbackLabel="백엔드 미연결 · 로컬 알림 설정 표시"
+          loadingLabel="백엔드 미연결 · 로컬 알림 설정 표시"
+          status={notificationSourceStatus}
+        />
+      </div>
+
       <section className="rounded-xl border border-blue-100 bg-white p-5">
         <h3 className="m-0 mb-4 text-lg font-black">알림 방식</h3>
         <div className="grid grid-cols-3 gap-3 max-md:grid-cols-1">
@@ -1519,6 +1689,7 @@ function ReportPanel({
   filteredReports,
   interestLocations,
   locationSourceStatus,
+  notificationSourceStatus,
   notificationSettings,
   onDeleteInterest,
   onFilterChange,
@@ -1541,6 +1712,7 @@ function ReportPanel({
   filteredReports: SavedReport[]
   interestLocations: InterestLocation[]
   locationSourceStatus: BackendReportStatus
+  notificationSourceStatus: NotificationSettingsStatus
   notificationSettings: NotificationSettings
   onDeleteInterest: (location: InterestLocation) => void
   onFilterChange: (filter: CategoryFilter) => void
@@ -1609,6 +1781,7 @@ function ReportPanel({
 
       {activeTab === 'notifications' ? (
         <NotificationsTab
+          notificationSourceStatus={notificationSourceStatus}
           onChange={onSetNotificationSettings}
           onSave={onSaveNotifications}
           settings={notificationSettings}
@@ -1655,10 +1828,34 @@ export function MyPage() {
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<SortOrder>('latest')
-  const [notificationSettings, setNotificationSettings] =
-    useState<NotificationSettings>(() => buildNotificationSettings())
+  const localNotificationSettings = useMemo(() => buildNotificationSettings(), [])
+  const [notificationDraftSettings, setNotificationDraftSettings] =
+    useState<NotificationSettings | null>(null)
   const [message, setMessage] = useState('')
   const activities = useMemo(() => buildActivities(), [])
+  const backendNotificationSettingsQuery = useBackendNotificationSettings()
+  const createBackendNotificationSettingsMutation =
+    useCreateBackendNotificationSettings()
+  const updateBackendNotificationSettingsMutation =
+    useUpdateBackendNotificationSettings()
+  const backendNotificationSetting =
+    backendNotificationSettingsQuery.data?.data_status === 'supabase_connected'
+      ? selectLatestBackendNotificationSetting(
+          backendNotificationSettingsQuery.data.settings,
+        )
+      : undefined
+  const notificationSourceStatus: NotificationSettingsStatus =
+    backendNotificationSetting ? 'connected' : 'fallback'
+  const backendNotificationSettings = useMemo(
+    () =>
+      buildBackendNotificationSettings(
+        localNotificationSettings,
+        backendNotificationSetting,
+      ),
+    [backendNotificationSetting, localNotificationSettings],
+  )
+  const notificationSettings =
+    notificationDraftSettings ?? backendNotificationSettings
   const backendOnboardingSettingsQuery = useBackendOnboardingSettings()
   const backendOnboardingSetting =
     backendOnboardingSettingsQuery.data?.data_status === 'supabase_connected'
@@ -1799,20 +1996,30 @@ export function MyPage() {
     showMessage('관심 역세권에서 삭제되었습니다.')
   }
 
-  const handleSaveNotifications = () => {
-    writeStorage('metropick-onboarding-notifications', {
-      channels: notificationSettings.channels,
-      channelLabels: [
-        notificationSettings.channels.email ? '이메일' : null,
-        notificationSettings.channels.webPush ? '웹 푸시' : null,
-        notificationSettings.channels.sms ? '문자' : null,
-      ].filter((item): item is string => Boolean(item)),
-      enabledNotificationLabels: notificationSettings.enabledNotifications,
-      frequency: notificationSettings.frequency,
-      quietHours: notificationSettings.quietHours,
-      savedAt: new Date().toISOString(),
-    })
-    showMessage('알림 설정이 저장되었습니다.')
+  const handleSaveNotifications = async () => {
+    writeStorage(
+      'metropick-onboarding-notifications',
+      buildStoredNotificationSettings(notificationSettings),
+    )
+
+    try {
+      const backendInput = buildBackendNotificationSettingsInput(notificationSettings)
+      const settingId = readString(backendNotificationSetting?.id)
+      const response = settingId
+        ? await updateBackendNotificationSettingsMutation.mutateAsync({
+            id: settingId,
+            input: backendInput,
+          })
+        : await createBackendNotificationSettingsMutation.mutateAsync(backendInput)
+
+      showMessage(
+        response.data_status === 'supabase_connected'
+          ? 'Supabase에 알림 설정을 저장했어요.'
+          : '백엔드 미연결 · 로컬에 알림 설정을 저장했어요.',
+      )
+    } catch {
+      showMessage('백엔드 미연결 · 로컬에 알림 설정을 저장했어요.')
+    }
   }
 
   return (
@@ -1867,13 +2074,14 @@ export function MyPage() {
               filteredReports={filteredReports}
               interestLocations={visibleInterestLocations}
               locationSourceStatus={locationSourceStatus}
+              notificationSourceStatus={notificationSourceStatus}
               notificationSettings={notificationSettings}
               onDeleteInterest={handleDeleteInterest}
               onFilterChange={setActiveFilter}
               onOpenReport={handleOpenReport}
               onSaveNotifications={handleSaveNotifications}
               onSearchChange={setSearchQuery}
-              onSetNotificationSettings={setNotificationSettings}
+              onSetNotificationSettings={setNotificationDraftSettings}
               onShareReport={handleShareReport}
               onSortChange={setSortOrder}
               onTabChange={handleTabChange}

@@ -103,7 +103,7 @@ describe('OnboardingNotificationsPage', () => {
     await user.click(screen.getByRole('button', { name: /설정 완료하고 시작하기/ }))
 
     expect(
-      await screen.findByText('백엔드 미연결 · 로컬에 초기 설정을 저장했어요.'),
+      await screen.findByText('백엔드 미연결 · 로컬에 알림 설정을 저장했어요.'),
     ).toBeInTheDocument()
     expect(await screen.findByText('MetroPick AI 대시보드')).toBeInTheDocument()
 
@@ -117,7 +117,7 @@ describe('OnboardingNotificationsPage', () => {
     expect(window.localStorage.getItem('metropick-onboarding-summary')).toBeTruthy()
   })
 
-  it('saves final onboarding state to the backend when available', async () => {
+  it('saves final notification and onboarding state to the backend when available', async () => {
     const user = userEvent.setup()
     window.localStorage.setItem(
       'metropick-onboarding-stations',
@@ -135,6 +135,23 @@ describe('OnboardingNotificationsPage', () => {
     )
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
+      if (url.includes('/api/notification-settings') && init?.method === 'POST') {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            setting: {
+              id: 'backend-notification-setting',
+              channels: ['email', 'web-push'],
+              frequency: 'realtime',
+              quiet_hours: { enabled: true, start: '22:00', end: '08:00' },
+              enabled_notifications: ['개통 일정 변경 알림'],
+              created_at: '2026-05-15T00:00:00+00:00',
+            },
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
       if (url.includes('/api/onboarding-settings') && init?.method === 'POST') {
         return {
           ok: true,
@@ -169,8 +186,29 @@ describe('OnboardingNotificationsPage', () => {
     await user.click(screen.getByRole('button', { name: /설정 완료하고 시작하기/ }))
 
     expect(
-      await screen.findByText('Supabase에 초기 설정을 저장했어요.'),
+      await screen.findByText('Supabase에 알림 설정을 저장했어요.'),
     ).toBeInTheDocument()
+
+    const notificationSaveCall = fetchMock.mock.calls.find(([input]) =>
+      String(input).includes('/api/notification-settings'),
+    )
+    expect(notificationSaveCall).toBeDefined()
+    const notificationBody = JSON.parse(
+      String(notificationSaveCall?.[1]?.body ?? '{}'),
+    ) as {
+      channels?: string[]
+      enabled_notifications?: string[]
+      frequency?: string
+      quiet_hours?: { end?: string; start?: string }
+    }
+    expect(notificationBody).toMatchObject({
+      channels: ['email', 'web-push'],
+      frequency: 'realtime',
+      quiet_hours: { start: '22:00', end: '08:00' },
+    })
+    expect(notificationBody.enabled_notifications).toContain(
+      '개통 일정 변경 알림',
+    )
 
     const saveCall = fetchMock.mock.calls.find(([input]) =>
       String(input).includes('/api/onboarding-settings'),

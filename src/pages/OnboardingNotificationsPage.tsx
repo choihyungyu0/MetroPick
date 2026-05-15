@@ -22,7 +22,9 @@ import {
 import { useNavigate } from 'react-router-dom'
 
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
+import type { BackendNotificationSettingsCreateInput } from '@/shared/api/backendNotificationSettingsApi'
 import type { BackendOnboardingSettingsCreateInput } from '@/shared/api/backendOnboardingSettingsApi'
+import { useCreateBackendNotificationSettings } from '@/shared/api/hooks/useBackendNotificationSettings'
 import { useCreateBackendOnboardingSettings } from '@/shared/api/hooks/useBackendOnboardingSettings'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
@@ -708,12 +710,25 @@ function buildOnboardingSettingsInput({
   }
 }
 
+function buildNotificationSettingsInput(
+  notifications: NotificationPayload,
+): BackendNotificationSettingsCreateInput {
+  return {
+    channels: notifications.channels,
+    frequency: notifications.frequency,
+    quiet_hours: notifications.quietHours,
+    enabled_notifications: notifications.enabledNotificationLabels,
+  }
+}
+
 export function OnboardingNotificationsPage() {
   const navigate = useNavigate()
   const [setup, setSetup] = useState<NotificationSetup>(loadInitialSetup)
   const [notificationError, setNotificationError] = useState('')
   const [channelError, setChannelError] = useState('')
   const [saveMessage, setSaveMessage] = useState('')
+  const createNotificationSettingsMutation =
+    useCreateBackendNotificationSettings()
   const createOnboardingSettingsMutation = useCreateBackendOnboardingSettings()
 
   const handleToggleNotification = (id: NotificationId) => {
@@ -773,24 +788,34 @@ export function OnboardingNotificationsPage() {
       notifications,
     })
 
+    let nextSaveMessage: string
+
     try {
-      const response = await createOnboardingSettingsMutation.mutateAsync(
+      const response = await createNotificationSettingsMutation.mutateAsync(
+        buildNotificationSettingsInput(notifications),
+      )
+
+      nextSaveMessage =
+        response.data_status === 'supabase_connected'
+          ? 'Supabase에 알림 설정을 저장했어요.'
+          : '백엔드 미연결 · 로컬에 알림 설정을 저장했어요.'
+    } catch {
+      nextSaveMessage = '백엔드 미연결 · 로컬에 알림 설정을 저장했어요.'
+    }
+
+    try {
+      await createOnboardingSettingsMutation.mutateAsync(
         buildOnboardingSettingsInput({
           businessTypes,
           notifications,
           stations,
         }),
       )
-
-      setSaveMessage(
-        response.data_status === 'supabase_connected'
-          ? 'Supabase에 초기 설정을 저장했어요.'
-          : '백엔드 미연결 · 로컬에 초기 설정을 저장했어요.',
-      )
     } catch {
-      setSaveMessage('백엔드 미연결 · 로컬에 초기 설정을 저장했어요.')
+      // The local onboarding summary above remains the fallback source.
     }
 
+    setSaveMessage(nextSaveMessage)
     window.setTimeout(() => navigate('/dashboard'), ONBOARDING_NAVIGATION_DELAY_MS)
   }
 

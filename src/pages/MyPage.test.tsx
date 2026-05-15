@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { BackendNotificationSetting } from '@/shared/api/backendNotificationSettingsApi'
 import type { BackendOnboardingSetting } from '@/shared/api/backendOnboardingSettingsApi'
 import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
@@ -34,6 +35,8 @@ function mockBackendSavedReports(
 function mockBackendApis({
   locations = [],
   locationStatus = 'supabase_missing',
+  notificationSettings = [],
+  notificationStatus = 'supabase_missing',
   onboardingSettings = [],
   onboardingStatus = 'supabase_missing',
   predictionResults = [],
@@ -43,6 +46,8 @@ function mockBackendApis({
 }: {
   locations?: BackendSavedLocation[]
   locationStatus?: string
+  notificationSettings?: BackendNotificationSetting[]
+  notificationStatus?: string
   onboardingSettings?: BackendOnboardingSetting[]
   onboardingStatus?: string
   predictionResults?: BackendPredictionResult[]
@@ -52,8 +57,32 @@ function mockBackendApis({
 }) {
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (input: RequestInfo | URL) => {
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
+
+      if (url.includes('/api/notification-settings')) {
+        if (init?.method === 'POST' || init?.method === 'PATCH') {
+          return {
+            ok: true,
+            json: async () => ({
+              data_status: notificationStatus,
+              setting: {
+                id: 'backend-notification-setting',
+                created_at: '2026-05-15T00:00:00+00:00',
+                ...notificationSettings[0],
+              },
+            }),
+          } satisfies Pick<Response, 'json' | 'ok'>
+        }
+
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: notificationStatus,
+            settings: notificationSettings,
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
 
       if (url.includes('/api/saved-reports')) {
         return {
@@ -380,7 +409,9 @@ describe('MyPage', () => {
     await user.click(screen.getByRole('button', { name: '문자' }))
     await user.click(screen.getByRole('button', { name: '알림 설정 저장' }))
 
-    expect(screen.getByText('알림 설정이 저장되었습니다.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('백엔드 미연결 · 로컬에 알림 설정을 저장했어요.'),
+    ).toBeInTheDocument()
 
     const raw = window.localStorage.getItem('metropick-onboarding-notifications')
     expect(raw).not.toBeNull()
@@ -388,6 +419,158 @@ describe('MyPage', () => {
       channels?: { sms?: boolean }
     }
     expect(settings.channels?.sms).toBe(true)
+  })
+
+  it('uses backend notification settings in the notifications tab when connected', async () => {
+    mockBackendApis({
+      notificationStatus: 'supabase_connected',
+      notificationSettings: [
+        {
+          id: 'older-notification-setting',
+          channels: ['email'],
+          frequency: 'daily',
+          quiet_hours: { enabled: true, start: '23:00', end: '06:00' },
+          enabled_notifications: ['이전 알림'],
+          created_at: '2026-05-14T00:00:00+00:00',
+        },
+        {
+          id: 'backend-notification-setting',
+          channels: ['sms'],
+          frequency: 'weekly',
+          quiet_hours: { enabled: true, start: '21:00', end: '07:00' },
+          enabled_notifications: ['경쟁도 변화 알림'],
+          created_at: '2026-05-15T00:00:00+00:00',
+        },
+      ],
+    })
+
+    renderMyPage(['/mypage?tab=notifications'])
+
+    expect(await screen.findByText('Supabase 알림 설정 연결됨')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '문자' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: '이메일' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(screen.getByRole('button', { name: '매주' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByText('21:00 ~ 07:00')).toBeInTheDocument()
+    expect(screen.getByText('경쟁도 변화 알림')).toBeInTheDocument()
+    expect(screen.queryByText('이전 알림')).not.toBeInTheDocument()
+  })
+
+  it('falls back to localStorage notification settings when backend fails', () => {
+    window.localStorage.setItem(
+      'metropick-onboarding-notifications',
+      JSON.stringify({
+        channels: { email: false, sms: true, webPush: false },
+        enabledNotificationLabels: ['로컬 알림'],
+        frequency: '매일',
+        quietHours: '20:00 ~ 06:00',
+      }),
+    )
+
+    renderMyPage(['/mypage?tab=notifications'])
+
+    expect(screen.getByText('백엔드 미연결 · 로컬 알림 설정 표시')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '문자' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: '이메일' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(screen.getByRole('button', { name: '매일' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByText('20:00 ~ 06:00')).toBeInTheDocument()
+    expect(screen.getByText('로컬 알림')).toBeInTheDocument()
+  })
+
+  it('updates backend notification settings from My Page when connected', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url.includes('/api/notification-settings') && init?.method === 'PATCH') {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            setting: {
+              id: 'backend-notification-setting',
+              channels: ['email', 'sms'],
+              frequency: 'realtime',
+              quiet_hours: { enabled: true, start: '22:00', end: '08:00' },
+              enabled_notifications: ['개통 일정 업데이트'],
+              created_at: '2026-05-15T00:00:00+00:00',
+            },
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      if (url.includes('/api/notification-settings')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            settings: [
+              {
+                id: 'backend-notification-setting',
+                channels: ['email'],
+                frequency: 'realtime',
+                quiet_hours: { enabled: true, start: '22:00', end: '08:00' },
+                enabled_notifications: ['개통 일정 업데이트'],
+                created_at: '2026-05-15T00:00:00+00:00',
+              },
+            ],
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      return {
+        ok: true,
+        json: async () => ({ data_status: 'supabase_missing', settings: [] }),
+      } satisfies Pick<Response, 'json' | 'ok'>
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderMyPage(['/mypage?tab=notifications'])
+
+    expect(await screen.findByText('Supabase 알림 설정 연결됨')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '문자' }))
+    await user.click(screen.getByRole('button', { name: '알림 설정 저장' }))
+
+    expect(
+      await screen.findByText('Supabase에 알림 설정을 저장했어요.'),
+    ).toBeInTheDocument()
+
+    const updateCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).includes('/api/notification-settings/backend-notification-setting') &&
+        init?.method === 'PATCH',
+    )
+    expect(updateCall).toBeDefined()
+    const body = JSON.parse(String(updateCall?.[1]?.body ?? '{}')) as {
+      channels?: string[]
+      frequency?: string
+      quiet_hours?: { end?: string; start?: string }
+    }
+    expect(body).toMatchObject({
+      channels: ['email', 'sms'],
+      frequency: 'realtime',
+      quiet_hours: { start: '22:00', end: '08:00' },
+    })
+    expect(window.localStorage.getItem('metropick-onboarding-notifications')).toContain(
+      '"sms":true',
+    )
   })
 
   it('filters the saved report list by search query', async () => {
