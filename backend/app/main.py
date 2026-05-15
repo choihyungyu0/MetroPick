@@ -11,6 +11,7 @@ from backend.app.routers import (
     prediction,
     profiles,
     recommendation,
+    saved_locations,
     saved_reports,
 )
 
@@ -39,6 +40,7 @@ app.include_router(db_health.router)
 app.include_router(prediction.router)
 app.include_router(profiles.router)
 app.include_router(recommendation.router)
+app.include_router(saved_locations.router)
 app.include_router(saved_reports.router)
 
 

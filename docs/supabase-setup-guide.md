@@ -101,3 +101,49 @@ Delete a saved report:
 ```bash
 curl -X DELETE http://127.0.0.1:8000/api/saved-reports/<report_id>
 ```
+
+## Saved locations API
+
+Use these endpoints after the `saved_locations` table is available. These calls are server-side FastAPI requests; keep Supabase service credentials on the backend only.
+
+List saved locations:
+
+```bash
+curl http://127.0.0.1:8000/api/saved-locations
+```
+
+Create a saved location:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/saved-locations \
+  -H "Content-Type: application/json" \
+  -d '{
+    "station_name": "금남로4가역",
+    "district": "동구",
+    "business_type": "카페",
+    "score": 91.5,
+    "payload": {
+      "source": "localStorage_sync_candidate"
+    }
+  }'
+```
+
+Update a saved location:
+
+```bash
+curl -X PATCH http://127.0.0.1:8000/api/saved-locations/<location_id> \
+  -H "Content-Type: application/json" \
+  -d '{
+    "station_name": "수완역",
+    "score": 88.0,
+    "payload": {
+      "source": "updated_payload"
+    }
+  }'
+```
+
+Delete a saved location:
+
+```bash
+curl -X DELETE http://127.0.0.1:8000/api/saved-locations/<location_id>
+```

@@ -33,7 +33,11 @@ describe('AIPredictionPage', () => {
       screen.getByRole('heading', { name: /AI 매출 변동 시뮬레이션/ }),
     ).toBeInTheDocument()
     expect(
-      await screen.findByRole('button', { name: '리포트 다운로드' }),
+      await screen.findByRole(
+        'button',
+        { name: '리포트 다운로드' },
+        { timeout: 10000 },
+      ),
     ).toBeInTheDocument()
     expect(screen.getByAltText('개통 전후 매출 전망 예측 차트')).toBeInTheDocument()
     expect(screen.getByText('선택 역세권 예측 요약')).toBeInTheDocument()

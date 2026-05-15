@@ -86,3 +86,35 @@ class SavedReportResponse(BaseModel):
 class SavedReportListResponse(BaseModel):
     data_status: str
     reports: list[SavedReportResponse]
+
+
+class SavedLocationCreate(BaseModel):
+    station_name: str
+    district: str | None = None
+    business_type: str | None = None
+    score: float | None = None
+    payload: dict[str, object] = Field(default_factory=dict)
+
+
+class SavedLocationUpdate(BaseModel):
+    station_name: str | None = None
+    district: str | None = None
+    business_type: str | None = None
+    score: float | None = None
+    payload: dict[str, object] | None = None
+
+
+class SavedLocationResponse(BaseModel):
+    id: str
+    user_id: str | None = None
+    station_name: str
+    district: str | None = None
+    business_type: str | None = None
+    score: float | None = None
+    payload: dict[str, object] = Field(default_factory=dict)
+    created_at: str
+
+
+class SavedLocationListResponse(BaseModel):
+    data_status: str
+    locations: list[SavedLocationResponse]
