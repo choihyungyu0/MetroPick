@@ -24,6 +24,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
+import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
+import { useBackendPredictionResults } from '@/shared/api/hooks/useBackendPredictionResults'
 import {
   useBackendSavedLocations,
   useDeleteBackendSavedLocation,
@@ -45,7 +47,9 @@ type SavedReport = {
   businessType: string
   category: ReportCategory
   id: string
+  predictedScore?: number
   savedAt: string
+  summary?: string
   stationArea: string
   thumbnailSrc: string
   title: string
@@ -151,8 +155,15 @@ type StoredCommercialReport = {
 
 type StoredPredictionResult = {
   businessType?: string
+  backendStartupSuitability?: {
+    predicted_score?: number
+    recommendation_label?: string
+  }
   createdAt?: string
   id?: string
+  predicted_score?: number
+  recommendation_label?: string
+  riskLevel?: string
   stationArea?: string
 }
 
@@ -452,6 +463,12 @@ function normalizePredictionReports(): SavedReport[] {
         title: `${stationArea} 매출 예측 리포트`,
         category: 'AI 예측',
         businessType: item.businessType ?? '카페',
+        predictedScore:
+          item.predicted_score ?? item.backendStartupSuitability?.predicted_score,
+        summary:
+          item.recommendation_label ??
+          item.backendStartupSuitability?.recommendation_label ??
+          (item.riskLevel ? `위험 수준 ${item.riskLevel}` : undefined),
         stationArea,
         savedAt: item.createdAt ?? new Date().toISOString(),
         thumbnailSrc: myPageAssets.aiPredictionChart,
@@ -514,16 +531,24 @@ function interestLocationsAsReports(locations: InterestLocation[]): SavedReport[
   }))
 }
 
-function buildSavedReports(locations: InterestLocation[]): SavedReport[] {
-  const byKey = new Map<string, SavedReport>()
+function buildSavedReports(
+  locations: InterestLocation[],
+  predictionReports = normalizePredictionReports(),
+): SavedReport[] {
   const reports = [
     ...defaultReports,
     ...normalizeCommercialReports(),
-    ...normalizePredictionReports(),
+    ...predictionReports,
     ...interestLocationsAsReports(locations),
     ...normalizeCurrentReport(),
     ...normalizeSelectedRecommendation(),
   ]
+
+  return mergeSavedReports(reports)
+}
+
+function mergeSavedReports(reports: SavedReport[]): SavedReport[] {
+  const byKey = new Map<string, SavedReport>()
 
   reports.forEach((report) => {
     const key = report.id || `${report.title}-${report.savedAt}`
@@ -627,6 +652,87 @@ function normalizeBackendSavedReports(
       stationArea,
       savedAt: createdAt,
       thumbnailSrc: getReportThumbnailSrc(category),
+    }
+  })
+}
+
+function getPredictionPayload(
+  result: BackendPredictionResult,
+): Record<string, unknown> | undefined {
+  return isRecord(result.result_payload) ? result.result_payload : undefined
+}
+
+function getBackendStartupSuitabilityPayload(
+  payload: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  const backendStartupSuitability = payload?.backendStartupSuitability
+  return isRecord(backendStartupSuitability) ? backendStartupSuitability : undefined
+}
+
+function buildBackendPredictionSummary(
+  payload: Record<string, unknown> | undefined,
+  predictedScore: number | undefined,
+): string | undefined {
+  const backendStartupSuitability = getBackendStartupSuitabilityPayload(payload)
+  const recommendation =
+    readString(backendStartupSuitability?.recommendation_label) ??
+    readPayloadString(payload, ['recommendation_label', 'recommendationLabel', 'summary'])
+  if (recommendation) {
+    return recommendation
+  }
+
+  const predictedSalesIncrease = readPayloadString(payload, [
+    'predictedSalesIncrease',
+  ])
+  if (predictedSalesIncrease) {
+    return `예상 매출 변화 ${predictedSalesIncrease}`
+  }
+
+  if (predictedScore !== undefined) {
+    return `창업 적합도 ${predictedScore.toFixed(1)}점`
+  }
+
+  const riskLevel = readPayloadString(payload, ['riskLevel'])
+  return riskLevel ? `위험 수준 ${riskLevel}` : undefined
+}
+
+function normalizeBackendPredictionResults(
+  results: BackendPredictionResult[],
+): SavedReport[] {
+  return results.map((result, index) => {
+    const payload = getPredictionPayload(result)
+    const backendStartupSuitability = getBackendStartupSuitabilityPayload(payload)
+    const stationArea =
+      readString(result.station_area) ??
+      readPayloadString(payload, ['stationArea', 'station_area']) ??
+      '선택 역세권'
+    const businessType =
+      readString(result.business_type) ??
+      readPayloadString(payload, ['businessType', 'business_type']) ??
+      '업종 미지정'
+    const predictedScore =
+      readNumber(result.predicted_score) ??
+      readNumber(backendStartupSuitability?.predicted_score)
+    const createdAt =
+      readString(result.created_at) ??
+      readPayloadString(payload, ['createdAt', 'created_at']) ??
+      new Date().toISOString()
+
+    return {
+      id:
+        readString(result.id) ??
+        readPayloadString(payload, ['id']) ??
+        `backend-prediction-result-${index}`,
+      title:
+        readPayloadString(payload, ['title']) ??
+        `${stationArea} 매출 예측 리포트`,
+      category: 'AI 예측',
+      businessType,
+      predictedScore,
+      summary: buildBackendPredictionSummary(payload, predictedScore),
+      stationArea,
+      savedAt: createdAt,
+      thumbnailSrc: myPageAssets.aiPredictionChart,
     }
   })
 }
@@ -937,6 +1043,17 @@ function ReportItem({
         <p className="m-0 text-sm font-bold text-slate-500">
           저장일 <strong className="text-slate-900">{report.savedAt}</strong>
         </p>
+        {report.predictedScore !== undefined || report.summary ? (
+          <p className="m-0 mt-1 text-sm font-bold text-slate-500">
+            {report.predictedScore !== undefined ? (
+              <strong className="text-blue-600">
+                예측 점수 {report.predictedScore.toFixed(1)}점
+              </strong>
+            ) : null}
+            {report.predictedScore !== undefined && report.summary ? ' · ' : null}
+            {report.summary}
+          </p>
+        ) : null}
       </div>
 
       <span
@@ -983,6 +1100,7 @@ function ReportsTab({
   onSearchChange,
   onShare,
   onSortChange,
+  predictionResultSourceStatus,
   reportSourceStatus,
   reports,
   searchQuery,
@@ -994,6 +1112,7 @@ function ReportsTab({
   onSearchChange: (value: string) => void
   onShare: (report: SavedReport) => void
   onSortChange: (value: SortOrder) => void
+  predictionResultSourceStatus: BackendReportStatus
   reportSourceStatus: BackendReportStatus
   reports: SavedReport[]
   searchQuery: string
@@ -1026,6 +1145,12 @@ function ReportsTab({
             fallbackLabel="백엔드 미연결 · 로컬 저장 리포트 표시"
             loadingLabel="백엔드 미연결 · 로컬 저장 리포트 표시"
             status={reportSourceStatus}
+          />
+          <BackendStatusBadge
+            connectedLabel="Supabase AI 예측 결과 연결됨"
+            fallbackLabel="백엔드 미연결 · 로컬 AI 예측 결과 표시"
+            loadingLabel="백엔드 미연결 · 로컬 AI 예측 결과 표시"
+            status={predictionResultSourceStatus}
           />
         </div>
 
@@ -1338,6 +1463,7 @@ function ReportPanel({
   onSortChange,
   onTabChange,
   onViewInterest,
+  predictionResultSourceStatus,
   reportSourceStatus,
   searchQuery,
   sortOrder,
@@ -1359,6 +1485,7 @@ function ReportPanel({
   onSortChange: (value: SortOrder) => void
   onTabChange: (tab: MyPageTab) => void
   onViewInterest: () => void
+  predictionResultSourceStatus: BackendReportStatus
   reportSourceStatus: BackendReportStatus
   searchQuery: string
   sortOrder: SortOrder
@@ -1396,6 +1523,7 @@ function ReportPanel({
           onSearchChange={onSearchChange}
           onShare={onShareReport}
           onSortChange={onSortChange}
+          predictionResultSourceStatus={predictionResultSourceStatus}
           reportSourceStatus={reportSourceStatus}
           reports={filteredReports}
           searchQuery={searchQuery}
@@ -1466,6 +1594,7 @@ export function MyPage() {
   const activities = useMemo(() => buildActivities(), [])
   const backendSavedLocationsQuery = useBackendSavedLocations()
   const deleteBackendSavedLocationMutation = useDeleteBackendSavedLocation()
+  const backendPredictionResultsQuery = useBackendPredictionResults()
   const isBackendSavedLocationsConnected =
     backendSavedLocationsQuery.data?.data_status === 'supabase_connected'
   const backendInterestLocations = useMemo(() => {
@@ -1482,9 +1611,22 @@ export function MyPage() {
   const locationSourceStatus: BackendReportStatus = isBackendSavedLocationsConnected
     ? 'connected'
     : 'fallback'
+  const isBackendPredictionResultsConnected =
+    backendPredictionResultsQuery.data?.data_status === 'supabase_connected'
+  const backendPredictionReports = useMemo(() => {
+    const response = backendPredictionResultsQuery.data
+    return response?.data_status === 'supabase_connected'
+      ? normalizeBackendPredictionResults(response.results)
+      : []
+  }, [backendPredictionResultsQuery.data])
+  const predictionReportsForMyPage = isBackendPredictionResultsConnected
+    ? backendPredictionReports
+    : normalizePredictionReports()
+  const predictionResultSourceStatus: BackendReportStatus =
+    isBackendPredictionResultsConnected ? 'connected' : 'fallback'
   const localSavedReports = useMemo(
-    () => buildSavedReports(visibleInterestLocations),
-    [visibleInterestLocations],
+    () => buildSavedReports(visibleInterestLocations, predictionReportsForMyPage),
+    [predictionReportsForMyPage, visibleInterestLocations],
   )
   const backendSavedReportsQuery = useBackendSavedReports()
   const isBackendSavedReportsConnected =
@@ -1496,7 +1638,7 @@ export function MyPage() {
       : []
   }, [backendSavedReportsQuery.data])
   const savedReports = isBackendSavedReportsConnected
-    ? backendSavedReports
+    ? mergeSavedReports([...backendSavedReports, ...predictionReportsForMyPage])
     : localSavedReports
   const reportSourceStatus: BackendReportStatus = isBackendSavedReportsConnected
     ? 'connected'
@@ -1652,6 +1794,7 @@ export function MyPage() {
               onSortChange={setSortOrder}
               onTabChange={handleTabChange}
               onViewInterest={() => navigate('/recommendation')}
+              predictionResultSourceStatus={predictionResultSourceStatus}
               reportSourceStatus={reportSourceStatus}
               searchQuery={searchQuery}
               sortOrder={sortOrder}

@@ -19,6 +19,8 @@ import type {
   BackendStartupSuitabilityInput,
   BackendStartupSuitabilityResponse,
 } from '@/shared/api/backendPredictionApi'
+import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
+import { useCreateBackendPredictionResult } from '@/shared/api/hooks/useBackendPredictionResults'
 import { useBackendStartupSuitability } from '@/shared/api/hooks/useBackendStartupSuitability'
 import { aiPredictionAssets } from '@/shared/assets/aiPredictionAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
@@ -187,6 +189,46 @@ function appendPredictionResult(result: PredictionResult) {
   const key = 'metropick-ai-prediction-results'
   const existing = safeParseStorage<PredictionResult[]>(key) ?? []
   writeStorage(key, [...existing, result])
+}
+
+function buildPredictionResultInput(result: PredictionResult) {
+  return {
+    station_area: result.stationArea,
+    business_type: result.businessType,
+    predicted_score: result.backendStartupSuitability?.predicted_score ?? null,
+    result_payload: {
+      scenario: result.scenario,
+      predictedSalesGrowthRate: result.predictedSalesGrowthRate,
+      predictedSalesIncrease: result.predictedSalesIncrease,
+      predictedFloatingPopulationGrowthRate:
+        result.predictedFloatingPopulationGrowthRate,
+      riskLevel: result.riskLevel,
+      backendStartupSuitability: result.backendStartupSuitability,
+      createdAt: result.createdAt,
+    },
+  }
+}
+
+function normalizeBackendPredictionResultForStorage(
+  backendResult: BackendPredictionResult,
+  fallback: PredictionResult,
+): PredictionResult {
+  const payload =
+    typeof backendResult.result_payload === 'object' &&
+    backendResult.result_payload !== null
+      ? backendResult.result_payload
+      : {}
+
+  return {
+    ...fallback,
+    id: backendResult.id ?? fallback.id,
+    businessType: backendResult.business_type ?? fallback.businessType,
+    stationArea: backendResult.station_area ?? fallback.stationArea,
+    predicted_score: backendResult.predicted_score ?? fallback.predicted_score,
+    createdAt:
+      backendResult.created_at ??
+      (typeof payload.createdAt === 'string' ? payload.createdAt : fallback.createdAt),
+  }
 }
 
 function buildMockPredictionResult(filters: PredictionFilters): PredictionResult {
@@ -565,6 +607,7 @@ export function AIPredictionPage() {
   const [backendPrediction, setBackendPrediction] =
     useState<BackendStartupSuitabilityResponse | null>(null)
   const startupSuitabilityMutation = useBackendStartupSuitability()
+  const createPredictionResultMutation = useCreateBackendPredictionResult()
 
   const stationSummary = useMemo(() => filters.stationArea, [filters.stationArea])
   const backendStatus = getPredictionBackendStatus({
@@ -582,26 +625,38 @@ export function AIPredictionPage() {
   )
 
   const handleRunSimulation = async () => {
+    let result: PredictionResult
+
     try {
       const prediction = await startupSuitabilityMutation.mutateAsync(
         sampleStartupSuitabilityPayload,
       )
       setBackendPrediction(prediction)
-      appendPredictionResult(buildBackendPredictionResult(filters, prediction))
-      setSaveMessage('FastAPI 예측 결과가 저장되었습니다.')
-      setLastSimulated(
-        new Date().toLocaleTimeString('ko-KR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      )
-      return
+      result = buildBackendPredictionResult(filters, prediction)
     } catch {
       setBackendPrediction(null)
+      result = buildMockPredictionResult(filters)
     }
 
-    appendPredictionResult(buildMockPredictionResult(filters))
-    setSaveMessage('시뮬레이션 결과가 저장되었습니다.')
+    try {
+      const response = await createPredictionResultMutation.mutateAsync(
+        buildPredictionResultInput(result),
+      )
+
+      if (response.data_status === 'supabase_connected') {
+        appendPredictionResult(
+          normalizeBackendPredictionResultForStorage(response.result, result),
+        )
+        setSaveMessage('Supabase에 AI 예측 결과를 저장했어요.')
+      } else {
+        appendPredictionResult(result)
+        setSaveMessage('백엔드 미연결 · 로컬에 AI 예측 결과를 저장했어요.')
+      }
+    } catch {
+      appendPredictionResult(result)
+      setSaveMessage('백엔드 미연결 · 로컬에 AI 예측 결과를 저장했어요.')
+    }
+
     setLastSimulated(
       new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
     )

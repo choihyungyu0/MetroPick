@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
 import { MyPage } from './MyPage'
@@ -32,11 +33,15 @@ function mockBackendSavedReports(
 function mockBackendApis({
   locations = [],
   locationStatus = 'supabase_missing',
+  predictionResults = [],
+  predictionStatus = 'supabase_missing',
   reports = [],
   reportStatus = 'supabase_missing',
 }: {
   locations?: BackendSavedLocation[]
   locationStatus?: string
+  predictionResults?: BackendPredictionResult[]
+  predictionStatus?: string
   reports?: BackendSavedReport[]
   reportStatus?: string
 }) {
@@ -51,6 +56,16 @@ function mockBackendApis({
           json: async () => ({
             data_status: reportStatus,
             reports,
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      if (url.includes('/api/prediction-results')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: predictionStatus,
+            results: predictionResults,
           }),
         } satisfies Pick<Response, 'json' | 'ok'>
       }
@@ -143,6 +158,66 @@ describe('MyPage', () => {
     expect(await screen.findByText('상무역 상권 분석 리포트')).toBeInTheDocument()
     expect(
       screen.getByText('백엔드 미연결 · 로컬 저장 리포트 표시'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows backend prediction results when Supabase is connected', async () => {
+    mockBackendApis({
+      predictionStatus: 'supabase_connected',
+      predictionResults: [
+        {
+          id: 'backend-prediction-result',
+          station_area: '금남로4가역',
+          business_type: '카페',
+          predicted_score: 83.4,
+          result_payload: {
+            backendStartupSuitability: {
+              recommendation_label: '창업 적합도 높음',
+              predicted_score: 83.4,
+            },
+            predictedSalesIncrease: '+980만원',
+            scenario: '광주 2호선 2단계 개통 - 2026년 예정',
+          },
+          created_at: '2026-05-15T00:00:00+00:00',
+        },
+      ],
+    })
+
+    renderMyPage()
+
+    expect(await screen.findByText('금남로4가역 매출 예측 리포트')).toBeInTheDocument()
+    expect(screen.getByText('Supabase AI 예측 결과 연결됨')).toBeInTheDocument()
+    expect(screen.getByText('예측 점수 83.4점')).toBeInTheDocument()
+    expect(screen.getByText(/창업 적합도 높음/)).toBeInTheDocument()
+  })
+
+  it('falls back to localStorage prediction results when backend fails', () => {
+    window.localStorage.setItem(
+      'metropick-ai-prediction-results',
+      JSON.stringify([
+        {
+          id: 'local-prediction-result',
+          stationArea: '양산역',
+          businessType: '베이커리',
+          predicted_score: 77.2,
+          recommendation_label: '로컬 예측 결과',
+          predictedSalesGrowthRate: 47.6,
+          predictedSalesIncrease: '+1,280만원',
+          predictedFloatingPopulationGrowthRate: 42.3,
+          riskLevel: '보통',
+          scenario: '광주 2호선 2단계 개통 - 2026년 예정',
+          createdAt: '2026-05-15T09:30:00+09:00',
+        },
+      ]),
+    )
+
+    renderMyPage()
+
+    expect(screen.getByText('양산역 매출 예측 리포트')).toBeInTheDocument()
+    expect(screen.getByText('예측 점수 77.2점')).toBeInTheDocument()
+    expect(screen.getByText(/로컬 예측 결과/)).toBeInTheDocument()
+    expect(
+      screen.getByText('백엔드 미연결 · 로컬 AI 예측 결과 표시'),
     ).toBeInTheDocument()
   })
 
