@@ -13,6 +13,8 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
+import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
+import { useCreateBackendSavedLocation } from '@/shared/api/hooks/useBackendSavedLocations'
 import { useBackendRecommendations } from '@/shared/api/hooks/useBackendRecommendations'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
@@ -38,6 +40,7 @@ type SavedInterestLocation = {
   businessType: string
   district: string
   id: string
+  reason?: string
   savedAt: string
   score: number
   station: string
@@ -125,6 +128,48 @@ function appendInterestLocation(item: SavedInterestLocation) {
   }
 
   writeStorage(key, [...existing, item])
+}
+
+function normalizeBackendSavedLocationForStorage(
+  location: BackendSavedLocation,
+  fallback: SavedInterestLocation,
+): SavedInterestLocation {
+  return {
+    id: location.id ?? fallback.id,
+    station: location.station_name ?? fallback.station,
+    district: location.district ?? fallback.district,
+    businessType: location.business_type ?? fallback.businessType,
+    score: location.score ?? fallback.score,
+    reason:
+      typeof location.payload?.reason === 'string'
+        ? location.payload.reason
+        : fallback.reason,
+    savedAt: location.created_at ?? fallback.savedAt,
+  }
+}
+
+function buildSavedLocationInput(
+  item: LocationRecommendationItem,
+  filters: RecommendationFilters,
+) {
+  return {
+    station_name: item.station,
+    district: item.district,
+    business_type: filters.businessType,
+    score: item.score,
+    payload: {
+      rank: item.rank,
+      risk: item.riskLevel,
+      reason: item.reason,
+      metrics: {
+        growth: item.growth,
+        stability: item.stability,
+        competition: item.competition,
+        accessibility: item.accessibility,
+      },
+      line: item.line,
+    },
+  }
 }
 
 function clampRecommendationScore(score: number): number {
@@ -527,6 +572,7 @@ export function RecommendationPage() {
   const [filters] = useState<RecommendationFilters>(() => buildInitialFilters())
   const [message, setMessage] = useState('')
   const backendRecommendationsQuery = useBackendRecommendations(5)
+  const createBackendSavedLocationMutation = useCreateBackendSavedLocation()
   const recommendationItems = buildRecommendationItems(
     backendRecommendationsQuery.isSuccess
       ? backendRecommendationsQuery.data.items
@@ -543,16 +589,36 @@ export function RecommendationPage() {
     [],
   )
 
-  const handleSaveInterest = (item: LocationRecommendationItem) => {
-    appendInterestLocation({
+  const handleSaveInterest = async (item: LocationRecommendationItem) => {
+    const fallbackLocation: SavedInterestLocation = {
       id: `interest-location-${Date.now()}`,
       station: item.station,
       district: item.district,
       businessType: filters.businessType,
       score: item.score,
+      reason: item.reason,
       savedAt: new Date().toISOString(),
-    })
-    setMessage('관심 지역에 저장되었습니다.')
+    }
+
+    try {
+      const response = await createBackendSavedLocationMutation.mutateAsync(
+        buildSavedLocationInput(item, filters),
+      )
+
+      if (response.data_status === 'supabase_connected') {
+        appendInterestLocation(
+          normalizeBackendSavedLocationForStorage(response.location, fallbackLocation),
+        )
+        setMessage('Supabase에 관심 지역을 저장했어요.')
+        return
+      }
+
+      appendInterestLocation(fallbackLocation)
+      setMessage('백엔드 미연결 · 로컬에 관심 지역을 저장했어요.')
+    } catch {
+      appendInterestLocation(fallbackLocation)
+      setMessage('백엔드 미연결 · 로컬에 관심 지역을 저장했어요.')
+    }
   }
 
   const handleViewReport = (item: LocationRecommendationItem) => {

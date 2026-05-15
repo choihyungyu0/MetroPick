@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
 import { MyPage } from './MyPage'
 
@@ -25,15 +26,47 @@ function mockBackendSavedReports(
   reports: BackendSavedReport[],
   dataStatus = 'supabase_connected',
 ) {
+  mockBackendApis({ reports, reportStatus: dataStatus })
+}
+
+function mockBackendApis({
+  locations = [],
+  locationStatus = 'supabase_missing',
+  reports = [],
+  reportStatus = 'supabase_missing',
+}: {
+  locations?: BackendSavedLocation[]
+  locationStatus?: string
+  reports?: BackendSavedReport[]
+  reportStatus?: string
+}) {
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data_status: dataStatus,
-        reports,
-      }),
-    } satisfies Pick<Response, 'json' | 'ok'>),
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+
+      if (url.includes('/api/saved-reports')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: reportStatus,
+            reports,
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      if (url.includes('/api/saved-locations')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: locationStatus,
+            locations,
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      throw new Error('offline')
+    }),
   )
 }
 
@@ -121,6 +154,67 @@ describe('MyPage', () => {
 
     expect(screen.getByText('백운광장역')).toBeInTheDocument()
     expect(screen.getByText('남구 백운동 · 카페/커피전문점')).toBeInTheDocument()
+    expect(
+      screen.getByText('백엔드 미연결 · 로컬 관심 지역 표시'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows backend interest locations when Supabase is connected', async () => {
+    const user = userEvent.setup()
+    mockBackendApis({
+      locationStatus: 'supabase_connected',
+      locations: [
+        {
+          id: 'backend-location-geumnam',
+          station_name: '금남로4가역',
+          district: '동구',
+          business_type: '카페',
+          score: 91.5,
+          payload: { reason: '유동 수요가 안정적인 권역입니다.' },
+          created_at: '2026-05-15T00:00:00+00:00',
+        },
+      ],
+    })
+
+    renderMyPage()
+
+    await user.click(screen.getByRole('tab', { name: '관심 역세권' }))
+
+    expect(await screen.findByText('금남로4가역')).toBeInTheDocument()
+    expect(screen.getByText('동구 · 카페')).toBeInTheDocument()
+    expect(screen.getByText('91.5')).toBeInTheDocument()
+    expect(screen.getByText('유동 수요가 안정적인 권역입니다.')).toBeInTheDocument()
+    expect(screen.getByText('Supabase 관심 지역 연결됨')).toBeInTheDocument()
+    expect(screen.queryByText('백운광장역')).not.toBeInTheDocument()
+  })
+
+  it('falls back to localStorage interest locations when backend fails', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem(
+      'metropick-saved-interest-locations',
+      JSON.stringify([
+        {
+          id: 'local-interest-location',
+          station: '양산역',
+          district: '북구',
+          businessType: '베이커리',
+          score: 86,
+          reason: '로컬 저장 관심 지역입니다.',
+          savedAt: '2026-05-15T09:30:00+09:00',
+        },
+      ]),
+    )
+
+    renderMyPage()
+
+    await user.click(screen.getByRole('tab', { name: '관심 역세권' }))
+
+    expect(screen.getByText('양산역')).toBeInTheDocument()
+    expect(screen.getByText('북구 · 베이커리')).toBeInTheDocument()
+    expect(screen.getByText('로컬 저장 관심 지역입니다.')).toBeInTheDocument()
+    expect(
+      screen.getByText('백엔드 미연결 · 로컬 관심 지역 표시'),
+    ).toBeInTheDocument()
   })
 
   it('opens a mypage tab from the query parameter', () => {

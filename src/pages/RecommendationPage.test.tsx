@@ -8,7 +8,7 @@ import { RecommendationPage } from './RecommendationPage'
 
 function renderRecommendationPage() {
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   })
 
   return render(
@@ -18,6 +18,45 @@ function renderRecommendationPage() {
       </MemoryRouter>
     </QueryClientProvider>,
   )
+}
+
+function mockSavedLocationCreate() {
+  const fetchMock = vi.fn(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/api/saved-locations') && init?.method === 'POST') {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            location: {
+              id: 'backend-location-sangmu',
+              station_name: '상무역',
+              district: '서구 치평동',
+              business_type: '카페/디저트',
+              score: 92,
+              payload: {
+                rank: 1,
+                risk: '위험 낮음',
+                reason: '상무지구 중심 상권',
+                metrics: {
+                  growth: 93,
+                  stability: 88,
+                  competition: 72,
+                  accessibility: 94,
+                },
+              },
+              created_at: '2026-05-15T00:00:00+00:00',
+            },
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      throw new Error('offline')
+    },
+  )
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
 }
 
 describe('RecommendationPage', () => {
@@ -42,7 +81,60 @@ describe('RecommendationPage', () => {
     ).toBe(true)
   })
 
-  it('saves an interest location to localStorage', async () => {
+  it('saves an interest location through the backend and syncs localStorage', async () => {
+    const fetchMock = mockSavedLocationCreate()
+    const user = userEvent.setup()
+    renderRecommendationPage()
+
+    const saveButtons = screen.getAllByRole('button', { name: /관심 지역 저장/ })
+    await user.click(saveButtons[0] as HTMLElement)
+
+    expect(
+      await screen.findByText('Supabase에 관심 지역을 저장했어요.'),
+    ).toBeInTheDocument()
+
+    const savedLocationCall = fetchMock.mock.calls.find(([input]) =>
+      String(input).includes('/api/saved-locations'),
+    )
+    expect(savedLocationCall).toBeDefined()
+
+    const requestInit = savedLocationCall?.[1] as RequestInit | undefined
+    expect(requestInit?.method).toBe('POST')
+
+    const body = JSON.parse(String(requestInit?.body ?? '{}')) as {
+      business_type?: string
+      payload?: { metrics?: { growth?: number }; rank?: number; reason?: string }
+      score?: number
+      station_name?: string
+    }
+    expect(body).toMatchObject({
+      station_name: '상무역',
+      business_type: '카페/디저트',
+      score: 92,
+    })
+    expect(body.payload).toMatchObject({
+      rank: 1,
+      reason: expect.any(String) as string,
+      metrics: { growth: 93 },
+    })
+
+    const raw = window.localStorage.getItem('metropick-saved-interest-locations')
+    const saved = JSON.parse(raw ?? '[]') as Array<{
+      id: string
+      businessType: string
+      score: number
+      station: string
+    }>
+    expect(saved).toHaveLength(1)
+    expect(saved[0]).toMatchObject({
+      id: 'backend-location-sangmu',
+      businessType: '카페/디저트',
+      score: 92,
+      station: '상무역',
+    })
+  })
+
+  it('falls back to localStorage when backend save fails', async () => {
     const user = userEvent.setup()
     renderRecommendationPage()
 
@@ -63,6 +155,8 @@ describe('RecommendationPage', () => {
       score: 92,
       station: '상무역',
     })
-    expect(screen.getByText('관심 지역에 저장되었습니다.')).toBeInTheDocument()
+    expect(
+      screen.getByText('백엔드 미연결 · 로컬에 관심 지역을 저장했어요.'),
+    ).toBeInTheDocument()
   })
 })

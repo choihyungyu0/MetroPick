@@ -22,7 +22,12 @@ import {
 } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
+import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
+import {
+  useBackendSavedLocations,
+  useDeleteBackendSavedLocation,
+} from '@/shared/api/hooks/useBackendSavedLocations'
 import { useBackendSavedReports } from '@/shared/api/hooks/useBackendSavedReports'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
@@ -50,6 +55,7 @@ type InterestLocation = {
   businessType: string
   district: string
   id: string
+  reason?: string
   savedAt?: string
   score: number
   station: string
@@ -390,6 +396,7 @@ function normalizeInterestLocations(): InterestLocation[] {
         district,
         businessType,
         score,
+        reason: readString(entry.reason),
         savedAt: readString(entry.savedAt),
       },
     ]
@@ -622,6 +629,77 @@ function normalizeBackendSavedReports(
       thumbnailSrc: getReportThumbnailSrc(category),
     }
   })
+}
+
+function normalizeBackendInterestLocations(
+  locations: BackendSavedLocation[],
+): InterestLocation[] {
+  return locations.map((location, index) => {
+    const payload = isRecord(location.payload) ? location.payload : undefined
+    const station =
+      readString(location.station_name) ??
+      readPayloadString(payload, ['station', 'stationName', 'station_name']) ??
+      '선택 역세권'
+    const businessType =
+      readString(location.business_type) ??
+      readPayloadString(payload, ['businessType', 'business_type']) ??
+      '업종 미지정'
+    const district =
+      readString(location.district) ??
+      readPayloadString(payload, ['district']) ??
+      '지역 미지정'
+    const score =
+      readNumber(location.score) ?? readNumber(payload?.score) ?? 0
+
+    return {
+      id:
+        readString(location.id) ??
+        readPayloadString(payload, ['id']) ??
+        `backend-interest-location-${index}`,
+      station,
+      district,
+      businessType,
+      score,
+      reason: readPayloadString(payload, ['reason']),
+      savedAt:
+        readString(location.created_at) ??
+        readPayloadString(payload, ['createdAt', 'created_at', 'savedAt']),
+    }
+  })
+}
+
+function removeStoredInterestLocation(
+  location: InterestLocation,
+  currentLocations?: InterestLocation[],
+): InterestLocation[] {
+  const existing = currentLocations ??
+    safeParseStorage<InterestLocation[]>('metropick-saved-interest-locations') ?? []
+  const nextLocations = existing.filter(
+    (item) =>
+      item.id !== location.id &&
+      !(item.station === location.station && item.businessType === location.businessType),
+  )
+  writeStorage('metropick-saved-interest-locations', nextLocations)
+  return nextLocations
+}
+
+function formatInterestSavedAt(value: string | undefined): string | null {
+  if (!value) {
+    return null
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(parsed)
 }
 
 function buildNotificationSettings(): NotificationSettings {
@@ -1015,70 +1093,103 @@ function ReportsTab({
 }
 
 function InterestLocationsTab({
+  locationSourceStatus,
   locations,
   onDelete,
   onView,
 }: {
+  locationSourceStatus: BackendReportStatus
   locations: InterestLocation[]
   onDelete: (location: InterestLocation) => void
   onView: () => void
 }) {
+  const statusBadge = (
+    <div className="flex justify-end px-5 pt-4">
+      <BackendStatusBadge
+        connectedLabel="Supabase 관심 지역 연결됨"
+        fallbackLabel="백엔드 미연결 · 로컬 관심 지역 표시"
+        loadingLabel="백엔드 미연결 · 로컬 관심 지역 표시"
+        status={locationSourceStatus}
+      />
+    </div>
+  )
+
   if (locations.length === 0) {
     return (
-      <div className="grid min-h-[220px] place-items-center px-5 py-5">
-        <div className="rounded-xl border border-dashed border-blue-100 bg-slate-50 px-6 py-8 text-center">
-          <p className="m-0 text-sm font-black text-slate-700">
-            저장된 관심 역세권이 없습니다.
-          </p>
-          <p className="m-0 mt-2 text-sm font-bold text-slate-500">
-            입지 추천에서 관심 지역을 저장하면 이곳에 표시됩니다.
-          </p>
+      <>
+        {statusBadge}
+        <div className="grid min-h-[220px] place-items-center px-5 py-5">
+          <div className="rounded-xl border border-dashed border-blue-100 bg-slate-50 px-6 py-8 text-center">
+            <p className="m-0 text-sm font-black text-slate-700">
+              저장된 관심 역세권이 없습니다.
+            </p>
+            <p className="m-0 mt-2 text-sm font-bold text-slate-500">
+              입지 추천에서 관심 지역을 저장하면 이곳에 표시됩니다.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="grid gap-3 px-5 py-5">
-      {locations.map((location) => (
-        <article
-          className="grid grid-cols-[1fr_120px_220px] items-center gap-4 rounded-[13px] border border-blue-100 bg-white p-5 max-lg:grid-cols-1"
-          key={location.id}
-        >
-          <div>
-            <h3 className="m-0 text-xl font-black text-slate-900">
-              {location.station}
-            </h3>
-            <p className="m-0 mt-2 text-sm font-bold text-slate-500">
-              {location.district} · {location.businessType}
-            </p>
-          </div>
-          <div className="text-center max-lg:text-left">
-            <span className="block text-xs font-black text-slate-500">AI 점수</span>
-            <strong className="text-2xl font-black text-blue-600">
-              {location.score}
-            </strong>
-          </div>
-          <div className="flex justify-end gap-2 max-lg:justify-start">
-            <button
-              className="h-10 rounded-lg bg-blue-600 px-5 text-sm font-black text-white"
-              onClick={onView}
-              type="button"
+    <>
+      {statusBadge}
+      <div className="grid gap-3 px-5 py-5">
+        {locations.map((location) => {
+          const savedAtLabel = formatInterestSavedAt(location.savedAt)
+
+          return (
+            <article
+              className="grid grid-cols-[1fr_120px_220px] items-center gap-4 rounded-[13px] border border-blue-100 bg-white p-5 max-lg:grid-cols-1"
+              key={location.id}
             >
-              분석 보기
-            </button>
-            <button
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-black text-slate-700"
-              onClick={() => onDelete(location)}
-              type="button"
-            >
-              <Trash2 aria-hidden="true" size={16} />
-              삭제
-            </button>
-          </div>
-        </article>
-      ))}
-    </div>
+              <div>
+                <h3 className="m-0 text-xl font-black text-slate-900">
+                  {location.station}
+                </h3>
+                <p className="m-0 mt-2 text-sm font-bold text-slate-500">
+                  {location.district} · {location.businessType}
+                </p>
+                {savedAtLabel ? (
+                  <p className="m-0 mt-1 text-xs font-bold text-slate-400">
+                    저장일 {savedAtLabel}
+                  </p>
+                ) : null}
+                {location.reason ? (
+                  <p className="m-0 mt-2 text-sm font-bold text-slate-600">
+                    {location.reason}
+                  </p>
+                ) : null}
+              </div>
+              <div className="text-center max-lg:text-left">
+                <span className="block text-xs font-black text-slate-500">AI 점수</span>
+                <strong className="text-2xl font-black text-blue-600">
+                  {location.score}
+                </strong>
+              </div>
+              <div className="flex justify-end gap-2 max-lg:justify-start">
+                <button
+                  className="h-10 rounded-lg bg-blue-600 px-5 text-sm font-black text-white"
+                  onClick={onView}
+                  type="button"
+                >
+                  분석 보기
+                </button>
+                <button
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-black text-slate-700"
+                  onClick={() => onDelete(location)}
+                  type="button"
+                >
+                  <Trash2 aria-hidden="true" size={16} />
+                  삭제
+                </button>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    </>
   )
 }
 
@@ -1215,6 +1326,7 @@ function ReportPanel({
   activities,
   filteredReports,
   interestLocations,
+  locationSourceStatus,
   notificationSettings,
   onDeleteInterest,
   onFilterChange,
@@ -1235,6 +1347,7 @@ function ReportPanel({
   activities: ActivityItem[]
   filteredReports: SavedReport[]
   interestLocations: InterestLocation[]
+  locationSourceStatus: BackendReportStatus
   notificationSettings: NotificationSettings
   onDeleteInterest: (location: InterestLocation) => void
   onFilterChange: (filter: CategoryFilter) => void
@@ -1292,6 +1405,7 @@ function ReportPanel({
 
       {activeTab === 'interest-locations' ? (
         <InterestLocationsTab
+          locationSourceStatus={locationSourceStatus}
           locations={interestLocations}
           onDelete={onDeleteInterest}
           onView={onViewInterest}
@@ -1339,6 +1453,8 @@ export function MyPage() {
   const [interestLocations, setInterestLocations] = useState<InterestLocation[]>(() =>
     normalizeInterestLocations(),
   )
+  const [hiddenBackendInterestLocationIds, setHiddenBackendInterestLocationIds] =
+    useState<string[]>([])
   const requestedTab = searchParams.get('tab')
   const activeTab: MyPageTab = isMyPageTab(requestedTab) ? requestedTab : 'reports'
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>('all')
@@ -1348,9 +1464,27 @@ export function MyPage() {
     useState<NotificationSettings>(() => buildNotificationSettings())
   const [message, setMessage] = useState('')
   const activities = useMemo(() => buildActivities(), [])
+  const backendSavedLocationsQuery = useBackendSavedLocations()
+  const deleteBackendSavedLocationMutation = useDeleteBackendSavedLocation()
+  const isBackendSavedLocationsConnected =
+    backendSavedLocationsQuery.data?.data_status === 'supabase_connected'
+  const backendInterestLocations = useMemo(() => {
+    const response = backendSavedLocationsQuery.data
+    return response?.data_status === 'supabase_connected'
+      ? normalizeBackendInterestLocations(response.locations)
+      : []
+  }, [backendSavedLocationsQuery.data])
+  const visibleInterestLocations = isBackendSavedLocationsConnected
+    ? backendInterestLocations.filter(
+        (location) => !hiddenBackendInterestLocationIds.includes(location.id),
+      )
+    : interestLocations
+  const locationSourceStatus: BackendReportStatus = isBackendSavedLocationsConnected
+    ? 'connected'
+    : 'fallback'
   const localSavedReports = useMemo(
-    () => buildSavedReports(interestLocations),
-    [interestLocations],
+    () => buildSavedReports(visibleInterestLocations),
+    [visibleInterestLocations],
   )
   const backendSavedReportsQuery = useBackendSavedReports()
   const isBackendSavedReportsConnected =
@@ -1421,10 +1555,24 @@ export function MyPage() {
     showMessage('리포트 링크가 복사되었습니다.')
   }
 
-  const handleDeleteInterest = (location: InterestLocation) => {
-    const nextLocations = interestLocations.filter((item) => item.id !== location.id)
+  const handleDeleteInterest = async (location: InterestLocation) => {
+    if (isBackendSavedLocationsConnected) {
+      const previousHiddenIds = hiddenBackendInterestLocationIds
+      setHiddenBackendInterestLocationIds((current) => [...current, location.id])
+
+      try {
+        await deleteBackendSavedLocationMutation.mutateAsync(location.id)
+        setInterestLocations(removeStoredInterestLocation(location))
+        showMessage('관심 역세권에서 삭제되었습니다.')
+      } catch {
+        setHiddenBackendInterestLocationIds(previousHiddenIds)
+        showMessage('백엔드 삭제에 실패했습니다. 관심 지역 목록을 유지합니다.')
+      }
+      return
+    }
+
+    const nextLocations = removeStoredInterestLocation(location, interestLocations)
     setInterestLocations(nextLocations)
-    writeStorage('metropick-saved-interest-locations', nextLocations)
     showMessage('관심 역세권에서 삭제되었습니다.')
   }
 
@@ -1491,7 +1639,8 @@ export function MyPage() {
               activeTab={activeTab}
               activities={activities}
               filteredReports={filteredReports}
-              interestLocations={interestLocations}
+              interestLocations={visibleInterestLocations}
+              locationSourceStatus={locationSourceStatus}
               notificationSettings={notificationSettings}
               onDeleteInterest={handleDeleteInterest}
               onFilterChange={setActiveFilter}
