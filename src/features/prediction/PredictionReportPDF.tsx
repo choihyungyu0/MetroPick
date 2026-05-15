@@ -12,14 +12,14 @@ import type { BackendStartupSuitabilityResponse } from '@/shared/api/backendPred
 import { aiPredictionAssets } from '@/shared/assets/aiPredictionAssets'
 
 Font.register({
-  family: 'NotoSansKR',
+  family: 'NanumGothic',
   fonts: [
     {
-      src: 'https://cdn.jsdelivr.net/gh/fonts-archive/NotoSansKR/NotoSansKR-Regular.ttf',
+      src: '/assets/fonts/NanumGothic-Regular.ttf',
       fontWeight: 400,
     },
     {
-      src: 'https://cdn.jsdelivr.net/gh/fonts-archive/NotoSansKR/NotoSansKR-Bold.ttf',
+      src: '/assets/fonts/NanumGothic-Bold.ttf',
       fontWeight: 700,
     },
   ],
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     padding: 32,
     backgroundColor: '#f8fbff',
     color: '#0f172a',
-    fontFamily: 'NotoSansKR',
+    fontFamily: 'NanumGothic',
     fontSize: 10,
   },
   header: {
