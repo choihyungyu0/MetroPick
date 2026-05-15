@@ -193,3 +193,52 @@ Delete a prediction result:
 ```bash
 curl -X DELETE http://127.0.0.1:8000/api/prediction-results/<result_id>
 ```
+
+## Notification settings API
+
+Use these endpoints after the `notification_settings` table is available. These calls store notification preferences through FastAPI while keeping Supabase service credentials on the backend only.
+
+List notification settings:
+
+```bash
+curl http://127.0.0.1:8000/api/notification-settings
+```
+
+Create notification settings:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/notification-settings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "channels": ["push", "email"],
+    "frequency": "realtime",
+    "quiet_hours": {
+      "start": "22:00",
+      "end": "08:00"
+    },
+    "enabled_notifications": [
+      "prediction_updates",
+      "saved_location_alerts"
+    ]
+  }'
+```
+
+Update notification settings:
+
+```bash
+curl -X PATCH http://127.0.0.1:8000/api/notification-settings/<setting_id> \
+  -H "Content-Type: application/json" \
+  -d '{
+    "channels": ["email"],
+    "frequency": "daily",
+    "enabled_notifications": [
+      "prediction_updates"
+    ]
+  }'
+```
+
+Delete notification settings:
+
+```bash
+curl -X DELETE http://127.0.0.1:8000/api/notification-settings/<setting_id>
+```

@@ -147,3 +147,32 @@ class PredictionResultResponse(BaseModel):
 class PredictionResultListResponse(BaseModel):
     data_status: str
     results: list[PredictionResultResponse]
+
+
+class NotificationSettingsCreate(BaseModel):
+    channels: list[str] = Field(default_factory=list)
+    frequency: str = "realtime"
+    quiet_hours: dict[str, object] = Field(default_factory=dict)
+    enabled_notifications: list[str] = Field(default_factory=list)
+
+
+class NotificationSettingsUpdate(BaseModel):
+    channels: list[str] | None = None
+    frequency: str | None = None
+    quiet_hours: dict[str, object] | None = None
+    enabled_notifications: list[str] | None = None
+
+
+class NotificationSettingsResponse(BaseModel):
+    id: str
+    user_id: str | None = None
+    channels: list[str] = Field(default_factory=list)
+    frequency: str
+    quiet_hours: dict[str, object] = Field(default_factory=dict)
+    enabled_notifications: list[str] = Field(default_factory=list)
+    created_at: str
+
+
+class NotificationSettingsListResponse(BaseModel):
+    data_status: str
+    settings: list[NotificationSettingsResponse]

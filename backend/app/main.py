@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routers import (
     commercial_analysis,
     db_health,
+    notification_settings,
     prediction,
     prediction_results,
     profiles,
@@ -38,6 +39,7 @@ app.add_middleware(
 
 app.include_router(commercial_analysis.router)
 app.include_router(db_health.router)
+app.include_router(notification_settings.router)
 app.include_router(prediction.router)
 app.include_router(prediction_results.router)
 app.include_router(profiles.router)
