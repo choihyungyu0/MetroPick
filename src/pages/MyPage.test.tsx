@@ -9,6 +9,16 @@ import type { BackendOnboardingSetting } from '@/shared/api/backendOnboardingSet
 import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
+import { saveAuthUser } from '@/shared/auth/authStorage'
+
+const authMocks = vi.hoisted(() => ({
+  signOut: vi.fn(),
+}))
+
+vi.mock('@/shared/auth/supabaseAuth', () => ({
+  signOut: authMocks.signOut,
+}))
+
 import { MyPage } from './MyPage'
 
 function renderMyPage(initialEntries = ['/mypage']) {
@@ -157,8 +167,36 @@ function mockBackendApis({
 describe('MyPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    authMocks.signOut.mockReset()
+    authMocks.signOut.mockResolvedValue({ ok: true })
     window.localStorage.clear()
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+  })
+
+  it('shows a logout button in the top-right actions and clears local auth', async () => {
+    const user = userEvent.setup()
+    saveAuthUser({
+      email: 'founder@metropick.ai',
+      id: 'auth-user-id',
+      name: '인증 사용자',
+      role: '예비 창업자',
+      source: 'supabase',
+    })
+
+    renderMyPage()
+
+    const logoutButton = screen.getAllByRole('button', { name: '로그아웃' }).at(0)
+    if (!logoutButton) {
+      throw new Error('Logout button was not rendered.')
+    }
+
+    await user.click(logoutButton)
+
+    expect(authMocks.signOut).toHaveBeenCalled()
+    await waitFor(() => {
+      expect(window.localStorage.getItem('metropick-authenticated')).toBeNull()
+    })
+    expect(window.localStorage.getItem('metropick-user')).toBeNull()
   })
 
   it('renders the profile and saved reports', () => {

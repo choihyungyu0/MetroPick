@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
-import { getStoredAuthUser } from '@/shared/auth/authStorage'
+import { clearAuthUser, getStoredAuthUser } from '@/shared/auth/authStorage'
+import { signOut } from '@/shared/auth/supabaseAuth'
 import { cn } from '@/shared/lib/cn'
 
 export type TopNavigationItem = {
@@ -115,20 +116,43 @@ export function TopNavigation({
   renderActions,
   sticky = false,
 }: TopNavigationProps) {
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+    } finally {
+      clearAuthUser()
+      navigate('/login', { replace: true })
+    }
+  }
+
   const renderDefaultActions = () => {
     const storedUser = getStoredAuthUser()
 
     if (storedUser) {
       return (
-        <Link
-          className={cn(
-            actionLinkClasses,
-            'max-w-[220px] border border-white/50 bg-slate-950/25 text-white hover:bg-white/10',
-          )}
-          to="/mypage"
-        >
-          <span className="truncate">{storedUser.name || storedUser.email}</span>
-        </Link>
+        <>
+          <Link
+            className={cn(
+              actionLinkClasses,
+              'max-w-[220px] border border-white/50 bg-slate-950/25 text-white hover:bg-white/10',
+            )}
+            to="/mypage"
+          >
+            <span className="truncate">{storedUser.name || storedUser.email}</span>
+          </Link>
+          <button
+            className={cn(
+              actionLinkClasses,
+              'min-w-[112px] border border-white/55 bg-white text-[#061f4c] hover:bg-blue-50',
+            )}
+            onClick={handleLogout}
+            type="button"
+          >
+            로그아웃
+          </button>
+        </>
       )
     }
 

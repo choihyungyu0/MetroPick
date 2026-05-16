@@ -55,6 +55,8 @@ import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { myPageAssets } from '@/shared/assets/myPageAssets'
+import { clearAuthUser } from '@/shared/auth/authStorage'
+import { signOut } from '@/shared/auth/supabaseAuth'
 import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
 type MyPageTab = 'reports' | 'interest-locations' | 'notifications' | 'activity'
@@ -2379,6 +2381,15 @@ export function MyPage() {
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      await signOut()
+    } finally {
+      clearAuthUser()
+      navigate('/login', { replace: true })
+    }
+  }
+
   return (
     <div className="mypage-page min-h-screen bg-slate-50 text-slate-900">
       <TopNavigation
@@ -2391,12 +2402,13 @@ export function MyPage() {
               {profile.name}님
               <ChevronDown aria-hidden="true" size={17} />
             </Link>
-            <Link
-              className="inline-flex h-12 min-w-[170px] items-center justify-center rounded-lg bg-[#086bff] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(0,102,255,0.26)] transition hover:bg-[#0054dc] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              to="/signup"
+            <button
+              className="inline-flex h-12 min-w-[112px] items-center justify-center rounded-lg border border-white/55 bg-white px-5 text-sm font-black text-[#061f4c] transition hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              onClick={handleLogout}
+              type="button"
             >
-              무료로 시작하기
-            </Link>
+              로그아웃
+            </button>
           </>
         )}
         sticky
