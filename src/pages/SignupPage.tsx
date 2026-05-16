@@ -18,6 +18,21 @@ import { createProfile } from '@/shared/api/backendProfilesApi'
 import { saveAuthUser } from '@/shared/auth/authStorage'
 import { signUpWithEmail } from '@/shared/auth/supabaseAuth'
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const minimumPasswordLength = 8
+
+function getSignupErrorMessage(message: string): string {
+  if (message.includes('already registered')) {
+    return '이미 가입된 이메일입니다. 로그인으로 진행해주세요.'
+  }
+
+  if (message.includes('Password')) {
+    return '비밀번호 조건을 확인해주세요.'
+  }
+
+  return '회원가입에 실패했어요. 입력한 정보를 확인해주세요.'
+}
+
 const userTypes = [
   { Icon: UserRound, label: '예비 창업자', active: true },
   { Icon: Store, label: '소상공인', active: false },
@@ -155,6 +170,11 @@ function SignupForm() {
   const navigate = useNavigate()
   const [message, setMessage] = useState('')
 
+  const getPostSignupPath = () =>
+    window.localStorage.getItem('metropick-onboarding-completed') === 'true'
+      ? '/dashboard'
+      : '/onboarding'
+
   const continueWithDemoSignup = (email: string, name: string) => {
     saveAuthUser({
       email: email || 'founder@metropick.ai',
@@ -163,7 +183,7 @@ function SignupForm() {
       source: 'demo',
     })
     setMessage('Supabase Auth 미설정 · 데모 회원가입으로 진행합니다.')
-    window.setTimeout(() => navigate('/onboarding'), 250)
+    window.setTimeout(() => navigate(getPostSignupPath()), 250)
   }
 
   const handleSignupSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -172,10 +192,37 @@ function SignupForm() {
     const name = String(formData.get('name') ?? '').trim()
     const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '')
+    const passwordConfirm = String(formData.get('passwordConfirm') ?? '')
+
+    if (!name || !email || !password || !passwordConfirm) {
+      setMessage('이름, 이메일, 비밀번호를 모두 입력해주세요.')
+      return
+    }
+
+    if (!emailPattern.test(email)) {
+      setMessage('올바른 이메일 주소를 입력해주세요.')
+      return
+    }
+
+    if (password.length < minimumPasswordLength) {
+      setMessage('비밀번호는 8자 이상 입력해주세요.')
+      return
+    }
+
+    if (password !== passwordConfirm) {
+      setMessage('비밀번호 확인이 일치하지 않습니다.')
+      return
+    }
+
     const result = await signUpWithEmail(email, password)
 
     if (!result.ok) {
-      continueWithDemoSignup(email, name)
+      if (result.reason === 'missing_client') {
+        continueWithDemoSignup(email, name)
+        return
+      }
+
+      setMessage(getSignupErrorMessage(result.message))
       return
     }
 
@@ -205,12 +252,12 @@ function SignupForm() {
     }
 
     saveAuthUser(authUser)
-    navigate('/onboarding')
+    navigate(getPostSignupPath())
   }
 
   return (
     <section className="min-w-0" aria-label="회원가입 입력 양식">
-      <form className="grid gap-4" onSubmit={handleSignupSubmit}>
+      <form className="grid gap-4" noValidate onSubmit={handleSignupSubmit}>
         <div>
           <label
             className="mb-2 block text-base font-black tracking-[-0.02em] text-[#0f2446]"
@@ -223,6 +270,7 @@ function SignupForm() {
             id="signup-name"
             name="name"
             placeholder="이름을 입력해주세요"
+            required
             type="text"
           />
         </div>
@@ -239,6 +287,7 @@ function SignupForm() {
             id="signup-email"
             name="email"
             placeholder="이메일 주소를 입력해주세요"
+            required
             type="email"
           />
         </div>
@@ -254,8 +303,10 @@ function SignupForm() {
             <input
               className="h-[52px] w-full rounded-lg border border-[#cbd7e6] bg-white px-5 pr-14 text-base font-semibold text-[#10213d] outline-none transition placeholder:text-[#9ba8ba] focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10"
               id="signup-password"
+              minLength={minimumPasswordLength}
               name="password"
               placeholder="영문, 숫자, 특수문자 포함 8자 이상"
+              required
               type="password"
             />
             <button
@@ -279,8 +330,10 @@ function SignupForm() {
             <input
               className="h-[52px] w-full rounded-lg border border-[#cbd7e6] bg-white px-5 pr-14 text-base font-semibold text-[#10213d] outline-none transition placeholder:text-[#9ba8ba] focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10"
               id="signup-password-confirm"
+              minLength={minimumPasswordLength}
               name="passwordConfirm"
               placeholder="비밀번호를 다시 입력해주세요"
+              required
               type="password"
             />
             <button
@@ -340,7 +393,10 @@ function SignupForm() {
           </Link>
         </p>
         {message ? (
-          <p className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-sm font-extrabold text-blue-700">
+          <p
+            aria-live="polite"
+            className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-sm font-extrabold text-blue-700"
+          >
             {message}
           </p>
         ) : null}

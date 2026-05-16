@@ -16,6 +16,16 @@ import { loginAssets } from '@/shared/assets/loginAssets'
 import { saveAuthUser } from '@/shared/auth/authStorage'
 import { signInWithEmail } from '@/shared/auth/supabaseAuth'
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function getLoginErrorMessage(message: string): string {
+  if (message.includes('Email not confirmed')) {
+    return '이메일 인증을 완료한 뒤 다시 로그인해주세요.'
+  }
+
+  return '이메일 또는 비밀번호를 확인해주세요.'
+}
+
 function PreviewImage({
   alt,
   className,
@@ -103,6 +113,17 @@ function LoginCard() {
     const formData = new FormData(event.currentTarget)
     const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '')
+
+    if (!email || !password) {
+      setMessage('이메일과 비밀번호를 모두 입력해주세요.')
+      return
+    }
+
+    if (!emailPattern.test(email)) {
+      setMessage('올바른 이메일 주소를 입력해주세요.')
+      return
+    }
+
     const result = await signInWithEmail(email, password)
 
     if (result.ok) {
@@ -123,7 +144,12 @@ function LoginCard() {
       return
     }
 
-    continueWithDemoLogin(email)
+    if (result.reason === 'missing_client') {
+      continueWithDemoLogin(email)
+      return
+    }
+
+    setMessage(getLoginErrorMessage(result.message))
   }
 
   return (
@@ -145,7 +171,11 @@ function LoginCard() {
         MetroPick AI에 오신 것을 환영합니다.
       </p>
 
-      <form className="mt-4 grid gap-2 min-[1700px]:!mt-6" onSubmit={handleLoginSubmit}>
+      <form
+        className="mt-4 grid gap-2 min-[1700px]:!mt-6"
+        noValidate
+        onSubmit={handleLoginSubmit}
+      >
         <label className="text-sm font-extrabold text-[#0e1f3f]" htmlFor="login-email">
           이메일
         </label>
@@ -154,6 +184,7 @@ function LoginCard() {
           id="login-email"
           name="email"
           placeholder="이메일 주소를 입력하세요"
+          required
           type="email"
         />
 
@@ -169,6 +200,7 @@ function LoginCard() {
             id="login-password"
             name="password"
             placeholder="비밀번호를 입력하세요"
+            required
             type="password"
           />
           <button
@@ -210,7 +242,10 @@ function LoginCard() {
           </Link>
         </p>
         {message ? (
-          <p className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-sm font-extrabold text-blue-700">
+          <p
+            aria-live="polite"
+            className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-sm font-extrabold text-blue-700"
+          >
             {message}
           </p>
         ) : null}

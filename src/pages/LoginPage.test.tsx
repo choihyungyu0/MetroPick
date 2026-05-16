@@ -55,6 +55,8 @@ describe('LoginPage', () => {
 
     render(<RouterProvider router={router} />)
 
+    await user.type(screen.getByLabelText('이메일'), 'demo@metropick.ai')
+    await user.type(screen.getByLabelText('비밀번호'), 'demo-password')
     await user.click(screen.getByRole('button', { name: '로그인' }))
 
     expect(
@@ -66,6 +68,46 @@ describe('LoginPage', () => {
       window.localStorage.getItem('metropick-user') ?? '{}',
     ) as { source?: string }
     expect(storedUser.source).toBe('demo')
+  })
+
+  it('blocks login when required fields are missing', async () => {
+    const user = userEvent.setup()
+
+    renderLoginPage()
+
+    await user.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(screen.getByText('이메일과 비밀번호를 모두 입력해주세요.')).toBeInTheDocument()
+    expect(authMocks.signInWithEmail).not.toHaveBeenCalled()
+    expect(window.localStorage.getItem('metropick-authenticated')).toBeNull()
+  })
+
+  it('does not continue to demo login when Supabase rejects credentials', async () => {
+    const user = userEvent.setup()
+    authMocks.signInWithEmail.mockResolvedValue({
+      ok: false,
+      reason: 'auth_error',
+      message: 'Invalid login credentials',
+    })
+    const router = createMemoryRouter(
+      [
+        { path: '/login', element: <LoginPage /> },
+        { path: '/onboarding', element: <h1>초기 설정</h1> },
+      ],
+      { initialEntries: ['/login'] },
+    )
+
+    render(<RouterProvider router={router} />)
+
+    await user.type(screen.getByLabelText('이메일'), 'missing@metropick.ai')
+    await user.type(screen.getByLabelText('비밀번호'), 'wrong-password')
+    await user.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(
+      await screen.findByText('이메일 또는 비밀번호를 확인해주세요.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('초기 설정')).not.toBeInTheDocument()
+    expect(window.localStorage.getItem('metropick-authenticated')).toBeNull()
   })
 
   it('calls Supabase Auth and stores the signed-in user when configured', async () => {
@@ -107,5 +149,36 @@ describe('LoginPage', () => {
       id: 'auth-user-id',
       source: 'supabase',
     })
+  })
+
+  it('routes returning users to the dashboard after login', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem('metropick-onboarding-completed', 'true')
+    authMocks.signInWithEmail.mockResolvedValue({
+      ok: true,
+      session: null,
+      user: {
+        id: 'auth-user-id',
+        email: 'founder@metropick.ai',
+        user_metadata: { name: '인증 사용자', role: '예비 창업자' },
+      },
+    })
+    const router = createMemoryRouter(
+      [
+        { path: '/login', element: <LoginPage /> },
+        { path: '/onboarding', element: <h1>초기 설정</h1> },
+        { path: '/dashboard', element: <h1>대시보드</h1> },
+      ],
+      { initialEntries: ['/login'] },
+    )
+
+    render(<RouterProvider router={router} />)
+
+    await user.type(screen.getByLabelText('이메일'), 'founder@metropick.ai')
+    await user.type(screen.getByLabelText('비밀번호'), 'secure-password')
+    await user.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(await screen.findByText('대시보드')).toBeInTheDocument()
+    expect(screen.queryByText('초기 설정')).not.toBeInTheDocument()
   })
 })
