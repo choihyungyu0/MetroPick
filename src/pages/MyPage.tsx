@@ -364,6 +364,17 @@ const defaultNotificationSettings: NotificationSettings = {
   ],
 }
 
+const emptyNotificationSettings: NotificationSettings = {
+  channels: {
+    email: false,
+    webPush: false,
+    sms: false,
+  },
+  frequency: '실시간',
+  quietHours: '설정 없음',
+  enabledNotifications: [],
+}
+
 const categoryByFilter: Record<
   Exclude<CategoryFilter, 'all'>,
   ReportCategory
@@ -456,9 +467,16 @@ function buildProfile(): UserProfile {
 function buildBackendProfile(
   localProfile: UserProfile,
   setting: BackendOnboardingSetting | undefined,
+  backendConnected: boolean,
 ): UserProfile {
   if (!setting) {
-    return localProfile
+    return backendConnected
+      ? {
+          ...localProfile,
+          preferredArea: '초기 설정 필요',
+          businessTypes: '초기 설정 필요',
+        }
+      : localProfile
   }
 
   const selectedStations = readStringArray(setting.selected_stations)
@@ -2120,37 +2138,50 @@ export function MyPage() {
     useCreateBackendNotificationSettings()
   const updateBackendNotificationSettingsMutation =
     useUpdateBackendNotificationSettings()
+  const backendNotificationSettingsResponse = backendNotificationSettingsQuery.data
+  const isBackendNotificationSettingsConnected =
+    backendNotificationSettingsResponse?.data_status === 'supabase_connected'
   const backendNotificationSetting =
-    backendNotificationSettingsQuery.data?.data_status === 'supabase_connected'
+    isBackendNotificationSettingsConnected && backendNotificationSettingsResponse
       ? selectLatestBackendNotificationSetting(
-          backendNotificationSettingsQuery.data.settings,
+          backendNotificationSettingsResponse.settings,
         )
       : undefined
   const notificationSourceStatus: NotificationSettingsStatus =
-    backendNotificationSetting ? 'connected' : 'fallback'
+    isBackendNotificationSettingsConnected ? 'connected' : 'fallback'
+  const notificationSettingsFallback = isBackendNotificationSettingsConnected
+    ? emptyNotificationSettings
+    : localNotificationSettings
   const backendNotificationSettings = useMemo(
     () =>
       buildBackendNotificationSettings(
-        localNotificationSettings,
+        notificationSettingsFallback,
         backendNotificationSetting,
       ),
-    [backendNotificationSetting, localNotificationSettings],
+    [backendNotificationSetting, notificationSettingsFallback],
   )
   const notificationSettings =
     notificationDraftSettings ?? backendNotificationSettings
   const backendOnboardingSettingsQuery = useBackendOnboardingSettings()
+  const backendOnboardingSettingsResponse = backendOnboardingSettingsQuery.data
+  const isBackendOnboardingSettingsConnected =
+    backendOnboardingSettingsResponse?.data_status === 'supabase_connected'
   const backendOnboardingSetting =
-    backendOnboardingSettingsQuery.data?.data_status === 'supabase_connected'
+    isBackendOnboardingSettingsConnected && backendOnboardingSettingsResponse
       ? selectLatestBackendOnboardingSetting(
-          backendOnboardingSettingsQuery.data.settings,
+          backendOnboardingSettingsResponse.settings,
         )
       : undefined
-  const onboardingSettingsStatus: OnboardingSettingsStatus = backendOnboardingSetting
-    ? 'connected'
-    : 'fallback'
+  const onboardingSettingsStatus: OnboardingSettingsStatus =
+    isBackendOnboardingSettingsConnected ? 'connected' : 'fallback'
   const profile = useMemo(
-    () => buildBackendProfile(localProfile, backendOnboardingSetting),
-    [backendOnboardingSetting, localProfile],
+    () =>
+      buildBackendProfile(
+        localProfile,
+        backendOnboardingSetting,
+        isBackendOnboardingSettingsConnected,
+      ),
+    [backendOnboardingSetting, isBackendOnboardingSettingsConnected, localProfile],
   )
   const backendSavedLocationsQuery = useBackendSavedLocations()
   const deleteBackendSavedLocationMutation = useDeleteBackendSavedLocation()

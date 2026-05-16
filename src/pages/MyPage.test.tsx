@@ -266,6 +266,28 @@ describe('MyPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('does not use local onboarding summary when backend onboarding is connected but empty', async () => {
+    window.localStorage.setItem(
+      'metropick-onboarding-summary',
+      JSON.stringify({
+        completedAt: '2026-05-15T00:00:00+00:00',
+        stations: { selectedStations: ['첨단역'] },
+        businessTypes: { selectedBusinessLabels: ['로컬 업종'] },
+      }),
+    )
+    mockBackendApis({
+      onboardingStatus: 'supabase_connected',
+      onboardingSettings: [],
+    })
+
+    renderMyPage()
+
+    expect(await screen.findByText('Supabase 초기 설정 연결됨')).toBeInTheDocument()
+    expect(screen.getAllByText('초기 설정 필요').length).toBeGreaterThan(0)
+    expect(screen.queryByText('첨단역')).not.toBeInTheDocument()
+    expect(screen.queryByText('로컬 업종')).not.toBeInTheDocument()
+  })
+
   it('renders backend reports when Supabase is connected', async () => {
     mockBackendSavedReports([
       {
@@ -322,6 +344,34 @@ describe('MyPage', () => {
     expect(
       screen.getByText('백엔드 미연결 · 로컬 저장 리포트 표시'),
     ).toBeInTheDocument()
+  })
+
+  it('shows an empty report state when backend reports are connected but empty', async () => {
+    window.localStorage.setItem(
+      'metropick-saved-commercial-analysis-reports',
+      JSON.stringify([
+        {
+          id: 'local-commercial-report',
+          title: '로컬 저장 상권 리포트',
+          createdAt: '2026-05-15T09:30:00+09:00',
+          selectedStations: ['금남로4가역'],
+          selectedBusinessTypes: ['베이커리'],
+        },
+      ]),
+    )
+    mockBackendApis({
+      reportStatus: 'supabase_connected',
+      reports: [],
+      predictionStatus: 'supabase_connected',
+      predictionResults: [],
+    })
+
+    renderMyPage()
+
+    expect(await screen.findByText('Supabase 리포트 연결됨')).toBeInTheDocument()
+    expect(screen.getByText('검색 조건에 맞는 리포트가 없습니다.')).toBeInTheDocument()
+    expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
+    expect(screen.queryByText('상무역 상권 분석 리포트')).not.toBeInTheDocument()
   })
 
   it('edits backend saved report metadata through the backend API', async () => {
@@ -719,6 +769,37 @@ describe('MyPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows an empty interest location state when backend locations are connected but empty', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem(
+      'metropick-saved-interest-locations',
+      JSON.stringify([
+        {
+          id: 'local-interest-location',
+          station: '양산역',
+          district: '북구',
+          businessType: '베이커리',
+          score: 86,
+          reason: '로컬 저장 관심 지역입니다.',
+          savedAt: '2026-05-15T09:30:00+09:00',
+        },
+      ]),
+    )
+    mockBackendApis({
+      locationStatus: 'supabase_connected',
+      locations: [],
+    })
+
+    renderMyPage()
+
+    await user.click(screen.getByRole('tab', { name: '관심 역세권' }))
+
+    expect(await screen.findByText('Supabase 관심 지역 연결됨')).toBeInTheDocument()
+    expect(screen.getByText('저장된 관심 역세권이 없습니다.')).toBeInTheDocument()
+    expect(screen.queryByText('양산역')).not.toBeInTheDocument()
+    expect(screen.queryByText('로컬 저장 관심 지역입니다.')).not.toBeInTheDocument()
+  })
+
   it('opens a mypage tab from the query parameter', () => {
     renderMyPage(['/mypage?tab=interest-locations'])
 
@@ -820,6 +901,37 @@ describe('MyPage', () => {
     )
     expect(screen.getByText('20:00 ~ 06:00')).toBeInTheDocument()
     expect(screen.getByText('로컬 알림')).toBeInTheDocument()
+  })
+
+  it('does not use local notification settings when backend settings are connected but empty', async () => {
+    window.localStorage.setItem(
+      'metropick-onboarding-notifications',
+      JSON.stringify({
+        channels: { email: false, sms: true, webPush: false },
+        enabledNotificationLabels: ['로컬 알림'],
+        frequency: '매일',
+        quietHours: '20:00 ~ 06:00',
+      }),
+    )
+    mockBackendApis({
+      notificationStatus: 'supabase_connected',
+      notificationSettings: [],
+    })
+
+    renderMyPage(['/mypage?tab=notifications'])
+
+    expect(await screen.findByText('Supabase 알림 설정 연결됨')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '문자' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(screen.getByRole('button', { name: '이메일' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(screen.getByText('설정 없음')).toBeInTheDocument()
+    expect(screen.queryByText('로컬 알림')).not.toBeInTheDocument()
+    expect(screen.queryByText('20:00 ~ 06:00')).not.toBeInTheDocument()
   })
 
   it('updates backend notification settings from My Page when connected', async () => {
