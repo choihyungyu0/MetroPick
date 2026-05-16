@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import {
   ChartNoAxesColumnIncreasing,
   Database,
@@ -13,7 +13,8 @@ import { AppFooter } from '@/shared/components/AppFooter'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { loginAssets } from '@/shared/assets/loginAssets'
-import { writeStorage } from '@/shared/lib/storage'
+import { saveAuthUser } from '@/shared/auth/authStorage'
+import { signInWithEmail } from '@/shared/auth/supabaseAuth'
 
 function PreviewImage({
   alt,
@@ -79,16 +80,48 @@ function HeroVisual() {
 
 function LoginCard() {
   const navigate = useNavigate()
+  const [message, setMessage] = useState('')
 
-  const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    window.localStorage.setItem('metropick-authenticated', 'true')
-    writeStorage('metropick-user', {
-      email: 'demo@metropick.ai',
+  const getPostLoginPath = () =>
+    window.localStorage.getItem('metropick-onboarding-completed') === 'true'
+      ? '/dashboard'
+      : '/onboarding'
+
+  const continueWithDemoLogin = (email: string) => {
+    saveAuthUser({
+      email: email || 'demo@metropick.ai',
       name: '데모 사용자',
       role: '예비 창업자',
     })
-    navigate('/onboarding')
+    setMessage('Supabase Auth 미설정 · 데모 로그인으로 진행합니다.')
+    window.setTimeout(() => navigate(getPostLoginPath()), 250)
+  }
+
+  const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get('email') ?? '').trim()
+    const password = String(formData.get('password') ?? '')
+    const result = await signInWithEmail(email, password)
+
+    if (result.ok) {
+      saveAuthUser({
+        id: result.user.id,
+        email: result.user.email ?? email,
+        name:
+          typeof result.user.user_metadata.name === 'string'
+            ? result.user.user_metadata.name
+            : result.user.email ?? email,
+        role:
+          typeof result.user.user_metadata.role === 'string'
+            ? result.user.user_metadata.role
+            : '예비 창업자',
+      })
+      navigate(getPostLoginPath())
+      return
+    }
+
+    continueWithDemoLogin(email)
   }
 
   return (
@@ -117,6 +150,7 @@ function LoginCard() {
         <input
           className="h-10 rounded-lg border border-[#cfdbea] bg-white px-4 text-base text-[#0d1b35] outline-none transition placeholder:font-semibold placeholder:text-[#96a3b5] focus:border-[#0b6cff] focus:ring-4 focus:ring-[#0b6cff]/10 min-[1700px]:!h-[50px]"
           id="login-email"
+          name="email"
           placeholder="이메일 주소를 입력하세요"
           type="email"
         />
@@ -131,6 +165,7 @@ function LoginCard() {
           <input
             className="h-10 w-full rounded-lg border border-[#cfdbea] bg-white px-4 pr-12 text-base text-[#0d1b35] outline-none transition placeholder:font-semibold placeholder:text-[#96a3b5] focus:border-[#0b6cff] focus:ring-4 focus:ring-[#0b6cff]/10 min-[1700px]:!h-[50px]"
             id="login-password"
+            name="password"
             placeholder="비밀번호를 입력하세요"
             type="password"
           />
@@ -172,6 +207,11 @@ function LoginCard() {
             회원가입
           </Link>
         </p>
+        {message ? (
+          <p className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-sm font-extrabold text-blue-700">
+            {message}
+          </p>
+        ) : null}
       </form>
     </section>
   )

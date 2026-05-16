@@ -1,9 +1,17 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { LoginPage } from './LoginPage'
+
+const authMocks = vi.hoisted(() => ({
+  signInWithEmail: vi.fn(),
+}))
+
+vi.mock('@/shared/auth/supabaseAuth', () => ({
+  signInWithEmail: authMocks.signInWithEmail,
+}))
 
 function renderLoginPage() {
   return render(
@@ -14,6 +22,16 @@ function renderLoginPage() {
 }
 
 describe('LoginPage', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+    authMocks.signInWithEmail.mockReset()
+    authMocks.signInWithEmail.mockResolvedValue({
+      ok: false,
+      reason: 'missing_client',
+      message: 'Supabase Auth is not configured.',
+    })
+  })
+
   it('renders the login page copy and preview image', () => {
     renderLoginPage()
 
@@ -25,7 +43,7 @@ describe('LoginPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('navigates to onboarding after mock login success', async () => {
+  it('falls back to demo login when Supabase Auth is not configured', async () => {
     const user = userEvent.setup()
     const router = createMemoryRouter(
       [
@@ -39,7 +57,46 @@ describe('LoginPage', () => {
 
     await user.click(screen.getByRole('button', { name: '로그인' }))
 
+    expect(
+      await screen.findByText('Supabase Auth 미설정 · 데모 로그인으로 진행합니다.'),
+    ).toBeInTheDocument()
     expect(await screen.findByText('초기 설정')).toBeInTheDocument()
     expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
+  })
+
+  it('calls Supabase Auth and stores the signed-in user when configured', async () => {
+    const user = userEvent.setup()
+    authMocks.signInWithEmail.mockResolvedValue({
+      ok: true,
+      session: null,
+      user: {
+        id: 'auth-user-id',
+        email: 'founder@metropick.ai',
+        user_metadata: { name: '인증 사용자', role: '예비 창업자' },
+      },
+    })
+    const router = createMemoryRouter(
+      [
+        { path: '/login', element: <LoginPage /> },
+        { path: '/onboarding', element: <h1>초기 설정</h1> },
+      ],
+      { initialEntries: ['/login'] },
+    )
+
+    render(<RouterProvider router={router} />)
+
+    await user.type(screen.getByLabelText('이메일'), 'founder@metropick.ai')
+    await user.type(screen.getByLabelText('비밀번호'), 'secure-password')
+    await user.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(authMocks.signInWithEmail).toHaveBeenCalledWith(
+      'founder@metropick.ai',
+      'secure-password',
+    )
+    expect(await screen.findByText('초기 설정')).toBeInTheDocument()
+    expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
+    expect(window.localStorage.getItem('metropick-user')).toContain(
+      'founder@metropick.ai',
+    )
   })
 })

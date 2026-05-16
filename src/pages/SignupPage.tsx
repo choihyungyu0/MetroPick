@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
@@ -14,7 +14,9 @@ import { landingAssets } from '@/shared/assets/landingAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { signupAssets } from '@/shared/assets/signupAssets'
-import { writeStorage } from '@/shared/lib/storage'
+import { createProfile } from '@/shared/api/backendProfilesApi'
+import { saveAuthUser } from '@/shared/auth/authStorage'
+import { signUpWithEmail } from '@/shared/auth/supabaseAuth'
 
 const userTypes = [
   { Icon: UserRound, label: '예비 창업자', active: true },
@@ -151,15 +153,56 @@ function AgreementRow({
 
 function SignupForm() {
   const navigate = useNavigate()
+  const [message, setMessage] = useState('')
 
-  const handleSignupSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    window.localStorage.setItem('metropick-authenticated', 'true')
-    writeStorage('metropick-user', {
-      email: 'founder@metropick.ai',
-      name: '예비 창업자',
+  const continueWithDemoSignup = (email: string, name: string) => {
+    saveAuthUser({
+      email: email || 'founder@metropick.ai',
+      name: name || '예비 창업자',
       role: '예비 창업자',
     })
+    setMessage('Supabase Auth 미설정 · 데모 회원가입으로 진행합니다.')
+    window.setTimeout(() => navigate('/onboarding'), 250)
+  }
+
+  const handleSignupSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const name = String(formData.get('name') ?? '').trim()
+    const email = String(formData.get('email') ?? '').trim()
+    const password = String(formData.get('password') ?? '')
+    const result = await signUpWithEmail(email, password)
+
+    if (!result.ok) {
+      continueWithDemoSignup(email, name)
+      return
+    }
+
+    const authUser = {
+      id: result.user.id,
+      email: result.user.email ?? email,
+      name:
+        typeof result.user.user_metadata.name === 'string'
+          ? result.user.user_metadata.name
+          : name || result.user.email || email,
+      role:
+        typeof result.user.user_metadata.role === 'string'
+          ? result.user.user_metadata.role
+          : '예비 창업자',
+    }
+
+    try {
+      await createProfile({
+        email: authUser.email,
+        name: authUser.name,
+        role: authUser.role,
+        plan: 'free',
+      })
+    } catch {
+      // Profile persistence is best-effort until backend auth linkage is enabled.
+    }
+
+    saveAuthUser(authUser)
     navigate('/onboarding')
   }
 
@@ -176,6 +219,7 @@ function SignupForm() {
           <input
             className="h-[52px] w-full rounded-lg border border-[#cbd7e6] bg-white px-5 text-base font-semibold text-[#10213d] outline-none transition placeholder:text-[#9ba8ba] focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10"
             id="signup-name"
+            name="name"
             placeholder="이름을 입력해주세요"
             type="text"
           />
@@ -191,6 +235,7 @@ function SignupForm() {
           <input
             className="h-[52px] w-full rounded-lg border border-[#cbd7e6] bg-white px-5 text-base font-semibold text-[#10213d] outline-none transition placeholder:text-[#9ba8ba] focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10"
             id="signup-email"
+            name="email"
             placeholder="이메일 주소를 입력해주세요"
             type="email"
           />
@@ -207,6 +252,7 @@ function SignupForm() {
             <input
               className="h-[52px] w-full rounded-lg border border-[#cbd7e6] bg-white px-5 pr-14 text-base font-semibold text-[#10213d] outline-none transition placeholder:text-[#9ba8ba] focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10"
               id="signup-password"
+              name="password"
               placeholder="영문, 숫자, 특수문자 포함 8자 이상"
               type="password"
             />
@@ -231,6 +277,7 @@ function SignupForm() {
             <input
               className="h-[52px] w-full rounded-lg border border-[#cbd7e6] bg-white px-5 pr-14 text-base font-semibold text-[#10213d] outline-none transition placeholder:text-[#9ba8ba] focus:border-[#096bff] focus:ring-4 focus:ring-[#096bff]/10"
               id="signup-password-confirm"
+              name="passwordConfirm"
               placeholder="비밀번호를 다시 입력해주세요"
               type="password"
             />
@@ -290,6 +337,11 @@ function SignupForm() {
             로그인
           </Link>
         </p>
+        {message ? (
+          <p className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-sm font-extrabold text-blue-700">
+            {message}
+          </p>
+        ) : null}
       </form>
     </section>
   )

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
+import { getStoredAuthUser } from '@/shared/auth/authStorage'
 import { cn } from '@/shared/lib/cn'
 
 export type TopNavigationItem = {
@@ -114,28 +115,46 @@ export function TopNavigation({
   renderActions,
   sticky = false,
 }: TopNavigationProps) {
-  const renderDefaultActions = () => (
-    <>
-      <Link
-        className={cn(
-          actionLinkClasses,
-          'min-w-[118px] border border-white/50 bg-slate-950/25 text-white hover:bg-white/10',
-        )}
-        to="/login"
-      >
-        로그인
-      </Link>
-      <Link
-        className={cn(
-          actionLinkClasses,
-          'min-w-[170px] bg-[#086bff] text-white shadow-[0_12px_24px_rgba(0,102,255,0.26)] hover:bg-[#0054dc]',
-        )}
-        to={ctaHref}
-      >
-        {ctaLabel}
-      </Link>
-    </>
-  )
+  const renderDefaultActions = () => {
+    const storedUser = getStoredAuthUser()
+
+    if (storedUser) {
+      return (
+        <Link
+          className={cn(
+            actionLinkClasses,
+            'max-w-[220px] border border-white/50 bg-slate-950/25 text-white hover:bg-white/10',
+          )}
+          to="/mypage"
+        >
+          <span className="truncate">{storedUser.name || storedUser.email}</span>
+        </Link>
+      )
+    }
+
+    return (
+      <>
+        <Link
+          className={cn(
+            actionLinkClasses,
+            'min-w-[118px] border border-white/50 bg-slate-950/25 text-white hover:bg-white/10',
+          )}
+          to="/login"
+        >
+          로그인
+        </Link>
+        <Link
+          className={cn(
+            actionLinkClasses,
+            'min-w-[170px] bg-[#086bff] text-white shadow-[0_12px_24px_rgba(0,102,255,0.26)] hover:bg-[#0054dc]',
+          )}
+          to={ctaHref}
+        >
+          {ctaLabel}
+        </Link>
+      </>
+    )
+  }
   const renderActionContent = renderActions ?? renderDefaultActions
 
   return (
