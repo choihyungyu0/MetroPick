@@ -42,6 +42,7 @@ function renderUnauthenticatedNavigation(initialEntries = ['/']) {
         <Route element={<h1>회원가입</h1>} path="/signup" />
         <Route element={<h1>상권 분석</h1>} path="/commercial-analysis" />
         <Route element={<h1>초기 설정</h1>} path="/onboarding" />
+        <Route element={<h1>대시보드</h1>} path="/dashboard" />
       </Routes>
     </MemoryRouter>,
   )
@@ -89,20 +90,43 @@ describe('TopNavigation', () => {
     expect(screen.queryByRole('heading', { name: '상권 분석' })).not.toBeInTheDocument()
   })
 
-  it('routes the free start action to signup without creating a demo session', async () => {
+  it('starts a local demo session from the free start action', async () => {
     const user = userEvent.setup()
 
     renderUnauthenticatedNavigation()
 
-    const startLink = screen.getAllByRole('link', { name: '무료로 시작하기' }).at(0)
-    if (!startLink) {
-      throw new Error('Free start link was not rendered.')
+    const startButton = screen.getAllByRole('button', { name: '무료로 시작하기' }).at(0)
+    if (!startButton) {
+      throw new Error('Free start button was not rendered.')
     }
 
-    await user.click(startLink)
+    await user.click(startButton)
 
-    expect(await screen.findByRole('heading', { name: '회원가입' })).toBeInTheDocument()
-    expect(window.localStorage.getItem('metropick-authenticated')).toBeNull()
-    expect(window.localStorage.getItem('metropick-user')).toBeNull()
+    expect(await screen.findByRole('heading', { name: '초기 설정' })).toBeInTheDocument()
+    expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
+    const storedUser = JSON.parse(
+      window.localStorage.getItem('metropick-user') ?? '{}',
+    ) as { email?: string; source?: string }
+    expect(storedUser).toMatchObject({
+      email: 'demo@metropick.ai',
+      source: 'demo',
+    })
+  })
+
+  it('routes a completed demo user to dashboard from the free start action', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem('metropick-onboarding-completed', 'true')
+    window.localStorage.setItem('metropick-onboarding-owner', 'email:demo@metropick.ai')
+
+    renderUnauthenticatedNavigation()
+
+    const startButton = screen.getAllByRole('button', { name: '무료로 시작하기' }).at(0)
+    if (!startButton) {
+      throw new Error('Free start button was not rendered.')
+    }
+
+    await user.click(startButton)
+
+    expect(await screen.findByRole('heading', { name: '대시보드' })).toBeInTheDocument()
   })
 })

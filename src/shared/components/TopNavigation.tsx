@@ -2,7 +2,12 @@ import type { MouseEvent, ReactNode } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
-import { clearAuthUser, getStoredAuthUser } from '@/shared/auth/authStorage'
+import {
+  clearAuthUser,
+  getStoredAuthUser,
+  hasStoredAuthUserCompletedOnboarding,
+  saveAuthUser,
+} from '@/shared/auth/authStorage'
 import { signOut } from '@/shared/auth/supabaseAuth'
 import { cn } from '@/shared/lib/cn'
 
@@ -123,7 +128,6 @@ function BrandLink() {
 export function TopNavigation({
   activeHref,
   className,
-  ctaHref = '/signup',
   ctaLabel = '무료로 시작하기',
   navItems = defaultNavItems,
   renderActions,
@@ -138,6 +142,16 @@ export function TopNavigation({
       clearAuthUser()
       navigate('/login', { replace: true })
     }
+  }
+
+  const handleStartFreeDemo = () => {
+    saveAuthUser({
+      email: 'demo@metropick.ai',
+      name: '데모 사용자',
+      role: '예비 창업자',
+      source: 'demo',
+    })
+    navigate(hasStoredAuthUserCompletedOnboarding() ? '/dashboard' : '/onboarding')
   }
 
   const renderDefaultActions = () => {
@@ -180,15 +194,16 @@ export function TopNavigation({
         >
           로그인
         </Link>
-        <Link
+        <button
           className={cn(
             actionLinkClasses,
             'min-w-[170px] bg-[#086bff] text-white shadow-[0_12px_24px_rgba(0,102,255,0.26)] hover:bg-[#0054dc]',
           )}
-          to={ctaHref}
+          onClick={handleStartFreeDemo}
+          type="button"
         >
           {ctaLabel}
-        </Link>
+        </button>
       </>
     )
   }
