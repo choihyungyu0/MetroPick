@@ -2,11 +2,7 @@ import type { MouseEvent, ReactNode } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 import { landingAssets } from '@/shared/assets/landingAssets'
-import {
-  clearAuthUser,
-  getStoredAuthUser,
-  saveAuthUser,
-} from '@/shared/auth/authStorage'
+import { clearAuthUser, getStoredAuthUser } from '@/shared/auth/authStorage'
 import { signOut } from '@/shared/auth/supabaseAuth'
 import { cn } from '@/shared/lib/cn'
 
@@ -144,16 +140,6 @@ export function TopNavigation({
     }
   }
 
-  const handleStartFreeDemo = () => {
-    saveAuthUser({
-      email: 'demo@metropick.ai',
-      name: '데모 사용자',
-      role: '예비 창업자',
-      source: 'demo',
-    })
-    navigate(ctaHref === '/signup' ? '/onboarding' : ctaHref)
-  }
-
   const renderDefaultActions = () => {
     const storedUser = getStoredAuthUser()
 
@@ -194,16 +180,15 @@ export function TopNavigation({
         >
           로그인
         </Link>
-        <button
+        <Link
           className={cn(
             actionLinkClasses,
             'min-w-[170px] bg-[#086bff] text-white shadow-[0_12px_24px_rgba(0,102,255,0.26)] hover:bg-[#0054dc]',
           )}
-          onClick={handleStartFreeDemo}
-          type="button"
+          to={ctaHref}
         >
           {ctaLabel}
-        </button>
+        </Link>
       </>
     )
   }
