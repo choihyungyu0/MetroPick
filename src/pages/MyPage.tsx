@@ -1305,8 +1305,8 @@ function ProfileCard({
   profile: UserProfile
 }) {
   return (
-    <section className="rounded-[15px] border border-blue-100 bg-white/95 px-7 py-7 shadow-[0_10px_30px_rgba(20,55,90,0.05)] max-sm:px-5">
-      <div className="mb-5 flex items-center gap-4">
+    <section className="min-w-0 overflow-hidden rounded-[15px] border border-blue-100 bg-white/95 px-7 py-7 shadow-[0_10px_30px_rgba(20,55,90,0.05)] max-sm:px-5">
+      <div className="mb-5 flex min-w-0 items-center gap-4">
         <div className="relative grid h-[68px] w-[68px] shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-blue-100 to-blue-300">
           <CircleUserRound
             aria-hidden="true"
@@ -1319,10 +1319,10 @@ function ProfileCard({
 
         <div className="min-w-0">
           <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-            <h3 className="m-0 text-[22px] font-black tracking-[-0.3px]">
+            <h3 className="m-0 min-w-0 flex-1 truncate text-[22px] font-black tracking-[-0.3px]">
               {profile.name}
             </h3>
-            <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-black text-blue-600">
+            <span className="shrink-0 rounded-md bg-blue-50 px-2 py-1 text-xs font-black text-blue-600">
               {profile.plan}
             </span>
           </div>
@@ -1341,21 +1341,21 @@ function ProfileCard({
       </div>
 
       <dl className="grid gap-4">
-        <div className="grid grid-cols-[96px_1fr] items-center">
+        <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center">
           <dt className="text-[14px] font-extrabold text-slate-500">역할</dt>
-          <dd className="m-0 text-[14px] font-extrabold text-slate-900">
+          <dd className="m-0 min-w-0 break-words text-[14px] font-extrabold text-slate-900">
             {profile.role}
           </dd>
         </div>
-        <div className="grid grid-cols-[96px_1fr] items-center">
+        <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center">
           <dt className="text-[14px] font-extrabold text-slate-500">관심 지역</dt>
-          <dd className="m-0 text-[14px] font-extrabold text-slate-900">
+          <dd className="m-0 min-w-0 break-words text-[14px] font-extrabold text-slate-900">
             {profile.preferredArea}
           </dd>
         </div>
-        <div className="grid grid-cols-[96px_1fr] items-center">
+        <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center">
           <dt className="text-[14px] font-extrabold text-slate-500">관심 업종</dt>
-          <dd className="m-0 text-[14px] font-extrabold text-slate-900">
+          <dd className="m-0 min-w-0 break-words text-[14px] font-extrabold text-slate-900">
             {profile.businessTypes}
           </dd>
         </div>
@@ -2026,7 +2026,7 @@ function ReportPanel({
   sortOrder: SortOrder
 }) {
   return (
-    <section className="min-h-[642px] overflow-hidden rounded-[15px] border border-blue-100 bg-white/95 shadow-[0_10px_30px_rgba(20,55,90,0.05)]">
+    <section className="min-h-[642px] min-w-0 overflow-hidden rounded-[15px] border border-blue-100 bg-white/95 shadow-[0_10px_30px_rgba(20,55,90,0.05)]">
       <nav
         aria-label="마이페이지 탭"
         className="flex h-[60px] items-center gap-[54px] overflow-x-auto border-b border-blue-100 px-7 max-md:gap-8 max-md:px-5"
@@ -2427,11 +2427,11 @@ export function MyPage() {
         renderActions={() => (
           <>
             <Link
-              className="inline-flex h-12 min-w-[132px] items-center justify-center gap-2 rounded-lg border border-white/45 bg-slate-950/35 px-5 text-sm font-black text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              className="inline-flex h-12 min-w-[132px] max-w-[280px] items-center justify-center gap-2 rounded-lg border border-white/45 bg-slate-950/35 px-5 text-sm font-black text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
               to="/mypage"
             >
-              {profile.name}님
-              <ChevronDown aria-hidden="true" size={17} />
+              <span className="min-w-0 truncate">{profile.name}님</span>
+              <ChevronDown aria-hidden="true" className="shrink-0" size={17} />
             </Link>
             <button
               className="inline-flex h-12 min-w-[112px] items-center justify-center rounded-lg border border-white/55 bg-white px-5 text-sm font-black text-[#061f4c] transition hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
@@ -2458,8 +2458,8 @@ export function MyPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-[380px_minmax(0,1fr)] gap-7 max-[1740px]:grid-cols-[340px_minmax(0,1fr)] max-xl:grid-cols-1">
-            <div className="grid content-start gap-5">
+          <div className="grid min-w-0 grid-cols-[380px_minmax(0,1fr)] gap-7 max-[1740px]:grid-cols-[340px_minmax(0,1fr)] max-xl:grid-cols-1">
+            <div className="grid min-w-0 content-start gap-5">
               <ProfileCard
                 onboardingSettingsStatus={onboardingSettingsStatus}
                 profile={profile}

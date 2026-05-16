@@ -33,6 +33,19 @@ function renderAuthenticatedNavigation() {
   )
 }
 
+function renderUnauthenticatedNavigation(initialEntries = ['/']) {
+  return render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <Routes>
+        <Route element={<TopNavigation />} path="/" />
+        <Route element={<h1>로그인</h1>} path="/login" />
+        <Route element={<h1>상권 분석</h1>} path="/commercial-analysis" />
+        <Route element={<h1>초기 설정</h1>} path="/onboarding" />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
 describe('TopNavigation', () => {
   beforeEach(() => {
     window.localStorage.clear()
@@ -57,5 +70,41 @@ describe('TopNavigation', () => {
       expect(window.localStorage.getItem('metropick-authenticated')).toBeNull()
     })
     expect(await screen.findByRole('heading', { name: '로그인' })).toBeInTheDocument()
+  })
+
+  it('routes unauthenticated protected navigation clicks to login', async () => {
+    const user = userEvent.setup()
+
+    renderUnauthenticatedNavigation()
+
+    const protectedLink = screen.getAllByRole('link', { name: '상권 분석' }).at(0)
+    if (!protectedLink) {
+      throw new Error('Protected navigation link was not rendered.')
+    }
+
+    await user.click(protectedLink)
+
+    expect(await screen.findByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '상권 분석' })).not.toBeInTheDocument()
+  })
+
+  it('starts a local demo session from the free start action', async () => {
+    const user = userEvent.setup()
+
+    renderUnauthenticatedNavigation()
+
+    const startButton = screen.getAllByRole('button', { name: '무료로 시작하기' }).at(0)
+    if (!startButton) {
+      throw new Error('Free start button was not rendered.')
+    }
+
+    await user.click(startButton)
+
+    expect(await screen.findByRole('heading', { name: '초기 설정' })).toBeInTheDocument()
+    expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
+    const storedUser = JSON.parse(
+      window.localStorage.getItem('metropick-user') ?? '{}',
+    ) as { source?: string }
+    expect(storedUser.source).toBe('demo')
   })
 })
