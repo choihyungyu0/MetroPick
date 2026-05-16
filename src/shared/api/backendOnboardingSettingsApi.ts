@@ -1,4 +1,5 @@
 import { fetchBackendJson } from '@/shared/api/backendClient'
+import { buildUserScopedPath, withBackendUserId } from '@/shared/api/backendUserScope'
 
 export type BackendOnboardingNotificationSettings = Record<string, unknown>
 
@@ -24,6 +25,7 @@ export type BackendOnboardingSettingsCreateInput = {
   region?: string | null
   selected_business_types?: string[]
   selected_stations?: string[]
+  user_id?: string | null
 }
 
 export type BackendOnboardingSettingsUpdateInput = {
@@ -32,6 +34,7 @@ export type BackendOnboardingSettingsUpdateInput = {
   region?: string | null
   selected_business_types?: string[] | null
   selected_stations?: string[] | null
+  user_id?: string | null
 }
 
 export type BackendOnboardingSettingsMutationResponse = {
@@ -47,7 +50,7 @@ export type BackendOnboardingSettingsDeleteResponse = {
 
 export function fetchOnboardingSettings(): Promise<BackendOnboardingSettingsResponse> {
   return fetchBackendJson<BackendOnboardingSettingsResponse>(
-    '/api/onboarding-settings',
+    buildUserScopedPath('/api/onboarding-settings'),
   )
 }
 
@@ -58,7 +61,7 @@ export function createOnboardingSettings(
     '/api/onboarding-settings',
     {
       method: 'POST',
-      body: JSON.stringify(input),
+      body: JSON.stringify(withBackendUserId(input)),
     },
   )
 }
@@ -71,7 +74,7 @@ export function updateOnboardingSettings(
     `/api/onboarding-settings/${encodeURIComponent(id)}`,
     {
       method: 'PATCH',
-      body: JSON.stringify(input),
+      body: JSON.stringify(withBackendUserId(input)),
     },
   )
 }

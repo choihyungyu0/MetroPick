@@ -63,6 +63,10 @@ describe('SignupPage', () => {
     ).toBeInTheDocument()
     expect(await screen.findByText('초기 설정')).toBeInTheDocument()
     expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
+    const storedUser = JSON.parse(
+      window.localStorage.getItem('metropick-user') ?? '{}',
+    ) as { source?: string }
+    expect(storedUser.source).toBe('demo')
   })
 
   it('calls Supabase Auth and creates a profile when configured', async () => {
@@ -138,5 +142,13 @@ describe('SignupPage', () => {
       plan: 'free',
     })
     expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
+    const storedUser = JSON.parse(
+      window.localStorage.getItem('metropick-user') ?? '{}',
+    ) as { email?: string; id?: string; source?: string }
+    expect(storedUser).toMatchObject({
+      email: 'founder@metropick.ai',
+      id: 'auth-user-id',
+      source: 'supabase',
+    })
   })
 })

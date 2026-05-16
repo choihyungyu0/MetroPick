@@ -61,7 +61,7 @@ class FakeSavedReportsTable:
         return self
 
     def eq(self, column: str, value: str) -> "FakeSavedReportsTable":
-        assert column == "id"
+        assert column in {"id", "user_id"}
         matched_rows = [row for row in self.rows if row.get(column) == value]
         if self.update_payload is not None:
             self.next_rows = [{**row, **self.update_payload} for row in matched_rows]
@@ -115,6 +115,20 @@ def test_saved_reports_list_returns_reports(monkeypatch) -> None:
     }
 
 
+def test_saved_reports_list_filters_by_user_id(monkeypatch) -> None:
+    other_report = {**REPORT, "id": "other-report", "user_id": "other-user"}
+    user_report = {**REPORT, "user_id": "auth-user-id"}
+    monkeypatch.setattr(
+        "backend.app.routers.saved_reports.get_supabase_client",
+        lambda: FakeSupabaseClient([other_report, user_report]),
+    )
+
+    response = TestClient(app).get("/api/saved-reports?user_id=auth-user-id")
+
+    assert response.status_code == 200
+    assert response.json()["reports"] == [user_report]
+
+
 def test_saved_reports_create_returns_report(monkeypatch) -> None:
     monkeypatch.setattr(
         "backend.app.routers.saved_reports.get_supabase_client",
@@ -129,6 +143,7 @@ def test_saved_reports_create_returns_report(monkeypatch) -> None:
             "station_area": "충장로역",
             "business_type": "카페",
             "payload": {"score": 82},
+            "user_id": "auth-user-id",
         },
     )
 
@@ -139,6 +154,7 @@ def test_saved_reports_create_returns_report(monkeypatch) -> None:
     assert body["report"]["report_type"] == "commercial_analysis"
     assert body["report"]["title"] == "충장로 카페 상권 리포트"
     assert body["report"]["payload"] == {"score": 82}
+    assert body["report"]["user_id"] == "auth-user-id"
 
 
 def test_saved_reports_get_not_found(monkeypatch) -> None:

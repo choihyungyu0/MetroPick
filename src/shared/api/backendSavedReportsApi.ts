@@ -1,4 +1,5 @@
 import { fetchBackendJson } from '@/shared/api/backendClient'
+import { buildUserScopedPath, withBackendUserId } from '@/shared/api/backendUserScope'
 
 export type BackendSavedReportPayload = Record<string, unknown>
 
@@ -24,6 +25,7 @@ export type BackendSavedReportCreateInput = {
   report_type: string
   station_area?: string | null
   title: string
+  user_id?: string | null
 }
 
 export type BackendSavedReportUpdateInput = {
@@ -31,6 +33,7 @@ export type BackendSavedReportUpdateInput = {
   payload?: BackendSavedReportPayload | null
   station_area?: string | null
   title?: string | null
+  user_id?: string | null
 }
 
 export type BackendSavedReportMutationResponse = {
@@ -45,7 +48,9 @@ export type BackendSavedReportDeleteResponse = {
 }
 
 export function fetchSavedReports(): Promise<BackendSavedReportsResponse> {
-  return fetchBackendJson<BackendSavedReportsResponse>('/api/saved-reports')
+  return fetchBackendJson<BackendSavedReportsResponse>(
+    buildUserScopedPath('/api/saved-reports'),
+  )
 }
 
 export function createSavedReport(
@@ -53,7 +58,7 @@ export function createSavedReport(
 ): Promise<BackendSavedReportMutationResponse> {
   return fetchBackendJson<BackendSavedReportMutationResponse>('/api/saved-reports', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: JSON.stringify(withBackendUserId(input)),
   })
 }
 
@@ -65,7 +70,7 @@ export function updateSavedReport(
     `/api/saved-reports/${encodeURIComponent(id)}`,
     {
       method: 'PATCH',
-      body: JSON.stringify(input),
+      body: JSON.stringify(withBackendUserId(input)),
     },
   )
 }

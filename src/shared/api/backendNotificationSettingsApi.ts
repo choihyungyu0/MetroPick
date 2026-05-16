@@ -1,4 +1,5 @@
 import { fetchBackendJson } from '@/shared/api/backendClient'
+import { buildUserScopedPath, withBackendUserId } from '@/shared/api/backendUserScope'
 
 export type BackendNotificationQuietHours = Record<string, unknown>
 
@@ -22,6 +23,7 @@ export type BackendNotificationSettingsCreateInput = {
   enabled_notifications?: string[]
   frequency?: string
   quiet_hours?: BackendNotificationQuietHours
+  user_id?: string | null
 }
 
 export type BackendNotificationSettingsUpdateInput = {
@@ -29,6 +31,7 @@ export type BackendNotificationSettingsUpdateInput = {
   enabled_notifications?: string[] | null
   frequency?: string | null
   quiet_hours?: BackendNotificationQuietHours | null
+  user_id?: string | null
 }
 
 export type BackendNotificationSettingsMutationResponse = {
@@ -44,7 +47,7 @@ export type BackendNotificationSettingsDeleteResponse = {
 
 export function fetchNotificationSettings(): Promise<BackendNotificationSettingsResponse> {
   return fetchBackendJson<BackendNotificationSettingsResponse>(
-    '/api/notification-settings',
+    buildUserScopedPath('/api/notification-settings'),
   )
 }
 
@@ -55,7 +58,7 @@ export function createNotificationSettings(
     '/api/notification-settings',
     {
       method: 'POST',
-      body: JSON.stringify(input),
+      body: JSON.stringify(withBackendUserId(input)),
     },
   )
 }
@@ -68,7 +71,7 @@ export function updateNotificationSettings(
     `/api/notification-settings/${encodeURIComponent(id)}`,
     {
       method: 'PATCH',
-      body: JSON.stringify(input),
+      body: JSON.stringify(withBackendUserId(input)),
     },
   )
 }

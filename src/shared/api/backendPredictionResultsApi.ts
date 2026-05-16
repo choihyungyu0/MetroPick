@@ -1,4 +1,5 @@
 import { fetchBackendJson } from '@/shared/api/backendClient'
+import { buildUserScopedPath, withBackendUserId } from '@/shared/api/backendUserScope'
 
 export type BackendPredictionResultPayload = Record<string, unknown>
 
@@ -22,6 +23,7 @@ export type BackendPredictionResultCreateInput = {
   predicted_score?: number | null
   result_payload?: BackendPredictionResultPayload
   station_area: string
+  user_id?: string | null
 }
 
 export type BackendPredictionResultUpdateInput = {
@@ -29,6 +31,7 @@ export type BackendPredictionResultUpdateInput = {
   predicted_score?: number | null
   result_payload?: BackendPredictionResultPayload | null
   station_area?: string | null
+  user_id?: string | null
 }
 
 export type BackendPredictionResultMutationResponse = {
@@ -43,7 +46,9 @@ export type BackendPredictionResultDeleteResponse = {
 }
 
 export function fetchPredictionResults(): Promise<BackendPredictionResultsResponse> {
-  return fetchBackendJson<BackendPredictionResultsResponse>('/api/prediction-results')
+  return fetchBackendJson<BackendPredictionResultsResponse>(
+    buildUserScopedPath('/api/prediction-results'),
+  )
 }
 
 export function createPredictionResult(
@@ -53,7 +58,7 @@ export function createPredictionResult(
     '/api/prediction-results',
     {
       method: 'POST',
-      body: JSON.stringify(input),
+      body: JSON.stringify(withBackendUserId(input)),
     },
   )
 }
@@ -66,7 +71,7 @@ export function updatePredictionResult(
     `/api/prediction-results/${encodeURIComponent(id)}`,
     {
       method: 'PATCH',
-      body: JSON.stringify(input),
+      body: JSON.stringify(withBackendUserId(input)),
     },
   )
 }

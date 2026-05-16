@@ -6,6 +6,7 @@ export type StoredAuthUser = {
   name: string
   plan?: string
   role: string
+  source: 'demo' | 'supabase'
 }
 
 const AUTHENTICATED_STORAGE_KEY = 'metropick-authenticated'
@@ -45,5 +46,11 @@ export function getStoredAuthUser(): StoredAuthUser | null {
     name: user.name ?? user.email,
     plan: user.plan,
     role: user.role ?? '예비 창업자',
+    source: user.source === 'supabase' ? 'supabase' : 'demo',
   }
+}
+
+export function getStoredAuthUserId(): string | undefined {
+  const user = getStoredAuthUser()
+  return user?.id
 }

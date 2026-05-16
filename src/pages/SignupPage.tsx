@@ -160,6 +160,7 @@ function SignupForm() {
       email: email || 'founder@metropick.ai',
       name: name || '예비 창업자',
       role: '예비 창업자',
+      source: 'demo',
     })
     setMessage('Supabase Auth 미설정 · 데모 회원가입으로 진행합니다.')
     window.setTimeout(() => navigate('/onboarding'), 250)
@@ -189,6 +190,7 @@ function SignupForm() {
         typeof result.user.user_metadata.role === 'string'
           ? result.user.user_metadata.role
           : '예비 창업자',
+      source: 'supabase' as const,
     }
 
     try {

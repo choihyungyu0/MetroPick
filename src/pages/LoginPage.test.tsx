@@ -62,6 +62,10 @@ describe('LoginPage', () => {
     ).toBeInTheDocument()
     expect(await screen.findByText('초기 설정')).toBeInTheDocument()
     expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
+    const storedUser = JSON.parse(
+      window.localStorage.getItem('metropick-user') ?? '{}',
+    ) as { source?: string }
+    expect(storedUser.source).toBe('demo')
   })
 
   it('calls Supabase Auth and stores the signed-in user when configured', async () => {
@@ -95,8 +99,13 @@ describe('LoginPage', () => {
     )
     expect(await screen.findByText('초기 설정')).toBeInTheDocument()
     expect(window.localStorage.getItem('metropick-authenticated')).toBe('true')
-    expect(window.localStorage.getItem('metropick-user')).toContain(
-      'founder@metropick.ai',
-    )
+    const storedUser = JSON.parse(
+      window.localStorage.getItem('metropick-user') ?? '{}',
+    ) as { email?: string; id?: string; source?: string }
+    expect(storedUser).toMatchObject({
+      email: 'founder@metropick.ai',
+      id: 'auth-user-id',
+      source: 'supabase',
+    })
   })
 })

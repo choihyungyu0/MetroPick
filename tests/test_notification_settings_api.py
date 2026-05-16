@@ -58,7 +58,7 @@ class FakeNotificationSettingsTable:
         return self
 
     def eq(self, column: str, value: str) -> "FakeNotificationSettingsTable":
-        assert column == "id"
+        assert column in {"id", "user_id"}
         matched_rows = [row for row in self.rows if row.get(column) == value]
         if self.update_payload is not None:
             self.next_rows = [{**row, **self.update_payload} for row in matched_rows]
@@ -113,6 +113,20 @@ def test_notification_settings_list_returns_settings(monkeypatch) -> None:
         "data_status": "supabase_connected",
         "settings": [NOTIFICATION_SETTING],
     }
+
+
+def test_notification_settings_list_filters_by_user_id(monkeypatch) -> None:
+    other_setting = {**NOTIFICATION_SETTING, "id": "other-setting", "user_id": "other-user"}
+    user_setting = {**NOTIFICATION_SETTING, "user_id": "auth-user-id"}
+    monkeypatch.setattr(
+        "backend.app.routers.notification_settings.get_supabase_client",
+        lambda: FakeSupabaseClient([other_setting, user_setting]),
+    )
+
+    response = TestClient(app).get("/api/notification-settings?user_id=auth-user-id")
+
+    assert response.status_code == 200
+    assert response.json()["settings"] == [user_setting]
 
 
 def test_notification_settings_create_returns_setting(monkeypatch) -> None:

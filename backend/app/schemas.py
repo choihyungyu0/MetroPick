@@ -58,6 +58,7 @@ class ProfileResponse(ProfileCreate):
 
 
 class SavedReportCreate(BaseModel):
+    user_id: str | None = None
     report_type: str
     title: str
     station_area: str | None = None
@@ -66,6 +67,7 @@ class SavedReportCreate(BaseModel):
 
 
 class SavedReportUpdate(BaseModel):
+    user_id: str | None = None
     title: str | None = None
     station_area: str | None = None
     business_type: str | None = None
@@ -89,6 +91,7 @@ class SavedReportListResponse(BaseModel):
 
 
 class SavedLocationCreate(BaseModel):
+    user_id: str | None = None
     station_name: str
     district: str | None = None
     business_type: str | None = None
@@ -97,6 +100,7 @@ class SavedLocationCreate(BaseModel):
 
 
 class SavedLocationUpdate(BaseModel):
+    user_id: str | None = None
     station_name: str | None = None
     district: str | None = None
     business_type: str | None = None
@@ -121,6 +125,7 @@ class SavedLocationListResponse(BaseModel):
 
 
 class PredictionResultCreate(BaseModel):
+    user_id: str | None = None
     station_area: str
     business_type: str | None = None
     predicted_score: float | None = None
@@ -128,6 +133,7 @@ class PredictionResultCreate(BaseModel):
 
 
 class PredictionResultUpdate(BaseModel):
+    user_id: str | None = None
     station_area: str | None = None
     business_type: str | None = None
     predicted_score: float | None = None
@@ -150,6 +156,7 @@ class PredictionResultListResponse(BaseModel):
 
 
 class NotificationSettingsCreate(BaseModel):
+    user_id: str | None = None
     channels: list[str] = Field(default_factory=list)
     frequency: str = "realtime"
     quiet_hours: dict[str, object] = Field(default_factory=dict)
@@ -157,6 +164,7 @@ class NotificationSettingsCreate(BaseModel):
 
 
 class NotificationSettingsUpdate(BaseModel):
+    user_id: str | None = None
     channels: list[str] | None = None
     frequency: str | None = None
     quiet_hours: dict[str, object] | None = None
@@ -179,6 +187,7 @@ class NotificationSettingsListResponse(BaseModel):
 
 
 class OnboardingSettingsCreate(BaseModel):
+    user_id: str | None = None
     region: str | None = None
     selected_stations: list[str] = Field(default_factory=list)
     selected_business_types: list[str] = Field(default_factory=list)
@@ -187,6 +196,7 @@ class OnboardingSettingsCreate(BaseModel):
 
 
 class OnboardingSettingsUpdate(BaseModel):
+    user_id: str | None = None
     region: str | None = None
     selected_stations: list[str] | None = None
     selected_business_types: list[str] | None = None

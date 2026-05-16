@@ -1,4 +1,5 @@
 import { fetchBackendJson } from '@/shared/api/backendClient'
+import { buildUserScopedPath, withBackendUserId } from '@/shared/api/backendUserScope'
 
 export type BackendSavedLocationPayload = Record<string, unknown>
 
@@ -24,6 +25,7 @@ export type BackendSavedLocationCreateInput = {
   payload?: BackendSavedLocationPayload
   score?: number | null
   station_name: string
+  user_id?: string | null
 }
 
 export type BackendSavedLocationUpdateInput = {
@@ -32,6 +34,7 @@ export type BackendSavedLocationUpdateInput = {
   payload?: BackendSavedLocationPayload | null
   score?: number | null
   station_name?: string | null
+  user_id?: string | null
 }
 
 export type BackendSavedLocationMutationResponse = {
@@ -46,7 +49,9 @@ export type BackendSavedLocationDeleteResponse = {
 }
 
 export function fetchSavedLocations(): Promise<BackendSavedLocationsResponse> {
-  return fetchBackendJson<BackendSavedLocationsResponse>('/api/saved-locations')
+  return fetchBackendJson<BackendSavedLocationsResponse>(
+    buildUserScopedPath('/api/saved-locations'),
+  )
 }
 
 export function createSavedLocation(
@@ -54,7 +59,7 @@ export function createSavedLocation(
 ): Promise<BackendSavedLocationMutationResponse> {
   return fetchBackendJson<BackendSavedLocationMutationResponse>('/api/saved-locations', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: JSON.stringify(withBackendUserId(input)),
   })
 }
 
@@ -66,7 +71,7 @@ export function updateSavedLocation(
     `/api/saved-locations/${encodeURIComponent(id)}`,
     {
       method: 'PATCH',
-      body: JSON.stringify(input),
+      body: JSON.stringify(withBackendUserId(input)),
     },
   )
 }

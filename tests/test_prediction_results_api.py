@@ -61,7 +61,7 @@ class FakePredictionResultsTable:
         return self
 
     def eq(self, column: str, value: str) -> "FakePredictionResultsTable":
-        assert column == "id"
+        assert column in {"id", "user_id"}
         matched_rows = [row for row in self.rows if row.get(column) == value]
         if self.update_payload is not None:
             self.next_rows = [{**row, **self.update_payload} for row in matched_rows]
@@ -118,6 +118,20 @@ def test_prediction_results_list_returns_results(monkeypatch) -> None:
     }
 
 
+def test_prediction_results_list_filters_by_user_id(monkeypatch) -> None:
+    other_result = {**PREDICTION_RESULT, "id": "other-result", "user_id": "other-user"}
+    user_result = {**PREDICTION_RESULT, "user_id": "auth-user-id"}
+    monkeypatch.setattr(
+        "backend.app.routers.prediction_results.get_supabase_client",
+        lambda: FakeSupabaseClient([other_result, user_result]),
+    )
+
+    response = TestClient(app).get("/api/prediction-results?user_id=auth-user-id")
+
+    assert response.status_code == 200
+    assert response.json()["results"] == [user_result]
+
+
 def test_prediction_results_create_returns_result(monkeypatch) -> None:
     monkeypatch.setattr(
         "backend.app.routers.prediction_results.get_supabase_client",
@@ -131,6 +145,7 @@ def test_prediction_results_create_returns_result(monkeypatch) -> None:
             "business_type": "커피전문점",
             "predicted_score": 83.4,
             "result_payload": {"risk_level": "낮음"},
+            "user_id": "auth-user-id",
         },
     )
 
@@ -142,6 +157,7 @@ def test_prediction_results_create_returns_result(monkeypatch) -> None:
     assert body["result"]["business_type"] == "커피전문점"
     assert body["result"]["predicted_score"] == 83.4
     assert body["result"]["result_payload"] == {"risk_level": "낮음"}
+    assert body["result"]["user_id"] == "auth-user-id"
 
 
 def test_prediction_results_get_not_found(monkeypatch) -> None:

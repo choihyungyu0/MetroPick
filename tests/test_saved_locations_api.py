@@ -59,7 +59,7 @@ class FakeSavedLocationsTable:
         return self
 
     def eq(self, column: str, value: str) -> "FakeSavedLocationsTable":
-        assert column == "id"
+        assert column in {"id", "user_id"}
         matched_rows = [row for row in self.rows if row.get(column) == value]
         if self.update_payload is not None:
             self.next_rows = [{**row, **self.update_payload} for row in matched_rows]
@@ -113,6 +113,20 @@ def test_saved_locations_list_returns_locations(monkeypatch) -> None:
     }
 
 
+def test_saved_locations_list_filters_by_user_id(monkeypatch) -> None:
+    other_location = {**LOCATION, "id": "other-location", "user_id": "other-user"}
+    user_location = {**LOCATION, "user_id": "auth-user-id"}
+    monkeypatch.setattr(
+        "backend.app.routers.saved_locations.get_supabase_client",
+        lambda: FakeSupabaseClient([other_location, user_location]),
+    )
+
+    response = TestClient(app).get("/api/saved-locations?user_id=auth-user-id")
+
+    assert response.status_code == 200
+    assert response.json()["locations"] == [user_location]
+
+
 def test_saved_locations_create_returns_location(monkeypatch) -> None:
     monkeypatch.setattr(
         "backend.app.routers.saved_locations.get_supabase_client",
@@ -127,6 +141,7 @@ def test_saved_locations_create_returns_location(monkeypatch) -> None:
             "business_type": "카페",
             "score": 91.5,
             "payload": {"rank": 1},
+            "user_id": "auth-user-id",
         },
     )
 
@@ -138,6 +153,7 @@ def test_saved_locations_create_returns_location(monkeypatch) -> None:
     assert body["location"]["business_type"] == "카페"
     assert body["location"]["score"] == 91.5
     assert body["location"]["payload"] == {"rank": 1}
+    assert body["location"]["user_id"] == "auth-user-id"
 
 
 def test_saved_locations_get_not_found(monkeypatch) -> None:

@@ -54,7 +54,7 @@ def _first_saved_location(data: object | None) -> dict[str, object] | None:
 
 
 @router.get("")
-def list_saved_locations() -> dict[str, object]:
+def list_saved_locations(user_id: str | None = None) -> dict[str, object]:
     client = get_supabase_client()
     if client is None:
         return {
@@ -63,13 +63,10 @@ def list_saved_locations() -> dict[str, object]:
         }
 
     try:
-        response = (
-            client.table("saved_locations")
-            .select("*")
-            .order("created_at", desc=True)
-            .limit(50)
-            .execute()
-        )
+        query = client.table("saved_locations").select("*")
+        if user_id:
+            query = query.eq("user_id", user_id)
+        response = query.order("created_at", desc=True).limit(50).execute()
     except Exception as error:
         raise _supabase_error(error) from error
 

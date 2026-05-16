@@ -54,7 +54,7 @@ def _first_notification_settings(data: object | None) -> dict[str, object] | Non
 
 
 @router.get("")
-def list_notification_settings() -> dict[str, object]:
+def list_notification_settings(user_id: str | None = None) -> dict[str, object]:
     client = get_supabase_client()
     if client is None:
         return {
@@ -63,13 +63,10 @@ def list_notification_settings() -> dict[str, object]:
         }
 
     try:
-        response = (
-            client.table("notification_settings")
-            .select("*")
-            .order("created_at", desc=True)
-            .limit(50)
-            .execute()
-        )
+        query = client.table("notification_settings").select("*")
+        if user_id:
+            query = query.eq("user_id", user_id)
+        response = query.order("created_at", desc=True).limit(50).execute()
     except Exception as error:
         raise _supabase_error(error) from error
 

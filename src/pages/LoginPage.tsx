@@ -92,6 +92,7 @@ function LoginCard() {
       email: email || 'demo@metropick.ai',
       name: '데모 사용자',
       role: '예비 창업자',
+      source: 'demo',
     })
     setMessage('Supabase Auth 미설정 · 데모 로그인으로 진행합니다.')
     window.setTimeout(() => navigate(getPostLoginPath()), 250)
@@ -116,6 +117,7 @@ function LoginCard() {
           typeof result.user.user_metadata.role === 'string'
             ? result.user.user_metadata.role
             : '예비 창업자',
+        source: 'supabase',
       })
       navigate(getPostLoginPath())
       return
