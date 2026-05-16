@@ -11,12 +11,56 @@ export type StoredAuthUser = {
 
 const AUTHENTICATED_STORAGE_KEY = 'metropick-authenticated'
 const USER_STORAGE_KEY = 'metropick-user'
+const ONBOARDING_COMPLETED_STORAGE_KEY = 'metropick-onboarding-completed'
+const ONBOARDING_OWNER_STORAGE_KEY = 'metropick-onboarding-owner'
+const LOCAL_ONBOARDING_STORAGE_KEYS = [
+  'metropick-onboarding-stations',
+  'metropick-onboarding-business-types',
+  'metropick-onboarding-notifications',
+  ONBOARDING_COMPLETED_STORAGE_KEY,
+  'metropick-onboarding-summary',
+]
+
+type AuthUserIdentity = Pick<StoredAuthUser, 'email' | 'id'>
+
+function getAuthUserStorageKey(user: AuthUserIdentity): string {
+  const id = user.id?.trim()
+
+  if (id) {
+    return `id:${id}`
+  }
+
+  return `email:${user.email.trim().toLowerCase()}`
+}
+
+function clearLocalOnboardingState(): void {
+  for (const key of LOCAL_ONBOARDING_STORAGE_KEYS) {
+    window.localStorage.removeItem(key)
+  }
+  window.localStorage.removeItem(ONBOARDING_OWNER_STORAGE_KEY)
+}
+
+function preventOnboardingStateLeak(user: AuthUserIdentity): void {
+  const completed =
+    window.localStorage.getItem(ONBOARDING_COMPLETED_STORAGE_KEY) === 'true'
+
+  if (!completed) {
+    return
+  }
+
+  const ownerKey = window.localStorage.getItem(ONBOARDING_OWNER_STORAGE_KEY)
+
+  if (ownerKey !== getAuthUserStorageKey(user)) {
+    clearLocalOnboardingState()
+  }
+}
 
 export function saveAuthUser(user: StoredAuthUser): void {
   if (typeof window === 'undefined') {
     return
   }
 
+  preventOnboardingStateLeak(user)
   window.localStorage.setItem(AUTHENTICATED_STORAGE_KEY, 'true')
   writeStorage(USER_STORAGE_KEY, user)
 }
@@ -53,4 +97,41 @@ export function getStoredAuthUser(): StoredAuthUser | null {
 export function getStoredAuthUserId(): string | undefined {
   const user = getStoredAuthUser()
   return user?.id
+}
+
+export function hasCompletedOnboardingForAuthUser(user: AuthUserIdentity): boolean {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  const completed =
+    window.localStorage.getItem(ONBOARDING_COMPLETED_STORAGE_KEY) === 'true'
+  const ownerKey = window.localStorage.getItem(ONBOARDING_OWNER_STORAGE_KEY)
+
+  return completed && ownerKey === getAuthUserStorageKey(user)
+}
+
+export function hasStoredAuthUserCompletedOnboarding(): boolean {
+  const user = getStoredAuthUser()
+
+  return user ? hasCompletedOnboardingForAuthUser(user) : false
+}
+
+export function markStoredAuthUserOnboardingCompleted(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const user = getStoredAuthUser()
+
+  window.localStorage.setItem(ONBOARDING_COMPLETED_STORAGE_KEY, 'true')
+
+  if (user) {
+    window.localStorage.setItem(
+      ONBOARDING_OWNER_STORAGE_KEY,
+      getAuthUserStorageKey(user),
+    )
+  } else {
+    window.localStorage.removeItem(ONBOARDING_OWNER_STORAGE_KEY)
+  }
 }

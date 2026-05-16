@@ -15,8 +15,12 @@ import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { signupAssets } from '@/shared/assets/signupAssets'
 import { createProfile } from '@/shared/api/backendProfilesApi'
-import { saveAuthUser } from '@/shared/auth/authStorage'
-import { signUpWithEmail } from '@/shared/auth/supabaseAuth'
+import {
+  clearAuthUser,
+  hasStoredAuthUserCompletedOnboarding,
+  saveAuthUser,
+} from '@/shared/auth/authStorage'
+import { signOut, signUpWithEmail } from '@/shared/auth/supabaseAuth'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const minimumPasswordLength = 8
@@ -171,9 +175,19 @@ function SignupForm() {
   const [message, setMessage] = useState('')
 
   const getPostSignupPath = () =>
-    window.localStorage.getItem('metropick-onboarding-completed') === 'true'
+    hasStoredAuthUserCompletedOnboarding()
       ? '/dashboard'
       : '/onboarding'
+
+  const resetPreviousAuth = async () => {
+    clearAuthUser()
+
+    try {
+      await signOut()
+    } catch {
+      // A failed sign-out should not block the next signup attempt.
+    }
+  }
 
   const continueWithDemoSignup = (email: string, name: string) => {
     saveAuthUser({
@@ -214,6 +228,7 @@ function SignupForm() {
       return
     }
 
+    await resetPreviousAuth()
     const result = await signUpWithEmail(email, password)
 
     if (!result.ok) {

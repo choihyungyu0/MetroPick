@@ -13,8 +13,12 @@ import { AppFooter } from '@/shared/components/AppFooter'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { loginAssets } from '@/shared/assets/loginAssets'
-import { saveAuthUser } from '@/shared/auth/authStorage'
-import { signInWithEmail } from '@/shared/auth/supabaseAuth'
+import {
+  clearAuthUser,
+  hasStoredAuthUserCompletedOnboarding,
+  saveAuthUser,
+} from '@/shared/auth/authStorage'
+import { signInWithEmail, signOut } from '@/shared/auth/supabaseAuth'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -93,9 +97,19 @@ function LoginCard() {
   const [message, setMessage] = useState('')
 
   const getPostLoginPath = () =>
-    window.localStorage.getItem('metropick-onboarding-completed') === 'true'
+    hasStoredAuthUserCompletedOnboarding()
       ? '/dashboard'
       : '/onboarding'
+
+  const resetPreviousAuth = async () => {
+    clearAuthUser()
+
+    try {
+      await signOut()
+    } catch {
+      // A failed sign-out should not block the next login attempt.
+    }
+  }
 
   const continueWithDemoLogin = (email: string) => {
     saveAuthUser({
@@ -124,6 +138,7 @@ function LoginCard() {
       return
     }
 
+    await resetPreviousAuth()
     const result = await signInWithEmail(email, password)
 
     if (result.ok) {

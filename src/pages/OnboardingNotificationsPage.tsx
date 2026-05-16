@@ -28,6 +28,7 @@ import { useCreateBackendNotificationSettings } from '@/shared/api/hooks/useBack
 import { useCreateBackendOnboardingSettings } from '@/shared/api/hooks/useBackendOnboardingSettings'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
+import { markStoredAuthUserOnboardingCompleted } from '@/shared/auth/authStorage'
 import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
 
 type NotificationId =
@@ -80,7 +81,6 @@ type StoredOnboardingSummary = {
 }
 
 const NOTIFICATION_STORAGE_KEY = 'metropick-onboarding-notifications'
-const ONBOARDING_COMPLETED_KEY = 'metropick-onboarding-completed'
 const ONBOARDING_SUMMARY_KEY = 'metropick-onboarding-summary'
 const STATION_STORAGE_KEY = 'metropick-onboarding-stations'
 const BUSINESS_TYPE_STORAGE_KEY = 'metropick-onboarding-business-types'
@@ -780,7 +780,7 @@ export function OnboardingNotificationsPage() {
     const completedAt = new Date().toISOString()
 
     writeStorage(NOTIFICATION_STORAGE_KEY, notifications)
-    writeStorage(ONBOARDING_COMPLETED_KEY, true)
+    markStoredAuthUserOnboardingCompleted()
     writeStorage(ONBOARDING_SUMMARY_KEY, {
       completedAt,
       stations,

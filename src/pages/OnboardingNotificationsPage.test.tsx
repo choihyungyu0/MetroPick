@@ -5,6 +5,7 @@ import type { ReactElement } from 'react'
 import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { saveAuthUser } from '@/shared/auth/authStorage'
 import { OnboardingNotificationsPage } from './OnboardingNotificationsPage'
 
 function renderWithQueryClient(ui: ReactElement) {
@@ -115,6 +116,34 @@ describe('OnboardingNotificationsPage', () => {
     expect(notifications.channelLabels).toEqual(['이메일', '웹 푸시'])
     expect(window.localStorage.getItem('metropick-onboarding-completed')).toBe('true')
     expect(window.localStorage.getItem('metropick-onboarding-summary')).toBeTruthy()
+  })
+
+  it('marks onboarding completion for the signed-in user', async () => {
+    const user = userEvent.setup()
+    saveAuthUser({
+      email: 'founder@metropick.ai',
+      id: 'auth-user-id',
+      name: '인증 사용자',
+      role: '예비 창업자',
+      source: 'supabase',
+    })
+    const router = createMemoryRouter(
+      [
+        { path: '/onboarding/notifications', element: <OnboardingNotificationsPage /> },
+        { path: '/dashboard', element: <h1>MetroPick AI 대시보드</h1> },
+      ],
+      { initialEntries: ['/onboarding/notifications'] },
+    )
+
+    renderWithQueryClient(<RouterProvider router={router} />)
+
+    await user.click(screen.getByRole('button', { name: /설정 완료하고 시작하기/ }))
+
+    expect(await screen.findByText('MetroPick AI 대시보드')).toBeInTheDocument()
+    expect(window.localStorage.getItem('metropick-onboarding-completed')).toBe('true')
+    expect(window.localStorage.getItem('metropick-onboarding-owner')).toBe(
+      'id:auth-user-id',
+    )
   })
 
   it('saves final notification and onboarding state to the backend when available', async () => {

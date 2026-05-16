@@ -7,10 +7,12 @@ import { LoginPage } from './LoginPage'
 
 const authMocks = vi.hoisted(() => ({
   signInWithEmail: vi.fn(),
+  signOut: vi.fn(),
 }))
 
 vi.mock('@/shared/auth/supabaseAuth', () => ({
   signInWithEmail: authMocks.signInWithEmail,
+  signOut: authMocks.signOut,
 }))
 
 function renderLoginPage() {
@@ -30,6 +32,8 @@ describe('LoginPage', () => {
       reason: 'missing_client',
       message: 'Supabase Auth is not configured.',
     })
+    authMocks.signOut.mockReset()
+    authMocks.signOut.mockResolvedValue({ ok: true })
   })
 
   it('renders the login page copy and preview image', () => {
@@ -154,6 +158,7 @@ describe('LoginPage', () => {
   it('routes returning users to the dashboard after login', async () => {
     const user = userEvent.setup()
     window.localStorage.setItem('metropick-onboarding-completed', 'true')
+    window.localStorage.setItem('metropick-onboarding-owner', 'id:auth-user-id')
     authMocks.signInWithEmail.mockResolvedValue({
       ok: true,
       session: null,
@@ -180,5 +185,39 @@ describe('LoginPage', () => {
 
     expect(await screen.findByText('대시보드')).toBeInTheDocument()
     expect(screen.queryByText('초기 설정')).not.toBeInTheDocument()
+  })
+
+  it('does not reuse onboarding completion from a different stored user', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem('metropick-onboarding-completed', 'true')
+    window.localStorage.setItem('metropick-onboarding-owner', 'id:previous-user-id')
+    authMocks.signInWithEmail.mockResolvedValue({
+      ok: true,
+      session: null,
+      user: {
+        id: 'new-auth-user-id',
+        email: 'new-founder@metropick.ai',
+        user_metadata: { name: '새 사용자', role: '예비 창업자' },
+      },
+    })
+    const router = createMemoryRouter(
+      [
+        { path: '/login', element: <LoginPage /> },
+        { path: '/onboarding', element: <h1>초기 설정</h1> },
+        { path: '/dashboard', element: <h1>대시보드</h1> },
+      ],
+      { initialEntries: ['/login'] },
+    )
+
+    render(<RouterProvider router={router} />)
+
+    await user.type(screen.getByLabelText('이메일'), 'new-founder@metropick.ai')
+    await user.type(screen.getByLabelText('비밀번호'), 'secure-password')
+    await user.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(await screen.findByText('초기 설정')).toBeInTheDocument()
+    expect(screen.queryByText('대시보드')).not.toBeInTheDocument()
+    expect(window.localStorage.getItem('metropick-onboarding-completed')).toBeNull()
+    expect(window.localStorage.getItem('metropick-onboarding-owner')).toBeNull()
   })
 })

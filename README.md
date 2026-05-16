@@ -44,6 +44,7 @@ Local storage keys:
 - `metropick-onboarding-business-types`
 - `metropick-onboarding-notifications`
 - `metropick-onboarding-completed`
+- `metropick-onboarding-owner`
 - `metropick-onboarding-summary`
 - `metropick-ai-prediction-results`
 - `metropick-saved-commercial-analysis-reports`
