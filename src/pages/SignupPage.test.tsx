@@ -6,11 +6,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SignupPage } from './SignupPage'
 
 const authMocks = vi.hoisted(() => ({
+  getCurrentSession: vi.fn(),
   signOut: vi.fn(),
   signUpWithEmail: vi.fn(),
 }))
 
 vi.mock('@/shared/auth/supabaseAuth', () => ({
+  getCurrentSession: authMocks.getCurrentSession,
   signOut: authMocks.signOut,
   signUpWithEmail: authMocks.signUpWithEmail,
 }))
@@ -32,6 +34,8 @@ describe('SignupPage', () => {
       reason: 'missing_client',
       message: 'Supabase Auth is not configured.',
     })
+    authMocks.getCurrentSession.mockReset()
+    authMocks.getCurrentSession.mockResolvedValue({ ok: true, session: null })
     authMocks.signOut.mockReset()
     authMocks.signOut.mockResolvedValue({ ok: true })
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
@@ -275,6 +279,74 @@ describe('SignupPage', () => {
 
     expect(await screen.findByText('대시보드')).toBeInTheDocument()
     expect(screen.queryByText('초기 설정')).not.toBeInTheDocument()
+  })
+
+  it('uses backend onboarding settings before local fallback after signup', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem('metropick-onboarding-completed', 'true')
+    window.localStorage.setItem('metropick-onboarding-owner', 'id:auth-user-id')
+    authMocks.signUpWithEmail.mockResolvedValue({
+      ok: true,
+      session: null,
+      user: {
+        id: 'auth-user-id',
+        email: 'new-founder@metropick.ai',
+        user_metadata: { name: '새 사용자', role: '예비 창업자' },
+      },
+    })
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url.includes('/api/profiles') && init?.method === 'POST') {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            profile: {
+              id: 'profile-id',
+              email: 'new-founder@metropick.ai',
+              name: '새 사용자',
+              role: '예비 창업자',
+              plan: 'free',
+              created_at: '2026-05-16T00:00:00+00:00',
+            },
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      if (url.includes('/api/onboarding-settings')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            settings: [],
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      throw new Error('offline')
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const router = createMemoryRouter(
+      [
+        { path: '/signup', element: <SignupPage /> },
+        { path: '/onboarding', element: <h1>초기 설정</h1> },
+        { path: '/dashboard', element: <h1>대시보드</h1> },
+      ],
+      { initialEntries: ['/signup'] },
+    )
+
+    render(<RouterProvider router={router} />)
+
+    await user.type(screen.getByLabelText('이름'), '새 사용자')
+    await user.type(screen.getByLabelText('이메일'), 'new-founder@metropick.ai')
+    await user.type(screen.getByLabelText('비밀번호'), 'secure-password')
+    await user.type(screen.getByLabelText('비밀번호 확인'), 'secure-password')
+    await user.click(screen.getByRole('button', { name: '회원가입 완료' }))
+
+    expect(await screen.findByText('초기 설정')).toBeInTheDocument()
+    expect(screen.queryByText('대시보드')).not.toBeInTheDocument()
+    expect(window.localStorage.getItem('metropick-onboarding-completed')).toBeNull()
   })
 
   it('does not reuse onboarding completion from a previous signup user', async () => {

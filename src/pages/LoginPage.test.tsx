@@ -6,11 +6,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { LoginPage } from './LoginPage'
 
 const authMocks = vi.hoisted(() => ({
+  getCurrentSession: vi.fn(),
   signInWithEmail: vi.fn(),
   signOut: vi.fn(),
 }))
 
 vi.mock('@/shared/auth/supabaseAuth', () => ({
+  getCurrentSession: authMocks.getCurrentSession,
   signInWithEmail: authMocks.signInWithEmail,
   signOut: authMocks.signOut,
 }))
@@ -32,8 +34,11 @@ describe('LoginPage', () => {
       reason: 'missing_client',
       message: 'Supabase Auth is not configured.',
     })
+    authMocks.getCurrentSession.mockReset()
+    authMocks.getCurrentSession.mockResolvedValue({ ok: true, session: null })
     authMocks.signOut.mockReset()
     authMocks.signOut.mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
   })
 
   it('renders the login page copy and preview image', () => {
@@ -185,6 +190,116 @@ describe('LoginPage', () => {
 
     expect(await screen.findByText('대시보드')).toBeInTheDocument()
     expect(screen.queryByText('초기 설정')).not.toBeInTheDocument()
+  })
+
+  it('uses backend onboarding settings before local fallback after login', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem('metropick-onboarding-completed', 'true')
+    window.localStorage.setItem('metropick-onboarding-owner', 'id:auth-user-id')
+    authMocks.signInWithEmail.mockResolvedValue({
+      ok: true,
+      session: null,
+      user: {
+        id: 'auth-user-id',
+        email: 'founder@metropick.ai',
+        user_metadata: { name: '인증 사용자', role: '예비 창업자' },
+      },
+    })
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+
+      if (url.includes('/api/onboarding-settings')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            settings: [],
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      throw new Error('offline')
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const router = createMemoryRouter(
+      [
+        { path: '/login', element: <LoginPage /> },
+        { path: '/onboarding', element: <h1>초기 설정</h1> },
+        { path: '/dashboard', element: <h1>대시보드</h1> },
+      ],
+      { initialEntries: ['/login'] },
+    )
+
+    render(<RouterProvider router={router} />)
+
+    await user.type(screen.getByLabelText('이메일'), 'founder@metropick.ai')
+    await user.type(screen.getByLabelText('비밀번호'), 'secure-password')
+    await user.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(await screen.findByText('초기 설정')).toBeInTheDocument()
+    expect(screen.queryByText('대시보드')).not.toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/onboarding-settings?user_id=auth-user-id',
+      expect.objectContaining({}),
+    )
+    expect(window.localStorage.getItem('metropick-onboarding-completed')).toBeNull()
+  })
+
+  it('routes users with backend onboarding settings to the dashboard', async () => {
+    const user = userEvent.setup()
+    authMocks.signInWithEmail.mockResolvedValue({
+      ok: true,
+      session: null,
+      user: {
+        id: 'auth-user-id',
+        email: 'founder@metropick.ai',
+        user_metadata: { name: '인증 사용자', role: '예비 창업자' },
+      },
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+
+        if (url.includes('/api/onboarding-settings')) {
+          return {
+            ok: true,
+            json: async () => ({
+              data_status: 'supabase_connected',
+              settings: [
+                {
+                  id: 'setting-id',
+                  selected_stations: ['상무역'],
+                  selected_business_types: ['카페/디저트'],
+                  created_at: '2026-05-16T00:00:00+00:00',
+                },
+              ],
+            }),
+          } satisfies Pick<Response, 'json' | 'ok'>
+        }
+
+        throw new Error('offline')
+      }),
+    )
+    const router = createMemoryRouter(
+      [
+        { path: '/login', element: <LoginPage /> },
+        { path: '/onboarding', element: <h1>초기 설정</h1> },
+        { path: '/dashboard', element: <h1>대시보드</h1> },
+      ],
+      { initialEntries: ['/login'] },
+    )
+
+    render(<RouterProvider router={router} />)
+
+    await user.type(screen.getByLabelText('이메일'), 'founder@metropick.ai')
+    await user.type(screen.getByLabelText('비밀번호'), 'secure-password')
+    await user.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(await screen.findByText('대시보드')).toBeInTheDocument()
+    expect(window.localStorage.getItem('metropick-onboarding-owner')).toBe(
+      'id:auth-user-id',
+    )
   })
 
   it('does not reuse onboarding completion from a different stored user', async () => {

@@ -13,9 +13,13 @@ import { AppFooter } from '@/shared/components/AppFooter'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { loginAssets } from '@/shared/assets/loginAssets'
+import { fetchOnboardingSettings } from '@/shared/api/backendOnboardingSettingsApi'
 import {
+  clearStoredOnboardingState,
   clearAuthUser,
+  getStoredAuthUser,
   hasStoredAuthUserCompletedOnboarding,
+  markStoredAuthUserOnboardingCompleted,
   saveAuthUser,
 } from '@/shared/auth/authStorage'
 import { signInWithEmail, signOut } from '@/shared/auth/supabaseAuth'
@@ -96,10 +100,31 @@ function LoginCard() {
   const navigate = useNavigate()
   const [message, setMessage] = useState('')
 
-  const getPostLoginPath = () =>
-    hasStoredAuthUserCompletedOnboarding()
-      ? '/dashboard'
-      : '/onboarding'
+  const getPostLoginPath = async () => {
+    const storedUser = getStoredAuthUser()
+
+    if (storedUser?.source !== 'supabase' || !storedUser.id) {
+      return hasStoredAuthUserCompletedOnboarding() ? '/dashboard' : '/onboarding'
+    }
+
+    try {
+      const response = await fetchOnboardingSettings()
+
+      if (response.data_status === 'supabase_connected') {
+        if (response.settings.length > 0) {
+          markStoredAuthUserOnboardingCompleted()
+          return '/dashboard'
+        }
+
+        clearStoredOnboardingState()
+        return '/onboarding'
+      }
+    } catch {
+      // Keep the local fallback path when the backend is unavailable.
+    }
+
+    return hasStoredAuthUserCompletedOnboarding() ? '/dashboard' : '/onboarding'
+  }
 
   const resetPreviousAuth = async () => {
     clearAuthUser()
@@ -119,7 +144,9 @@ function LoginCard() {
       source: 'demo',
     })
     setMessage('Supabase Auth 미설정 · 데모 로그인으로 진행합니다.')
-    window.setTimeout(() => navigate(getPostLoginPath()), 250)
+    window.setTimeout(() => {
+      void getPostLoginPath().then((path) => navigate(path))
+    }, 250)
   }
 
   const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -155,7 +182,7 @@ function LoginCard() {
             : '예비 창업자',
         source: 'supabase',
       })
-      navigate(getPostLoginPath())
+      navigate(await getPostLoginPath())
       return
     }
 

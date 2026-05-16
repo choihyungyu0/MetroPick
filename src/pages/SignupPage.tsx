@@ -15,9 +15,13 @@ import { AppFooter } from '@/shared/components/AppFooter'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { signupAssets } from '@/shared/assets/signupAssets'
 import { createProfile } from '@/shared/api/backendProfilesApi'
+import { fetchOnboardingSettings } from '@/shared/api/backendOnboardingSettingsApi'
 import {
+  clearStoredOnboardingState,
   clearAuthUser,
+  getStoredAuthUser,
   hasStoredAuthUserCompletedOnboarding,
+  markStoredAuthUserOnboardingCompleted,
   saveAuthUser,
 } from '@/shared/auth/authStorage'
 import { signOut, signUpWithEmail } from '@/shared/auth/supabaseAuth'
@@ -174,10 +178,31 @@ function SignupForm() {
   const navigate = useNavigate()
   const [message, setMessage] = useState('')
 
-  const getPostSignupPath = () =>
-    hasStoredAuthUserCompletedOnboarding()
-      ? '/dashboard'
-      : '/onboarding'
+  const getPostSignupPath = async () => {
+    const storedUser = getStoredAuthUser()
+
+    if (storedUser?.source !== 'supabase' || !storedUser.id) {
+      return hasStoredAuthUserCompletedOnboarding() ? '/dashboard' : '/onboarding'
+    }
+
+    try {
+      const response = await fetchOnboardingSettings()
+
+      if (response.data_status === 'supabase_connected') {
+        if (response.settings.length > 0) {
+          markStoredAuthUserOnboardingCompleted()
+          return '/dashboard'
+        }
+
+        clearStoredOnboardingState()
+        return '/onboarding'
+      }
+    } catch {
+      // Keep the local fallback path when the backend is unavailable.
+    }
+
+    return hasStoredAuthUserCompletedOnboarding() ? '/dashboard' : '/onboarding'
+  }
 
   const resetPreviousAuth = async () => {
     clearAuthUser()
@@ -197,7 +222,9 @@ function SignupForm() {
       source: 'demo',
     })
     setMessage('Supabase Auth 미설정 · 데모 회원가입으로 진행합니다.')
-    window.setTimeout(() => navigate(getPostSignupPath()), 250)
+    window.setTimeout(() => {
+      void getPostSignupPath().then((path) => navigate(path))
+    }, 250)
   }
 
   const handleSignupSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -267,7 +294,7 @@ function SignupForm() {
     }
 
     saveAuthUser(authUser)
-    navigate(getPostSignupPath())
+    navigate(await getPostSignupPath())
   }
 
   return (

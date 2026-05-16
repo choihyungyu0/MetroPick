@@ -117,6 +117,14 @@ export function hasStoredAuthUserCompletedOnboarding(): boolean {
   return user ? hasCompletedOnboardingForAuthUser(user) : false
 }
 
+export function clearStoredOnboardingState(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  clearLocalOnboardingState()
+}
+
 export function markStoredAuthUserOnboardingCompleted(): void {
   if (typeof window === 'undefined') {
     return
