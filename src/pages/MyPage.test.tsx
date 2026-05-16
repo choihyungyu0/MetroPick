@@ -85,6 +85,31 @@ function mockBackendApis({
       }
 
       if (url.includes('/api/saved-reports')) {
+        if (init?.method === 'PATCH') {
+          return {
+            ok: true,
+            json: async () => ({
+              data_status: reportStatus,
+              report: {
+                id: 'backend-commercial-report',
+                created_at: '2026-05-15T00:00:00+00:00',
+                ...reports[0],
+              },
+            }),
+          } satisfies Pick<Response, 'json' | 'ok'>
+        }
+
+        if (init?.method === 'DELETE') {
+          return {
+            ok: true,
+            json: async () => ({
+              data_status: reportStatus,
+              deleted: true,
+              id: url.split('/').at(-1) ?? 'backend-commercial-report',
+            }),
+          } satisfies Pick<Response, 'json' | 'ok'>
+        }
+
         return {
           ok: true,
           json: async () => ({
@@ -131,6 +156,7 @@ function mockBackendApis({
 
 describe('MyPage', () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     window.localStorage.clear()
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
   })
@@ -258,6 +284,270 @@ describe('MyPage', () => {
     expect(
       screen.getByText('백엔드 미연결 · 로컬 저장 리포트 표시'),
     ).toBeInTheDocument()
+  })
+
+  it('edits backend saved report metadata through the backend API', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url.includes('/api/saved-reports') && init?.method === 'PATCH') {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            report: {
+              id: 'backend-commercial-report',
+              report_type: 'commercial_analysis',
+              title: '충장로 카페 상권 리포트',
+              station_area: '충장로역',
+              business_type: '카페',
+              payload: {
+                description: '야간 유동인구가 강한 권역입니다.',
+                tags: ['야간상권', '카페'],
+              },
+              created_at: '2026-05-15T00:00:00+00:00',
+            },
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      if (url.includes('/api/saved-reports')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            reports: [
+              {
+                id: 'backend-commercial-report',
+                report_type: 'commercial_analysis',
+                title: '충장로 카페 상권 리포트',
+                station_area: '충장로역',
+                business_type: '카페',
+                payload: {},
+                created_at: '2026-05-15T00:00:00+00:00',
+              },
+            ],
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      return {
+        ok: true,
+        json: async () => ({ data_status: 'supabase_missing', settings: [] }),
+      } satisfies Pick<Response, 'json' | 'ok'>
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderMyPage()
+
+    expect(await screen.findByText('충장로 카페 상권 리포트')).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: '충장로 카페 상권 리포트 편집' }),
+    )
+    await user.type(screen.getByLabelText('설명'), '야간 유동인구가 강한 권역입니다.')
+    await user.type(screen.getByLabelText('태그'), '야간상권, 카페')
+    await user.click(screen.getByRole('button', { name: '수정 저장' }))
+
+    expect(
+      await screen.findByText('Supabase에 리포트 수정 내용을 저장했어요.'),
+    ).toBeInTheDocument()
+
+    const updateCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).includes('/api/saved-reports/backend-commercial-report') &&
+        init?.method === 'PATCH',
+    )
+    expect(updateCall).toBeDefined()
+    const body = JSON.parse(String(updateCall?.[1]?.body ?? '{}')) as {
+      payload?: { description?: string; tags?: string[] }
+    }
+    expect(body.payload).toMatchObject({
+      description: '야간 유동인구가 강한 권역입니다.',
+      tags: ['야간상권', '카페'],
+    })
+  })
+
+  it('edits fallback saved report metadata in localStorage', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem(
+      'metropick-saved-commercial-analysis-reports',
+      JSON.stringify([
+        {
+          id: 'local-commercial-report',
+          title: '로컬 저장 상권 리포트',
+          createdAt: '2026-05-15T09:30:00+09:00',
+          selectedStations: ['금남로4가역'],
+          selectedBusinessTypes: ['베이커리'],
+        },
+      ]),
+    )
+
+    renderMyPage()
+
+    await user.type(
+      screen.getByPlaceholderText('리포트 제목, 역세권, 업종 검색'),
+      '로컬',
+    )
+    await user.click(
+      screen.getByRole('button', { name: '로컬 저장 상권 리포트 편집' }),
+    )
+    await user.type(screen.getByLabelText('설명'), '로컬 수정 설명입니다.')
+    await user.type(screen.getByLabelText('태그'), '테스트태그, 로컬')
+    await user.click(screen.getByRole('button', { name: '수정 저장' }))
+
+    expect(
+      await screen.findByText('백엔드 미연결 · 로컬 리포트를 수정했어요.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('로컬 수정 설명입니다.')).toBeInTheDocument()
+    expect(screen.getByText('#테스트태그')).toBeInTheDocument()
+
+    const edits = JSON.parse(
+      window.localStorage.getItem('metropick-saved-report-edits') ?? '{}',
+    ) as Record<string, { description?: string; tags?: string[] }>
+    expect(edits['local-commercial-report']).toMatchObject({
+      description: '로컬 수정 설명입니다.',
+      tags: ['테스트태그', '로컬'],
+    })
+  })
+
+  it('deletes backend saved reports through the backend API', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url.includes('/api/saved-reports') && init?.method === 'DELETE') {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            deleted: true,
+            id: 'backend-commercial-report',
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      if (url.includes('/api/saved-reports')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data_status: 'supabase_connected',
+            reports: [
+              {
+                id: 'backend-commercial-report',
+                report_type: 'commercial_analysis',
+                title: '충장로 카페 상권 리포트',
+                station_area: '충장로역',
+                business_type: '카페',
+                payload: {},
+                created_at: '2026-05-15T00:00:00+00:00',
+              },
+            ],
+          }),
+        } satisfies Pick<Response, 'json' | 'ok'>
+      }
+
+      return {
+        ok: true,
+        json: async () => ({ data_status: 'supabase_missing', settings: [] }),
+      } satisfies Pick<Response, 'json' | 'ok'>
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderMyPage()
+
+    expect(await screen.findByText('충장로 카페 상권 리포트')).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: '충장로 카페 상권 리포트 삭제' }),
+    )
+
+    expect(
+      await screen.findByText('Supabase에서 리포트를 삭제했어요.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('충장로 카페 상권 리포트')).not.toBeInTheDocument()
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, init]) =>
+          String(input).includes('/api/saved-reports/backend-commercial-report') &&
+          init?.method === 'DELETE',
+      ),
+    ).toBe(true)
+  })
+
+  it('deletes fallback saved reports from localStorage', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    window.localStorage.setItem(
+      'metropick-saved-commercial-analysis-reports',
+      JSON.stringify([
+        {
+          id: 'local-commercial-report',
+          title: '로컬 저장 상권 리포트',
+          createdAt: '2026-05-15T09:30:00+09:00',
+          selectedStations: ['금남로4가역'],
+          selectedBusinessTypes: ['베이커리'],
+        },
+      ]),
+    )
+
+    renderMyPage()
+
+    await user.type(
+      screen.getByPlaceholderText('리포트 제목, 역세권, 업종 검색'),
+      '로컬',
+    )
+    await user.click(
+      screen.getByRole('button', { name: '로컬 저장 상권 리포트 삭제' }),
+    )
+
+    expect(
+      await screen.findByText('백엔드 미연결 · 로컬 리포트를 삭제했어요.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
+
+    const reports = JSON.parse(
+      window.localStorage.getItem('metropick-saved-commercial-analysis-reports') ??
+        '[]',
+    ) as Array<{ id?: string }>
+    expect(reports).toHaveLength(0)
+  })
+
+  it('searches edited report descriptions and tags', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem(
+      'metropick-saved-commercial-analysis-reports',
+      JSON.stringify([
+        {
+          id: 'local-commercial-report',
+          title: '로컬 저장 상권 리포트',
+          createdAt: '2026-05-15T09:30:00+09:00',
+          selectedStations: ['금남로4가역'],
+          selectedBusinessTypes: ['베이커리'],
+        },
+      ]),
+    )
+
+    renderMyPage()
+
+    await user.type(
+      screen.getByPlaceholderText('리포트 제목, 역세권, 업종 검색'),
+      '로컬',
+    )
+    await user.click(
+      screen.getByRole('button', { name: '로컬 저장 상권 리포트 편집' }),
+    )
+    await user.type(screen.getByLabelText('설명'), '강변 수요가 늘고 있습니다.')
+    await user.type(screen.getByLabelText('태그'), '강변특화')
+    await user.click(screen.getByRole('button', { name: '수정 저장' }))
+    await user.clear(screen.getByPlaceholderText('리포트 제목, 역세권, 업종 검색'))
+    await user.type(
+      screen.getByPlaceholderText('리포트 제목, 역세권, 업종 검색'),
+      '강변특화',
+    )
+
+    expect(screen.getByText('로컬 저장 상권 리포트')).toBeInTheDocument()
+    expect(screen.getByText('#강변특화')).toBeInTheDocument()
   })
 
   it('shows backend prediction results when Supabase is connected', async () => {

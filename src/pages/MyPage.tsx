@@ -28,7 +28,10 @@ import type {
 } from '@/shared/api/backendNotificationSettingsApi'
 import type { BackendOnboardingSetting } from '@/shared/api/backendOnboardingSettingsApi'
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
-import type { BackendSavedReport } from '@/shared/api/backendSavedReportsApi'
+import type {
+  BackendSavedReport,
+  BackendSavedReportPayload,
+} from '@/shared/api/backendSavedReportsApi'
 import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
 import {
   useBackendNotificationSettings,
@@ -41,7 +44,11 @@ import {
   useBackendSavedLocations,
   useDeleteBackendSavedLocation,
 } from '@/shared/api/hooks/useBackendSavedLocations'
-import { useBackendSavedReports } from '@/shared/api/hooks/useBackendSavedReports'
+import {
+  useBackendSavedReports,
+  useDeleteBackendSavedReport,
+  useUpdateBackendSavedReport,
+} from '@/shared/api/hooks/useBackendSavedReports'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
 import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
@@ -57,13 +64,23 @@ type ReportCategory = '상권 분석' | 'AI 예측' | '입지 추천'
 type SavedReport = {
   businessType: string
   category: ReportCategory
+  description?: string
   id: string
+  payload?: BackendSavedReportPayload
   predictedScore?: number
+  reportType?: string
   savedAt: string
+  source?: 'backend-saved-report' | 'local-report'
   summary?: string
   stationArea: string
+  tags?: string[]
   thumbnailSrc: string
   title: string
+}
+
+type SavedReportEditInput = {
+  description: string
+  tags: string[]
 }
 
 type InterestLocation = {
@@ -160,11 +177,13 @@ type StoredRecommendation = {
 type StoredCommercialReport = {
   businessType?: string
   createdAt?: string
+  description?: string
   id?: string
   savedAt?: string
   selectedBusinessTypes?: string[]
   selectedStations?: string[]
   stationArea?: string
+  tags?: string[]
   title?: string
 }
 
@@ -205,6 +224,9 @@ const categoryFilters: Array<{
 ]
 
 const reportsPerPage = 4
+const SAVED_REPORT_EDITS_KEY = 'metropick-saved-report-edits'
+const DELETED_SAVED_REPORT_IDS_KEY = 'metropick-deleted-saved-report-ids'
+const COMMERCIAL_REPORTS_STORAGE_KEY = 'metropick-saved-commercial-analysis-reports'
 
 const defaultReports: SavedReport[] = [
   {
@@ -378,6 +400,32 @@ function readStringArray(value: unknown): string[] {
     : []
 }
 
+function readTags(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return readStringArray(value).map((item) => item.trim())
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+
+  return []
+}
+
+function parseTagsInput(value: string): string[] {
+  return Array.from(
+    new Set(
+      value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  )
+}
+
 function buildProfile(): UserProfile {
   const user = safeParseStorage<StoredUser>('metropick-user')
   const businessSetup = safeParseStorage<StoredBusinessSetup>(
@@ -482,7 +530,7 @@ function normalizeInterestLocations(): InterestLocation[] {
 
 function normalizeCommercialReports(): SavedReport[] {
   const stored = safeParseStorage<StoredCommercialReport[]>(
-    'metropick-saved-commercial-analysis-reports',
+    COMMERCIAL_REPORTS_STORAGE_KEY,
   )
 
   return (stored ?? []).flatMap((item, index): SavedReport[] => {
@@ -501,8 +549,11 @@ function normalizeCommercialReports(): SavedReport[] {
         title: item.title ?? `${stationArea} 상권 분석 리포트`,
         category: '상권 분석',
         businessType,
+        description: readString(item.description),
         stationArea,
         savedAt: item.savedAt ?? item.createdAt ?? new Date().toISOString(),
+        source: 'local-report',
+        tags: readTags(item.tags),
         thumbnailSrc: myPageAssets.commercialMap,
       },
     ]
@@ -621,7 +672,122 @@ function mergeSavedReports(reports: SavedReport[]): SavedReport[] {
     }
   })
 
-  return Array.from(byKey.values())
+  return applySavedReportLocalState(Array.from(byKey.values()))
+}
+
+function getSavedReportEdits(): Record<string, SavedReportEditInput> {
+  const stored = safeParseStorage<Record<string, unknown>>(SAVED_REPORT_EDITS_KEY)
+
+  if (!isRecord(stored)) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(stored).flatMap(([id, value]) => {
+      if (!isRecord(value)) {
+        return []
+      }
+
+      return [
+        [
+          id,
+          {
+            description: readString(value.description) ?? '',
+            tags: readTags(value.tags),
+          },
+        ],
+      ]
+    }),
+  )
+}
+
+function writeSavedReportEdits(edits: Record<string, SavedReportEditInput>): void {
+  writeStorage(SAVED_REPORT_EDITS_KEY, edits)
+}
+
+function getDeletedSavedReportIds(): string[] {
+  return readStringArray(safeParseStorage<unknown>(DELETED_SAVED_REPORT_IDS_KEY))
+}
+
+function writeDeletedSavedReportIds(ids: string[]): void {
+  writeStorage(DELETED_SAVED_REPORT_IDS_KEY, Array.from(new Set(ids)))
+}
+
+function applySavedReportLocalState(reports: SavedReport[]): SavedReport[] {
+  const edits = getSavedReportEdits()
+  const deletedIds = getDeletedSavedReportIds()
+
+  return reports
+    .filter((report) => !deletedIds.includes(report.id))
+    .map((report) => {
+      const edit = edits[report.id]
+      if (!edit) {
+        return report
+      }
+
+      return {
+        ...report,
+        description: edit.description,
+        tags: edit.tags,
+      }
+    })
+}
+
+function updateSavedReportLocalEdit(
+  report: SavedReport,
+  input: SavedReportEditInput,
+): void {
+  const edits = getSavedReportEdits()
+  writeSavedReportEdits({
+    ...edits,
+    [report.id]: input,
+  })
+
+  const commercialReports = safeParseStorage<StoredCommercialReport[]>(
+    COMMERCIAL_REPORTS_STORAGE_KEY,
+  )
+  if (!commercialReports?.length) {
+    return
+  }
+
+  const nextReports = commercialReports.map((item, index) => {
+    const id = item.id ?? `stored-commercial-${index}`
+    if (id !== report.id) {
+      return item
+    }
+
+    return {
+      ...item,
+      description: input.description,
+      tags: input.tags,
+    }
+  })
+  writeStorage(COMMERCIAL_REPORTS_STORAGE_KEY, nextReports)
+}
+
+function removeSavedReportLocalEdit(report: SavedReport): void {
+  const edits = getSavedReportEdits()
+  delete edits[report.id]
+  writeSavedReportEdits(edits)
+}
+
+function deleteSavedReportFromLocalStorage(report: SavedReport): void {
+  removeSavedReportLocalEdit(report)
+
+  const commercialReports = safeParseStorage<StoredCommercialReport[]>(
+    COMMERCIAL_REPORTS_STORAGE_KEY,
+  )
+  const nextCommercialReports = commercialReports?.filter((item, index) => {
+    const id = item.id ?? `stored-commercial-${index}`
+    return id !== report.id
+  })
+
+  if (nextCommercialReports && nextCommercialReports.length !== commercialReports?.length) {
+    writeStorage(COMMERCIAL_REPORTS_STORAGE_KEY, nextCommercialReports)
+    return
+  }
+
+  writeDeletedSavedReportIds([...getDeletedSavedReportIds(), report.id])
 }
 
 function readPayloadString(
@@ -699,6 +865,7 @@ function normalizeBackendSavedReports(
     const reportType =
       readString(report.report_type) ??
       readPayloadString(payload, ['reportType', 'report_type', 'type', 'category'])
+    const tags = readTags(payload?.tags)
     const category = resolveBackendReportCategory(reportType, title)
     const createdAt =
       readString(report.created_at) ??
@@ -713,8 +880,13 @@ function normalizeBackendSavedReports(
       title,
       category,
       businessType,
+      description: readPayloadString(payload, ['description']),
+      payload,
+      reportType,
       stationArea,
       savedAt: createdAt,
+      source: 'backend-saved-report',
+      tags,
       thumbnailSrc: getReportThumbnailSrc(category),
     }
   })
@@ -1244,16 +1416,38 @@ function ReportThumbnail({ report }: { report: SavedReport }) {
 }
 
 function ReportItem({
+  onDelete,
+  onEdit,
   onOpen,
   onShare,
   report,
 }: {
+  onDelete: (report: SavedReport) => void
+  onEdit: (report: SavedReport, input: SavedReportEditInput) => Promise<void>
   onOpen: (report: SavedReport) => void
   onShare: (report: SavedReport) => void
   report: SavedReport
 }) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [descriptionDraft, setDescriptionDraft] = useState(report.description ?? '')
+  const [tagsDraft, setTagsDraft] = useState(report.tags?.join(', ') ?? '')
+
+  const handleEditOpen = () => {
+    setDescriptionDraft(report.description ?? '')
+    setTagsDraft(report.tags?.join(', ') ?? '')
+    setIsEditing(true)
+  }
+
+  const handleEditSave = async () => {
+    await onEdit(report, {
+      description: descriptionDraft.trim(),
+      tags: parseTagsInput(tagsDraft),
+    })
+    setIsEditing(false)
+  }
+
   return (
-    <article className="grid min-h-[108px] grid-cols-[120px_minmax(165px,1fr)_88px_minmax(236px,auto)] items-center gap-4 rounded-[13px] border border-blue-100 bg-white px-3.5 py-2.5 shadow-[0_8px_22px_rgba(20,55,90,0.04)] max-[1400px]:grid-cols-[130px_minmax(0,1fr)] max-lg:grid-cols-1">
+    <article className="grid min-h-[108px] grid-cols-[120px_minmax(165px,1fr)_88px_minmax(300px,auto)] items-center gap-4 rounded-[13px] border border-blue-100 bg-white px-3.5 py-2.5 shadow-[0_8px_22px_rgba(20,55,90,0.04)] max-[1400px]:grid-cols-[130px_minmax(0,1fr)] max-lg:grid-cols-1">
       <ReportThumbnail report={report} />
 
       <div className="min-w-0">
@@ -1279,6 +1473,23 @@ function ReportItem({
             {report.predictedScore !== undefined && report.summary ? ' · ' : null}
             {report.summary}
           </p>
+        ) : null}
+        {report.description ? (
+          <p className="m-0 mt-1 text-sm leading-5 font-bold text-slate-600">
+            {report.description}
+          </p>
+        ) : null}
+        {report.tags?.length ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {report.tags.map((tag) => (
+              <span
+                className="rounded-md bg-slate-100 px-2 py-1 text-xs font-black text-slate-600"
+                key={tag}
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
         ) : null}
       </div>
 
@@ -1314,13 +1525,70 @@ function ReportItem({
         >
           <MoreVertical aria-hidden="true" size={20} />
         </button>
+        <button
+          aria-label={`${report.title} 편집`}
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-800 max-sm:flex-1 max-sm:justify-center"
+          onClick={handleEditOpen}
+          type="button"
+        >
+          편집
+        </button>
+        <button
+          aria-label={`${report.title} 삭제`}
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-100 bg-white px-3 text-sm font-black text-rose-600 max-sm:flex-1 max-sm:justify-center"
+          onClick={() => onDelete(report)}
+          type="button"
+        >
+          <Trash2 aria-hidden="true" size={16} />
+          삭제
+        </button>
       </div>
+
+      {isEditing ? (
+        <div className="col-span-4 grid gap-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4 max-[1400px]:col-span-2 max-lg:col-auto">
+          <label className="grid gap-1 text-sm font-black text-slate-700">
+            설명
+            <textarea
+              className="min-h-20 resize-y rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-blue-300"
+              onChange={(event) => setDescriptionDraft(event.target.value)}
+              value={descriptionDraft}
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-black text-slate-700">
+            태그
+            <input
+              className="h-10 rounded-lg border border-blue-100 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-300"
+              onChange={(event) => setTagsDraft(event.target.value)}
+              placeholder="쉼표로 구분해 입력"
+              value={tagsDraft}
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="h-10 rounded-lg bg-blue-600 px-4 text-sm font-black text-white"
+              onClick={handleEditSave}
+              type="button"
+            >
+              수정 저장
+            </button>
+            <button
+              className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700"
+              onClick={() => setIsEditing(false)}
+              type="button"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      ) : null}
     </article>
   )
 }
 
 function ReportsTab({
   activeFilter,
+  onDelete,
+  onEdit,
   onFilterChange,
   onOpen,
   onSearchChange,
@@ -1333,6 +1601,8 @@ function ReportsTab({
   sortOrder,
 }: {
   activeFilter: CategoryFilter
+  onDelete: (report: SavedReport) => void
+  onEdit: (report: SavedReport, input: SavedReportEditInput) => Promise<void>
   onFilterChange: (filter: CategoryFilter) => void
   onOpen: (report: SavedReport) => void
   onSearchChange: (value: string) => void
@@ -1410,6 +1680,8 @@ function ReportsTab({
           visibleReports.map((report) => (
             <ReportItem
               key={report.id}
+              onDelete={onDelete}
+              onEdit={onEdit}
               onOpen={onOpen}
               onShare={onShare}
               report={report}
@@ -1692,6 +1964,8 @@ function ReportPanel({
   notificationSourceStatus,
   notificationSettings,
   onDeleteInterest,
+  onDeleteReport,
+  onEditReport,
   onFilterChange,
   onOpenReport,
   onSaveNotifications,
@@ -1715,6 +1989,8 @@ function ReportPanel({
   notificationSourceStatus: NotificationSettingsStatus
   notificationSettings: NotificationSettings
   onDeleteInterest: (location: InterestLocation) => void
+  onDeleteReport: (report: SavedReport) => void
+  onEditReport: (report: SavedReport, input: SavedReportEditInput) => Promise<void>
   onFilterChange: (filter: CategoryFilter) => void
   onOpenReport: (report: SavedReport) => void
   onSaveNotifications: () => void
@@ -1757,6 +2033,8 @@ function ReportPanel({
       {activeTab === 'reports' ? (
         <ReportsTab
           activeFilter={activeFilter}
+          onDelete={onDeleteReport}
+          onEdit={onEditReport}
           onFilterChange={onFilterChange}
           onOpen={onOpenReport}
           onSearchChange={onSearchChange}
@@ -1823,6 +2101,8 @@ export function MyPage() {
   )
   const [hiddenBackendInterestLocationIds, setHiddenBackendInterestLocationIds] =
     useState<string[]>([])
+  const [hiddenBackendReportIds, setHiddenBackendReportIds] = useState<string[]>([])
+  const [, setReportStorageRevision] = useState(0)
   const requestedTab = searchParams.get('tab')
   const activeTab: MyPageTab = isMyPageTab(requestedTab) ? requestedTab : 'reports'
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>('all')
@@ -1902,19 +2182,23 @@ export function MyPage() {
     : normalizePredictionReports()
   const predictionResultSourceStatus: BackendReportStatus =
     isBackendPredictionResultsConnected ? 'connected' : 'fallback'
-  const localSavedReports = useMemo(
-    () => buildSavedReports(visibleInterestLocations, predictionReportsForMyPage),
-    [predictionReportsForMyPage, visibleInterestLocations],
+  const localSavedReports = buildSavedReports(
+    visibleInterestLocations,
+    predictionReportsForMyPage,
   )
   const backendSavedReportsQuery = useBackendSavedReports()
+  const updateBackendSavedReportMutation = useUpdateBackendSavedReport()
+  const deleteBackendSavedReportMutation = useDeleteBackendSavedReport()
   const isBackendSavedReportsConnected =
     backendSavedReportsQuery.data?.data_status === 'supabase_connected'
   const backendSavedReports = useMemo(() => {
     const response = backendSavedReportsQuery.data
     return response?.data_status === 'supabase_connected'
-      ? normalizeBackendSavedReports(response.reports)
+      ? normalizeBackendSavedReports(response.reports).filter(
+          (report) => !hiddenBackendReportIds.includes(report.id),
+        )
       : []
-  }, [backendSavedReportsQuery.data])
+  }, [backendSavedReportsQuery.data, hiddenBackendReportIds])
   const savedReports = isBackendSavedReportsConnected
     ? mergeSavedReports([...backendSavedReports, ...predictionReportsForMyPage])
     : localSavedReports
@@ -1947,6 +2231,8 @@ export function MyPage() {
           report.stationArea,
           report.businessType,
           report.category,
+          report.description ?? '',
+          ...(report.tags ?? []),
         ].some((field) => field.toLocaleLowerCase('ko-KR').includes(query))
       })
       .sort((a, b) => {
@@ -1973,6 +2259,77 @@ export function MyPage() {
     }
 
     showMessage('리포트 링크가 복사되었습니다.')
+  }
+
+  const handleEditReport = async (
+    report: SavedReport,
+    input: SavedReportEditInput,
+  ) => {
+    updateSavedReportLocalEdit(report, input)
+    setReportStorageRevision((current) => current + 1)
+
+    if (isBackendSavedReportsConnected && report.source === 'backend-saved-report') {
+      try {
+        const nextPayload: BackendSavedReportPayload = {
+          ...(report.payload ?? {}),
+          description: input.description,
+          tags: input.tags,
+        }
+
+        const response = await updateBackendSavedReportMutation.mutateAsync({
+          id: report.id,
+          input: {
+            business_type: report.businessType,
+            payload: nextPayload,
+            station_area: report.stationArea,
+            title: report.title,
+          },
+        })
+
+        showMessage(
+          response.data_status === 'supabase_connected'
+            ? 'Supabase에 리포트 수정 내용을 저장했어요.'
+            : '백엔드 미연결 · 로컬 리포트를 수정했어요.',
+        )
+      } catch {
+        showMessage('백엔드 미연결 · 로컬 리포트를 수정했어요.')
+      }
+      return
+    }
+
+    showMessage('백엔드 미연결 · 로컬 리포트를 수정했어요.')
+  }
+
+  const handleDeleteReport = async (report: SavedReport) => {
+    if (!window.confirm('이 리포트를 삭제할까요?')) {
+      return
+    }
+
+    if (isBackendSavedReportsConnected && report.source === 'backend-saved-report') {
+      const previousHiddenReportIds = hiddenBackendReportIds
+      setHiddenBackendReportIds((current) => [...current, report.id])
+
+      try {
+        const response = await deleteBackendSavedReportMutation.mutateAsync(report.id)
+        removeSavedReportLocalEdit(report)
+        setReportStorageRevision((current) => current + 1)
+        showMessage(
+          response.data_status === 'supabase_connected'
+            ? 'Supabase에서 리포트를 삭제했어요.'
+            : '백엔드 미연결 · 로컬 리포트를 삭제했어요.',
+        )
+      } catch {
+        setHiddenBackendReportIds(previousHiddenReportIds)
+        deleteSavedReportFromLocalStorage(report)
+        setReportStorageRevision((current) => current + 1)
+        showMessage('백엔드 미연결 · 로컬 리포트를 삭제했어요.')
+      }
+      return
+    }
+
+    deleteSavedReportFromLocalStorage(report)
+    setReportStorageRevision((current) => current + 1)
+    showMessage('백엔드 미연결 · 로컬 리포트를 삭제했어요.')
   }
 
   const handleDeleteInterest = async (location: InterestLocation) => {
@@ -2077,6 +2434,8 @@ export function MyPage() {
               notificationSourceStatus={notificationSourceStatus}
               notificationSettings={notificationSettings}
               onDeleteInterest={handleDeleteInterest}
+              onDeleteReport={handleDeleteReport}
+              onEditReport={handleEditReport}
               onFilterChange={setActiveFilter}
               onOpenReport={handleOpenReport}
               onSaveNotifications={handleSaveNotifications}
