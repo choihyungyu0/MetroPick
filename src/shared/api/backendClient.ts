@@ -1,3 +1,5 @@
+import { getCurrentSession } from '@/shared/auth/supabaseAuth'
+
 const LOCAL_API_BASE_URL = 'http://127.0.0.1:8000'
 
 export function getBackendApiBaseUrl(): string | null {
@@ -17,6 +19,24 @@ function buildJsonHeaders(headers?: HeadersInit): Headers {
   return nextHeaders
 }
 
+async function buildBackendHeaders(headers?: HeadersInit): Promise<Headers> {
+  const nextHeaders = buildJsonHeaders(headers)
+  if (nextHeaders.has('Authorization')) {
+    return nextHeaders
+  }
+
+  try {
+    const sessionResult = await getCurrentSession()
+    if (sessionResult.ok && sessionResult.session?.access_token) {
+      nextHeaders.set('Authorization', `Bearer ${sessionResult.session.access_token}`)
+    }
+  } catch {
+    return nextHeaders
+  }
+
+  return nextHeaders
+}
+
 export async function fetchBackendJson<T>(
   path: string,
   options?: RequestInit,
@@ -29,7 +49,7 @@ export async function fetchBackendJson<T>(
   const requestPath = path.startsWith('/') ? path : `/${path}`
   const response = await fetch(`${apiBaseUrl}${requestPath}`, {
     ...options,
-    headers: buildJsonHeaders(options?.headers),
+    headers: await buildBackendHeaders(options?.headers),
   })
 
   if (!response.ok) {

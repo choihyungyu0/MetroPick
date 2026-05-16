@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from backend.app.dependencies.auth import AuthUser, get_optional_current_user, resolve_user_id
 from backend.app.schemas import NotificationSettingsCreate, NotificationSettingsUpdate
 from backend.app.services.supabase_service import get_supabase_client
 
@@ -54,7 +55,10 @@ def _first_notification_settings(data: object | None) -> dict[str, object] | Non
 
 
 @router.get("")
-def list_notification_settings(user_id: str | None = None) -> dict[str, object]:
+def list_notification_settings(
+    user_id: str | None = None,
+    auth_user: AuthUser | None = Depends(get_optional_current_user),
+) -> dict[str, object]:
     client = get_supabase_client()
     if client is None:
         return {
@@ -64,8 +68,9 @@ def list_notification_settings(user_id: str | None = None) -> dict[str, object]:
 
     try:
         query = client.table("notification_settings").select("*")
-        if user_id:
-            query = query.eq("user_id", user_id)
+        resolved_user_id = resolve_user_id(auth_user, user_id)
+        if resolved_user_id:
+            query = query.eq("user_id", resolved_user_id)
         response = query.order("created_at", desc=True).limit(50).execute()
     except Exception as error:
         raise _supabase_error(error) from error
@@ -79,12 +84,14 @@ def list_notification_settings(user_id: str | None = None) -> dict[str, object]:
 @router.post("")
 def create_notification_settings(
     payload: NotificationSettingsCreate,
+    auth_user: AuthUser | None = Depends(get_optional_current_user),
 ) -> dict[str, object]:
     client = get_supabase_client()
     if client is None:
         raise _missing_supabase_error()
 
     settings_payload = payload.model_dump()
+    settings_payload["user_id"] = resolve_user_id(auth_user, payload.user_id)
     try:
         response = client.table("notification_settings").insert(settings_payload).execute()
     except Exception as error:

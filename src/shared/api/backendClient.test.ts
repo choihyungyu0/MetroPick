@@ -1,14 +1,51 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+const authMocks = vi.hoisted(() => ({
+  getCurrentSession: vi.fn(),
+}))
+
+vi.mock('@/shared/auth/supabaseAuth', () => ({
+  getCurrentSession: authMocks.getCurrentSession,
+}))
+
 import { fetchBackendJson, getBackendApiBaseUrl } from '@/shared/api/backendClient'
 
 describe('fetchBackendJson', () => {
   afterEach(() => {
+    authMocks.getCurrentSession.mockReset()
     vi.unstubAllEnvs()
     vi.unstubAllGlobals()
   })
 
+  it('adds a Supabase access token when a session is available', async () => {
+    authMocks.getCurrentSession.mockResolvedValue({
+      ok: true,
+      session: { access_token: 'session-access-token' },
+    })
+    vi.stubEnv('VITE_PUBLIC_API_BASE_URL', 'https://api.example.com')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        json: async () => ({ status: 'ok' }),
+        ok: true,
+      } satisfies Pick<Response, 'json' | 'ok'>),
+    )
+
+    await expect(fetchBackendJson('/health')).resolves.toEqual({ status: 'ok' })
+
+    const headers = vi.mocked(fetch).mock.calls[0]?.[1]?.headers
+    expect(headers).toBeInstanceOf(Headers)
+    expect((headers as Headers).get('Authorization')).toBe(
+      'Bearer session-access-token',
+    )
+  })
+
   it('uses the configured backend base URL without exposing localhost in deployed builds', async () => {
+    authMocks.getCurrentSession.mockResolvedValue({
+      ok: false,
+      reason: 'missing_client',
+      message: 'Supabase Auth is not configured.',
+    })
     vi.stubEnv('VITE_PUBLIC_API_BASE_URL', 'https://api.example.com/')
     vi.stubGlobal(
       'fetch',
