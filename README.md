@@ -124,6 +124,8 @@ npm run preview
 - [Demo QA checklist](docs/demo-qa-checklist.md)
 - [Local validation commands](docs/local-validation-commands.md)
 - [Data integration plan](docs/data-integration-plan.md)
+- [Supabase RLS policy plan](docs/supabase-rls-policy-plan.md)
+- [Supabase RLS SQL draft](docs/supabase-rls-policies.sql)
 
 ## Frontend and FastAPI local integration
 
