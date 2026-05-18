@@ -305,6 +305,12 @@ describe('MyPage', () => {
 
     expect(await screen.findByText('충장로 카페 상권 리포트')).toBeInTheDocument()
     expect(screen.getByText('Supabase 리포트 연결됨')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /전체\s*1/ })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /상권 분석\s*1/ }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /AI 예측\s*0/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /입지 추천\s*0/ })).toBeInTheDocument()
     expect(screen.getByText('충장로역')).toBeInTheDocument()
     expect(screen.getByText('카페')).toBeInTheDocument()
 
@@ -370,6 +376,15 @@ describe('MyPage', () => {
 
     expect(await screen.findByText('Supabase 리포트 연결됨')).toBeInTheDocument()
     expect(screen.getByText('검색 조건에 맞는 리포트가 없습니다.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /전체\s*0/ })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /상권 분석\s*0/ }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /AI 예측\s*0/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /입지 추천\s*0/ })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', { name: '리포트 페이지' }),
+    ).not.toBeInTheDocument()
     expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
     expect(screen.queryByText('상무역 상권 분석 리포트')).not.toBeInTheDocument()
   })

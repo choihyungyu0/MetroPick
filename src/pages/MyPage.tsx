@@ -112,6 +112,8 @@ type CategoryFilter = 'all' | 'commercial-analysis' | 'ai-prediction' | 'recomme
 
 type SortOrder = 'latest' | 'oldest'
 
+type ReportFilterCounts = Record<CategoryFilter, number>
+
 type BackendReportStatus = 'connected' | 'fallback'
 
 type NotificationSettingsStatus = BackendReportStatus
@@ -215,14 +217,13 @@ function isMyPageTab(value: string | null): value is MyPageTab {
 }
 
 const categoryFilters: Array<{
-  count: number
   id: CategoryFilter
   label: string
 }> = [
-  { id: 'all', label: '전체', count: 12 },
-  { id: 'commercial-analysis', label: '상권 분석', count: 6 },
-  { id: 'ai-prediction', label: 'AI 예측', count: 4 },
-  { id: 'recommendation', label: '입지 추천', count: 2 },
+  { id: 'all', label: '전체' },
+  { id: 'commercial-analysis', label: '상권 분석' },
+  { id: 'ai-prediction', label: 'AI 예측' },
+  { id: 'recommendation', label: '입지 추천' },
 ]
 
 const reportsPerPage = 4
@@ -382,6 +383,21 @@ const categoryByFilter: Record<
   'commercial-analysis': '상권 분석',
   'ai-prediction': 'AI 예측',
   recommendation: '입지 추천',
+}
+
+function countReportsByFilter(reports: SavedReport[]): ReportFilterCounts {
+  return {
+    all: reports.length,
+    'commercial-analysis': reports.filter(
+      (report) => report.category === categoryByFilter['commercial-analysis'],
+    ).length,
+    'ai-prediction': reports.filter(
+      (report) => report.category === categoryByFilter['ai-prediction'],
+    ).length,
+    recommendation: reports.filter(
+      (report) => report.category === categoryByFilter.recommendation,
+    ).length,
+  }
 }
 
 const badgeClasses: Record<ReportCategory, string> = {
@@ -1615,6 +1631,7 @@ function ReportsTab({
   onShare,
   onSortChange,
   predictionResultSourceStatus,
+  reportFilterCounts,
   reportSourceStatus,
   reports,
   searchQuery,
@@ -1629,12 +1646,19 @@ function ReportsTab({
   onShare: (report: SavedReport) => void
   onSortChange: (value: SortOrder) => void
   predictionResultSourceStatus: BackendReportStatus
+  reportFilterCounts: ReportFilterCounts
   reportSourceStatus: BackendReportStatus
   reports: SavedReport[]
   searchQuery: string
   sortOrder: SortOrder
 }) {
-  const visibleReports = reports.slice(0, reportsPerPage)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageCount = Math.ceil(reports.length / reportsPerPage)
+  const visiblePage = pageCount > 0 ? Math.min(currentPage, pageCount) : 1
+  const startIndex = (visiblePage - 1) * reportsPerPage
+  const visibleReports = reports.slice(startIndex, startIndex + reportsPerPage)
+  const hasPreviousPage = visiblePage > 1
+  const hasNextPage = visiblePage < pageCount
 
   return (
     <>
@@ -1653,7 +1677,9 @@ function ReportsTab({
               type="button"
             >
               {filter.label}
-              <span className="ml-2 text-blue-600">{filter.count}</span>
+              <span className="ml-2 text-blue-600">
+                {reportFilterCounts[filter.id]}
+              </span>
             </button>
           ))}
           <BackendStatusBadge
@@ -1714,23 +1740,46 @@ function ReportsTab({
         )}
       </div>
 
-      <div className="flex h-12 items-center justify-center gap-4">
-        <button className="h-8 w-8 rounded-md text-slate-700" type="button">
-          ‹
-        </button>
-        <button className="h-8 w-8 rounded-md bg-blue-600 text-sm font-black text-white" type="button">
-          1
-        </button>
-        <button className="h-8 w-8 rounded-md text-sm font-black text-slate-700" type="button">
-          2
-        </button>
-        <button className="h-8 w-8 rounded-md text-sm font-black text-slate-700" type="button">
-          3
-        </button>
-        <button className="h-8 w-8 rounded-md text-slate-700" type="button">
-          ›
-        </button>
-      </div>
+      {pageCount > 1 ? (
+        <nav
+          aria-label="리포트 페이지"
+          className="flex h-12 items-center justify-center gap-4"
+        >
+          <button
+            aria-label="이전 페이지"
+            className="h-8 w-8 rounded-md text-slate-700 disabled:text-slate-300"
+            disabled={!hasPreviousPage}
+            onClick={() => setCurrentPage(visiblePage - 1)}
+            type="button"
+          >
+            ‹
+          </button>
+          {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+            <button
+              aria-current={visiblePage === page ? 'page' : undefined}
+              className={`h-8 w-8 rounded-md text-sm font-black ${
+                visiblePage === page
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-700'
+              }`}
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              type="button"
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            aria-label="다음 페이지"
+            className="h-8 w-8 rounded-md text-slate-700 disabled:text-slate-300"
+            disabled={!hasNextPage}
+            onClick={() => setCurrentPage(visiblePage + 1)}
+            type="button"
+          >
+            ›
+          </button>
+        </nav>
+      ) : null}
     </>
   )
 }
@@ -1996,6 +2045,7 @@ function ReportPanel({
   onTabChange,
   onViewInterest,
   predictionResultSourceStatus,
+  reportFilterCounts,
   reportSourceStatus,
   searchQuery,
   sortOrder,
@@ -2021,6 +2071,7 @@ function ReportPanel({
   onTabChange: (tab: MyPageTab) => void
   onViewInterest: () => void
   predictionResultSourceStatus: BackendReportStatus
+  reportFilterCounts: ReportFilterCounts
   reportSourceStatus: BackendReportStatus
   searchQuery: string
   sortOrder: SortOrder
@@ -2061,6 +2112,7 @@ function ReportPanel({
           onShare={onShareReport}
           onSortChange={onSortChange}
           predictionResultSourceStatus={predictionResultSourceStatus}
+          reportFilterCounts={reportFilterCounts}
           reportSourceStatus={reportSourceStatus}
           reports={filteredReports}
           searchQuery={searchQuery}
@@ -2235,6 +2287,10 @@ export function MyPage() {
   const savedReports = isBackendSavedReportsConnected
     ? mergeSavedReports([...backendSavedReports, ...predictionReportsForMyPage])
     : localSavedReports
+  const reportFilterCounts = useMemo(
+    () => countReportsByFilter(savedReports),
+    [savedReports],
+  )
   const reportSourceStatus: BackendReportStatus = isBackendSavedReportsConnected
     ? 'connected'
     : 'fallback'
@@ -2489,6 +2545,7 @@ export function MyPage() {
               onTabChange={handleTabChange}
               onViewInterest={() => navigate('/recommendation')}
               predictionResultSourceStatus={predictionResultSourceStatus}
+              reportFilterCounts={reportFilterCounts}
               reportSourceStatus={reportSourceStatus}
               searchQuery={searchQuery}
               sortOrder={sortOrder}
