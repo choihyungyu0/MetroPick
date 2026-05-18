@@ -20,7 +20,7 @@ import {
   Wallet,
 } from 'lucide-react'
 
-import { RecommendationMap } from '@/components/recommendation/RecommendationMap'
+import { GwangjuLine2RouteMap } from '@/features/map/GwangjuLine2RouteMap'
 import {
   getBackendCommercialAnalysisMapData,
   type BackendCommercialAnalysisMapData,
@@ -29,7 +29,6 @@ import {
 } from '@/shared/api/backendCommercialAnalysisApi'
 import type {
   BackendRecommendationItem,
-  BackendRecommendationMap,
   BackendRecommendationsResponse,
 } from '@/shared/api/backendRecommendationApi'
 import { useBackendRecommendations } from '@/shared/api/hooks/useBackendRecommendations'
@@ -680,43 +679,27 @@ function PanelTopLink({ title }: { title: string }) {
 function MapPanel({
   isLoading,
   recommendationItems,
-  recommendationMap,
 }: {
   isLoading: boolean
   recommendationItems: BackendRecommendationItem[]
-  recommendationMap?: BackendRecommendationMap
 }) {
-  const hasRecommendationMap = recommendationItems.length > 0
-
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-[18px] shadow-[0_8px_22px_rgba(12,33,70,0.06)] lg:row-span-2">
       <div className="flex items-center justify-between gap-3">
-        <PanelTitle info>광주 2호선 추천 역세권 지도</PanelTitle>
+        <PanelTitle info>광주 2호선 실제 지도</PanelTitle>
         <button
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-700"
           type="button"
         >
-          CSV 추천 위치
+          OSM 지도
         </button>
       </div>
 
       <div className="relative mt-3.5 h-[440px] overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50 max-sm:h-[320px]">
-        {hasRecommendationMap ? (
-          <RecommendationMap items={recommendationItems} map={recommendationMap} />
-        ) : (
-          <div className="flex h-full items-center justify-center px-5 text-center">
-            <div>
-              <strong className="block text-sm font-black text-slate-800">
-                {isLoading
-                  ? '추천 CSV 지도를 불러오는 중입니다.'
-                  : '추천 CSV 지도 데이터가 없습니다.'}
-              </strong>
-              <p className="m-0 mt-2 text-xs font-bold leading-relaxed text-slate-500">
-                추천 API가 연결되면 실제 좌표 기반 역세권 지도가 표시됩니다.
-              </p>
-            </div>
-          </div>
-        )}
+        <GwangjuLine2RouteMap
+          isRecommendationLoading={isLoading}
+          recommendationItems={recommendationItems}
+        />
       </div>
     </section>
   )
@@ -1393,7 +1376,6 @@ export function DashboardPage() {
               <MapPanel
                 isLoading={backendRecommendationsQuery.isLoading}
                 recommendationItems={recommendationItems ?? []}
-                recommendationMap={backendRecommendationsQuery.data?.map}
               />
               <RecommendationMetricChart
                 isLoading={backendRecommendationsQuery.isLoading}

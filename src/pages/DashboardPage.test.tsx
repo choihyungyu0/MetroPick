@@ -208,7 +208,11 @@ describe('DashboardPage', () => {
     expect(screen.queryByText('125,430명')).not.toBeInTheDocument()
     expect(screen.queryByText('2,845억 원')).not.toBeInTheDocument()
     expect(screen.queryByText('2024.05.18 기준')).not.toBeInTheDocument()
-    expect(screen.getByTestId('dashboard-recommendation-map')).toBeInTheDocument()
+    expect(screen.getByTestId('dashboard-line2-route-map')).toBeInTheDocument()
+    expect(screen.getByText('광주 2호선 실제 지도')).toBeInTheDocument()
+    expect(
+      screen.getByText('지도 기준: OpenStreetMap + 2호선 예정 경로 좌표'),
+    ).toBeInTheDocument()
     expect(screen.getByText('최근 저장한 리포트')).toBeInTheDocument()
   })
 
@@ -230,9 +234,9 @@ describe('DashboardPage', () => {
     expect(
       screen.getByText('실제 추천 CSV 응답에 표시할 Top 5 데이터가 없습니다.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('추천 CSV 지도 데이터가 없습니다.')).toBeInTheDocument()
+    expect(screen.getByText('추천 CSV 좌표 없음')).toBeInTheDocument()
+    expect(screen.getByTestId('dashboard-line2-route-map')).toBeInTheDocument()
     expect(screen.queryByText('상무역')).not.toBeInTheDocument()
-    expect(screen.queryByText('첨단역')).not.toBeInTheDocument()
   })
 
   it('links the sidebar mypage route without separate mypage section shortcuts', () => {
