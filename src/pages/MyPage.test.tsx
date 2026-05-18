@@ -200,18 +200,27 @@ describe('MyPage', () => {
   })
 
   it('renders the profile and saved reports', () => {
+    window.localStorage.setItem(
+      'metropick-saved-commercial-analysis-reports',
+      JSON.stringify([
+        {
+          id: 'local-commercial-report',
+          title: '로컬 저장 상권 리포트',
+          createdAt: '2026-05-15T09:30:00+09:00',
+          selectedStations: ['금남로4가역'],
+          selectedBusinessTypes: ['베이커리'],
+        },
+      ]),
+    )
+
     renderMyPage()
 
     expect(screen.getByRole('heading', { name: '마이페이지' })).toBeInTheDocument()
     expect(screen.getByText('저장한 리포트')).toBeInTheDocument()
     expect(screen.getByText('홍길동')).toBeInTheDocument()
-    expect(screen.getByText('상무역 상권 분석 리포트')).toBeInTheDocument()
-    expect(
-      screen.getByText('백엔드 미연결 · 로컬 저장 리포트 표시'),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('백엔드 미연결 · 로컬 초기 설정 표시'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('로컬 저장 상권 리포트')).toBeInTheDocument()
+    expect(screen.queryByText('상무역 상권 분석 리포트')).not.toBeInTheDocument()
+    expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
 
   it('uses backend onboarding settings in the profile when connected', async () => {
@@ -241,10 +250,10 @@ describe('MyPage', () => {
 
     renderMyPage()
 
-    expect(await screen.findByText('Supabase 초기 설정 연결됨')).toBeInTheDocument()
-    expect(screen.getByText('서구')).toBeInTheDocument()
+    expect(await screen.findByText('서구')).toBeInTheDocument()
     expect(screen.getByText('카페/디저트, 음식점')).toBeInTheDocument()
     expect(screen.queryByText('북구')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Supabase/)).not.toBeInTheDocument()
   })
 
   it('falls back to local onboarding summary when backend onboarding fails', () => {
@@ -261,9 +270,7 @@ describe('MyPage', () => {
 
     expect(screen.getByText('양산역')).toBeInTheDocument()
     expect(screen.getByText('베이커리')).toBeInTheDocument()
-    expect(
-      screen.getByText('백엔드 미연결 · 로컬 초기 설정 표시'),
-    ).toBeInTheDocument()
+    expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
 
   it('does not use local onboarding summary when backend onboarding is connected but empty', async () => {
@@ -282,10 +289,10 @@ describe('MyPage', () => {
 
     renderMyPage()
 
-    expect(await screen.findByText('Supabase 초기 설정 연결됨')).toBeInTheDocument()
-    expect(screen.getAllByText('초기 설정 필요').length).toBeGreaterThan(0)
+    expect((await screen.findAllByText('초기 설정 필요')).length).toBeGreaterThan(0)
     expect(screen.queryByText('첨단역')).not.toBeInTheDocument()
     expect(screen.queryByText('로컬 업종')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Supabase/)).not.toBeInTheDocument()
   })
 
   it('renders backend reports when Supabase is connected', async () => {
@@ -304,7 +311,6 @@ describe('MyPage', () => {
     renderMyPage()
 
     expect(await screen.findByText('충장로 카페 상권 리포트')).toBeInTheDocument()
-    expect(screen.getByText('Supabase 리포트 연결됨')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /전체\s*1/ })).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /상권 분석\s*1/ }),
@@ -336,20 +342,29 @@ describe('MyPage', () => {
     renderMyPage()
 
     expect(screen.getByText('로컬 저장 상권 리포트')).toBeInTheDocument()
-    expect(
-      screen.getByText('백엔드 미연결 · 로컬 저장 리포트 표시'),
-    ).toBeInTheDocument()
+    expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
 
   it('keeps local fallback when backend returns supabase_missing', async () => {
+    window.localStorage.setItem(
+      'metropick-saved-commercial-analysis-reports',
+      JSON.stringify([
+        {
+          id: 'local-commercial-report',
+          title: '로컬 저장 상권 리포트',
+          createdAt: '2026-05-15T09:30:00+09:00',
+          selectedStations: ['금남로4가역'],
+          selectedBusinessTypes: ['베이커리'],
+        },
+      ]),
+    )
     mockBackendSavedReports([], 'supabase_missing')
 
     renderMyPage()
 
-    expect(await screen.findByText('상무역 상권 분석 리포트')).toBeInTheDocument()
-    expect(
-      screen.getByText('백엔드 미연결 · 로컬 저장 리포트 표시'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('로컬 저장 상권 리포트')).toBeInTheDocument()
+    expect(screen.queryByText('상무역 상권 분석 리포트')).not.toBeInTheDocument()
+    expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
 
   it('shows an empty report state when backend reports are connected but empty', async () => {
@@ -374,8 +389,9 @@ describe('MyPage', () => {
 
     renderMyPage()
 
-    expect(await screen.findByText('Supabase 리포트 연결됨')).toBeInTheDocument()
-    expect(screen.getByText('검색 조건에 맞는 리포트가 없습니다.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('검색 조건에 맞는 리포트가 없습니다.'),
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /전체\s*0/ })).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /상권 분석\s*0/ }),
@@ -387,6 +403,7 @@ describe('MyPage', () => {
     ).not.toBeInTheDocument()
     expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
     expect(screen.queryByText('상무역 상권 분석 리포트')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Supabase|백엔드 미연결/)).not.toBeInTheDocument()
   })
 
   it('edits backend saved report metadata through the backend API', async () => {
@@ -453,7 +470,7 @@ describe('MyPage', () => {
     await user.click(screen.getByRole('button', { name: '수정 저장' }))
 
     expect(
-      await screen.findByText('Supabase에 리포트 수정 내용을 저장했어요.'),
+      await screen.findByText('리포트 수정 내용을 저장했어요.'),
     ).toBeInTheDocument()
 
     const updateCall = fetchMock.mock.calls.find(
@@ -500,7 +517,7 @@ describe('MyPage', () => {
     await user.click(screen.getByRole('button', { name: '수정 저장' }))
 
     expect(
-      await screen.findByText('백엔드 미연결 · 로컬 리포트를 수정했어요.'),
+      await screen.findByText('리포트 수정 내용을 저장했어요.'),
     ).toBeInTheDocument()
     expect(screen.getByText('로컬 수정 설명입니다.')).toBeInTheDocument()
     expect(screen.getByText('#테스트태그')).toBeInTheDocument()
@@ -565,9 +582,7 @@ describe('MyPage', () => {
       screen.getByRole('button', { name: '충장로 카페 상권 리포트 삭제' }),
     )
 
-    expect(
-      await screen.findByText('Supabase에서 리포트를 삭제했어요.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('리포트를 삭제했어요.')).toBeInTheDocument()
     expect(screen.queryByText('충장로 카페 상권 리포트')).not.toBeInTheDocument()
     expect(
       fetchMock.mock.calls.some(
@@ -604,9 +619,7 @@ describe('MyPage', () => {
       screen.getByRole('button', { name: '로컬 저장 상권 리포트 삭제' }),
     )
 
-    expect(
-      await screen.findByText('백엔드 미연결 · 로컬 리포트를 삭제했어요.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('리포트를 삭제했어요.')).toBeInTheDocument()
     expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
 
     const reports = JSON.parse(
@@ -653,7 +666,7 @@ describe('MyPage', () => {
     expect(screen.getByText('#강변특화')).toBeInTheDocument()
   })
 
-  it('shows backend prediction results when Supabase is connected', async () => {
+  it('does not show backend prediction results unless they are saved reports', async () => {
     mockBackendApis({
       predictionStatus: 'supabase_connected',
       predictionResults: [
@@ -677,13 +690,14 @@ describe('MyPage', () => {
 
     renderMyPage()
 
-    expect(await screen.findByText('금남로4가역 매출 예측 리포트')).toBeInTheDocument()
-    expect(screen.getByText('Supabase AI 예측 결과 연결됨')).toBeInTheDocument()
-    expect(screen.getByText('예측 점수 83.4점')).toBeInTheDocument()
-    expect(screen.getByText(/창업 적합도 높음/)).toBeInTheDocument()
+    expect(
+      await screen.findByText('검색 조건에 맞는 리포트가 없습니다.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('금남로4가역 매출 예측 리포트')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Supabase|백엔드 미연결/)).not.toBeInTheDocument()
   })
 
-  it('falls back to localStorage prediction results when backend fails', () => {
+  it('does not mix local AI prediction history into saved reports', () => {
     window.localStorage.setItem(
       'metropick-ai-prediction-results',
       JSON.stringify([
@@ -705,12 +719,11 @@ describe('MyPage', () => {
 
     renderMyPage()
 
-    expect(screen.getByText('양산역 매출 예측 리포트')).toBeInTheDocument()
-    expect(screen.getByText('예측 점수 77.2점')).toBeInTheDocument()
-    expect(screen.getByText(/로컬 예측 결과/)).toBeInTheDocument()
     expect(
-      screen.getByText('백엔드 미연결 · 로컬 AI 예측 결과 표시'),
+      screen.getByText('검색 조건에 맞는 리포트가 없습니다.'),
     ).toBeInTheDocument()
+    expect(screen.queryByText('양산역 매출 예측 리포트')).not.toBeInTheDocument()
+    expect(screen.queryByText(/로컬 예측 결과|백엔드 미연결/)).not.toBeInTheDocument()
   })
 
   it('shows interest locations from the tab panel', async () => {
@@ -721,9 +734,7 @@ describe('MyPage', () => {
 
     expect(screen.getByText('백운광장역')).toBeInTheDocument()
     expect(screen.getByText('남구 백운동 · 카페/커피전문점')).toBeInTheDocument()
-    expect(
-      screen.getByText('백엔드 미연결 · 로컬 관심 지역 표시'),
-    ).toBeInTheDocument()
+    expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
 
   it('shows backend interest locations when Supabase is connected', async () => {
@@ -751,8 +762,8 @@ describe('MyPage', () => {
     expect(screen.getByText('동구 · 카페')).toBeInTheDocument()
     expect(screen.getByText('91.5')).toBeInTheDocument()
     expect(screen.getByText('유동 수요가 안정적인 권역입니다.')).toBeInTheDocument()
-    expect(screen.getByText('Supabase 관심 지역 연결됨')).toBeInTheDocument()
     expect(screen.queryByText('백운광장역')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Supabase/)).not.toBeInTheDocument()
   })
 
   it('falls back to localStorage interest locations when backend fails', async () => {
@@ -779,9 +790,7 @@ describe('MyPage', () => {
     expect(screen.getByText('양산역')).toBeInTheDocument()
     expect(screen.getByText('북구 · 베이커리')).toBeInTheDocument()
     expect(screen.getByText('로컬 저장 관심 지역입니다.')).toBeInTheDocument()
-    expect(
-      screen.getByText('백엔드 미연결 · 로컬 관심 지역 표시'),
-    ).toBeInTheDocument()
+    expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
 
   it('shows an empty interest location state when backend locations are connected but empty', async () => {
@@ -809,10 +818,12 @@ describe('MyPage', () => {
 
     await user.click(screen.getByRole('tab', { name: '관심 역세권' }))
 
-    expect(await screen.findByText('Supabase 관심 지역 연결됨')).toBeInTheDocument()
-    expect(screen.getByText('저장된 관심 역세권이 없습니다.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('저장된 관심 역세권이 없습니다.'),
+    ).toBeInTheDocument()
     expect(screen.queryByText('양산역')).not.toBeInTheDocument()
     expect(screen.queryByText('로컬 저장 관심 지역입니다.')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Supabase/)).not.toBeInTheDocument()
   })
 
   it('opens a mypage tab from the query parameter', () => {
@@ -833,9 +844,7 @@ describe('MyPage', () => {
     await user.click(screen.getByRole('button', { name: '문자' }))
     await user.click(screen.getByRole('button', { name: '알림 설정 저장' }))
 
-    expect(
-      await screen.findByText('백엔드 미연결 · 로컬에 알림 설정을 저장했어요.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('알림 설정을 저장했어요.')).toBeInTheDocument()
 
     const raw = window.localStorage.getItem('metropick-onboarding-notifications')
     expect(raw).not.toBeNull()
@@ -870,11 +879,10 @@ describe('MyPage', () => {
 
     renderMyPage(['/mypage?tab=notifications'])
 
-    expect(await screen.findByText('Supabase 알림 설정 연결됨')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '문자' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    const smsButton = await screen.findByRole('button', { name: '문자' })
+    await waitFor(() => {
+      expect(smsButton).toHaveAttribute('aria-pressed', 'true')
+    })
     expect(screen.getByRole('button', { name: '이메일' })).toHaveAttribute(
       'aria-pressed',
       'false',
@@ -886,6 +894,7 @@ describe('MyPage', () => {
     expect(screen.getByText('21:00 ~ 07:00')).toBeInTheDocument()
     expect(screen.getByText('경쟁도 변화 알림')).toBeInTheDocument()
     expect(screen.queryByText('이전 알림')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Supabase/)).not.toBeInTheDocument()
   })
 
   it('falls back to localStorage notification settings when backend fails', () => {
@@ -901,7 +910,6 @@ describe('MyPage', () => {
 
     renderMyPage(['/mypage?tab=notifications'])
 
-    expect(screen.getByText('백엔드 미연결 · 로컬 알림 설정 표시')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '문자' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -916,6 +924,7 @@ describe('MyPage', () => {
     )
     expect(screen.getByText('20:00 ~ 06:00')).toBeInTheDocument()
     expect(screen.getByText('로컬 알림')).toBeInTheDocument()
+    expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
 
   it('does not use local notification settings when backend settings are connected but empty', async () => {
@@ -935,11 +944,10 @@ describe('MyPage', () => {
 
     renderMyPage(['/mypage?tab=notifications'])
 
-    expect(await screen.findByText('Supabase 알림 설정 연결됨')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '문자' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
+    const smsButton = await screen.findByRole('button', { name: '문자' })
+    await waitFor(() => {
+      expect(smsButton).toHaveAttribute('aria-pressed', 'false')
+    })
     expect(screen.getByRole('button', { name: '이메일' })).toHaveAttribute(
       'aria-pressed',
       'false',
@@ -947,6 +955,7 @@ describe('MyPage', () => {
     expect(screen.getByText('설정 없음')).toBeInTheDocument()
     expect(screen.queryByText('로컬 알림')).not.toBeInTheDocument()
     expect(screen.queryByText('20:00 ~ 06:00')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Supabase/)).not.toBeInTheDocument()
   })
 
   it('updates backend notification settings from My Page when connected', async () => {
@@ -999,13 +1008,11 @@ describe('MyPage', () => {
 
     renderMyPage(['/mypage?tab=notifications'])
 
-    expect(await screen.findByText('Supabase 알림 설정 연결됨')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: '문자' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '문자' }))
     await user.click(screen.getByRole('button', { name: '알림 설정 저장' }))
 
-    expect(
-      await screen.findByText('Supabase에 알림 설정을 저장했어요.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('알림 설정을 저장했어요.')).toBeInTheDocument()
 
     const updateCall = fetchMock.mock.calls.find(
       ([input, init]) =>
@@ -1030,6 +1037,25 @@ describe('MyPage', () => {
 
   it('filters the saved report list by search query', async () => {
     const user = userEvent.setup()
+    window.localStorage.setItem(
+      'metropick-saved-commercial-analysis-reports',
+      JSON.stringify([
+        {
+          id: 'local-commercial-report',
+          title: '상무역 상권 분석 리포트',
+          createdAt: '2026-05-15T09:30:00+09:00',
+          selectedStations: ['상무역'],
+          selectedBusinessTypes: ['카페'],
+        },
+        {
+          id: 'local-ai-report',
+          title: '쌍촌역 매출 예측 리포트',
+          createdAt: '2026-05-16T09:30:00+09:00',
+          selectedStations: ['쌍촌역'],
+          selectedBusinessTypes: ['편의점'],
+        },
+      ]),
+    )
     renderMyPage()
 
     await user.type(
@@ -1083,6 +1109,18 @@ describe('MyPage', () => {
 
   it('shows copy feedback when sharing a report', async () => {
     const user = userEvent.setup()
+    window.localStorage.setItem(
+      'metropick-saved-commercial-analysis-reports',
+      JSON.stringify([
+        {
+          id: 'local-commercial-report',
+          title: '로컬 저장 상권 리포트',
+          createdAt: '2026-05-15T09:30:00+09:00',
+          selectedStations: ['금남로4가역'],
+          selectedBusinessTypes: ['베이커리'],
+        },
+      ]),
+    )
     renderMyPage()
 
     const [shareButton] = screen.getAllByRole('button', { name: '공유' })

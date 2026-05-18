@@ -32,14 +32,12 @@ import type {
   BackendSavedReport,
   BackendSavedReportPayload,
 } from '@/shared/api/backendSavedReportsApi'
-import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
 import {
   useBackendNotificationSettings,
   useCreateBackendNotificationSettings,
   useUpdateBackendNotificationSettings,
 } from '@/shared/api/hooks/useBackendNotificationSettings'
 import { useBackendOnboardingSettings } from '@/shared/api/hooks/useBackendOnboardingSettings'
-import { useBackendPredictionResults } from '@/shared/api/hooks/useBackendPredictionResults'
 import {
   useBackendSavedLocations,
   useDeleteBackendSavedLocation,
@@ -51,7 +49,6 @@ import {
 } from '@/shared/api/hooks/useBackendSavedReports'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
-import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { myPageAssets } from '@/shared/assets/myPageAssets'
@@ -114,12 +111,6 @@ type SortOrder = 'latest' | 'oldest'
 
 type ReportFilterCounts = Record<CategoryFilter, number>
 
-type BackendReportStatus = 'connected' | 'fallback'
-
-type NotificationSettingsStatus = BackendReportStatus
-
-type OnboardingSettingsStatus = BackendReportStatus
-
 type NotificationFrequency = '실시간' | '매일' | '매주'
 
 type NotificationSettings = {
@@ -163,21 +154,6 @@ type StoredOnboardingSummary = {
   }
 }
 
-type StoredCurrentReport = {
-  businessType?: string
-  createdAt?: string
-  id?: string
-  stationArea?: string
-  title?: string
-}
-
-type StoredRecommendation = {
-  businessType?: string
-  createdAt?: string
-  score?: number
-  station?: string
-}
-
 type StoredCommercialReport = {
   businessType?: string
   createdAt?: string
@@ -189,20 +165,6 @@ type StoredCommercialReport = {
   stationArea?: string
   tags?: string[]
   title?: string
-}
-
-type StoredPredictionResult = {
-  businessType?: string
-  backendStartupSuitability?: {
-    predicted_score?: number
-    recommendation_label?: string
-  }
-  createdAt?: string
-  id?: string
-  predicted_score?: number
-  recommendation_label?: string
-  riskLevel?: string
-  stationArea?: string
 }
 
 const tabs: Array<{ id: MyPageTab; label: string }> = [
@@ -230,45 +192,6 @@ const reportsPerPage = 4
 const SAVED_REPORT_EDITS_KEY = 'metropick-saved-report-edits'
 const DELETED_SAVED_REPORT_IDS_KEY = 'metropick-deleted-saved-report-ids'
 const COMMERCIAL_REPORTS_STORAGE_KEY = 'metropick-saved-commercial-analysis-reports'
-
-const defaultReports: SavedReport[] = [
-  {
-    id: 'default-commercial-sangmu',
-    title: '상무역 상권 분석 리포트',
-    category: '상권 분석',
-    businessType: '카페',
-    stationArea: '상무역',
-    savedAt: '2024.06.18 14:30',
-    thumbnailSrc: myPageAssets.commercialMap,
-  },
-  {
-    id: 'default-recommendation-uncheon',
-    title: '운천역 입지 추천 리포트',
-    category: '입지 추천',
-    businessType: '음식점',
-    stationArea: '운천역',
-    savedAt: '2024.06.16 09:15',
-    thumbnailSrc: myPageAssets.recommendationMap,
-  },
-  {
-    id: 'default-ai-ssangchon',
-    title: '쌍촌역 매출 예측 리포트',
-    category: 'AI 예측',
-    businessType: '편의점',
-    stationArea: '쌍촌역',
-    savedAt: '2024.06.15 16:45',
-    thumbnailSrc: myPageAssets.aiPredictionChart,
-  },
-  {
-    id: 'default-commercial-all',
-    title: '전체 역세권 비교 분석 리포트',
-    category: '상권 분석',
-    businessType: '전체',
-    stationArea: '전체',
-    savedAt: '2024.06.14 11:20',
-    thumbnailSrc: myPageAssets.dashboardMap,
-  },
-]
 
 const defaultInterestLocations: InterestLocation[] = [
   {
@@ -596,106 +519,8 @@ function normalizeCommercialReports(): SavedReport[] {
   })
 }
 
-function normalizePredictionReports(): SavedReport[] {
-  const stored = safeParseStorage<StoredPredictionResult[]>(
-    'metropick-ai-prediction-results',
-  )
-
-  return (stored ?? []).flatMap((item, index): SavedReport[] => {
-    if (!item.stationArea && !item.businessType) {
-      return []
-    }
-
-    const stationArea = item.stationArea ?? '선택 역세권'
-
-    return [
-      {
-        id: item.id ?? `stored-ai-${index}`,
-        title: `${stationArea} 매출 예측 리포트`,
-        category: 'AI 예측',
-        businessType: item.businessType ?? '카페',
-        predictedScore:
-          item.predicted_score ?? item.backendStartupSuitability?.predicted_score,
-        summary:
-          item.recommendation_label ??
-          item.backendStartupSuitability?.recommendation_label ??
-          (item.riskLevel ? `위험 수준 ${item.riskLevel}` : undefined),
-        stationArea,
-        savedAt: item.createdAt ?? new Date().toISOString(),
-        thumbnailSrc: myPageAssets.aiPredictionChart,
-      },
-    ]
-  })
-}
-
-function normalizeCurrentReport(): SavedReport[] {
-  const report = safeParseStorage<StoredCurrentReport>('metropick-current-report')
-
-  if (!report?.title && !report?.stationArea) {
-    return []
-  }
-
-  return [
-    {
-      id: report.id ?? 'stored-current-report',
-      title: report.title ?? `${report.stationArea ?? '백운광장역'} 미래 매출 예측 리포트`,
-      category: 'AI 예측',
-      businessType: report.businessType ?? '카페/커피전문점',
-      stationArea: report.stationArea ?? '백운광장역 500m 상권',
-      savedAt: report.createdAt ?? new Date().toISOString(),
-      thumbnailSrc: myPageAssets.aiPredictionChart,
-    },
-  ]
-}
-
-function normalizeSelectedRecommendation(): SavedReport[] {
-  const recommendation = safeParseStorage<StoredRecommendation>(
-    'metropick-selected-recommendation',
-  )
-
-  if (!recommendation?.station) {
-    return []
-  }
-
-  return [
-    {
-      id: `selected-recommendation-${recommendation.station}`,
-      title: `${recommendation.station} 입지 추천 리포트`,
-      category: '입지 추천',
-      businessType: recommendation.businessType ?? '카페/디저트',
-      stationArea: recommendation.station,
-      savedAt: recommendation.createdAt ?? new Date().toISOString(),
-      thumbnailSrc: myPageAssets.recommendationMap,
-    },
-  ]
-}
-
-function interestLocationsAsReports(locations: InterestLocation[]): SavedReport[] {
-  return locations.map((item) => ({
-    id: `interest-report-${item.id}`,
-    title: `${item.station} 입지 추천 리포트`,
-    category: '입지 추천',
-    businessType: item.businessType,
-    stationArea: item.station,
-    savedAt: item.savedAt ?? new Date().toISOString(),
-    thumbnailSrc: myPageAssets.recommendationMap,
-  }))
-}
-
-function buildSavedReports(
-  locations: InterestLocation[],
-  predictionReports = normalizePredictionReports(),
-): SavedReport[] {
-  const reports = [
-    ...defaultReports,
-    ...normalizeCommercialReports(),
-    ...predictionReports,
-    ...interestLocationsAsReports(locations),
-    ...normalizeCurrentReport(),
-    ...normalizeSelectedRecommendation(),
-  ]
-
-  return mergeSavedReports(reports)
+function buildSavedReports(): SavedReport[] {
+  return mergeSavedReports(normalizeCommercialReports())
 }
 
 function mergeSavedReports(reports: SavedReport[]): SavedReport[] {
@@ -924,87 +749,6 @@ function normalizeBackendSavedReports(
       source: 'backend-saved-report',
       tags,
       thumbnailSrc: getReportThumbnailSrc(category),
-    }
-  })
-}
-
-function getPredictionPayload(
-  result: BackendPredictionResult,
-): Record<string, unknown> | undefined {
-  return isRecord(result.result_payload) ? result.result_payload : undefined
-}
-
-function getBackendStartupSuitabilityPayload(
-  payload: Record<string, unknown> | undefined,
-): Record<string, unknown> | undefined {
-  const backendStartupSuitability = payload?.backendStartupSuitability
-  return isRecord(backendStartupSuitability) ? backendStartupSuitability : undefined
-}
-
-function buildBackendPredictionSummary(
-  payload: Record<string, unknown> | undefined,
-  predictedScore: number | undefined,
-): string | undefined {
-  const backendStartupSuitability = getBackendStartupSuitabilityPayload(payload)
-  const recommendation =
-    readString(backendStartupSuitability?.recommendation_label) ??
-    readPayloadString(payload, ['recommendation_label', 'recommendationLabel', 'summary'])
-  if (recommendation) {
-    return recommendation
-  }
-
-  const predictedSalesIncrease = readPayloadString(payload, [
-    'predictedSalesIncrease',
-  ])
-  if (predictedSalesIncrease) {
-    return `예상 매출 변화 ${predictedSalesIncrease}`
-  }
-
-  if (predictedScore !== undefined) {
-    return `창업 적합도 ${predictedScore.toFixed(1)}점`
-  }
-
-  const riskLevel = readPayloadString(payload, ['riskLevel'])
-  return riskLevel ? `위험 수준 ${riskLevel}` : undefined
-}
-
-function normalizeBackendPredictionResults(
-  results: BackendPredictionResult[],
-): SavedReport[] {
-  return results.map((result, index) => {
-    const payload = getPredictionPayload(result)
-    const backendStartupSuitability = getBackendStartupSuitabilityPayload(payload)
-    const stationArea =
-      readString(result.station_area) ??
-      readPayloadString(payload, ['stationArea', 'station_area']) ??
-      '선택 역세권'
-    const businessType =
-      readString(result.business_type) ??
-      readPayloadString(payload, ['businessType', 'business_type']) ??
-      '업종 미지정'
-    const predictedScore =
-      readNumber(result.predicted_score) ??
-      readNumber(backendStartupSuitability?.predicted_score)
-    const createdAt =
-      readString(result.created_at) ??
-      readPayloadString(payload, ['createdAt', 'created_at']) ??
-      new Date().toISOString()
-
-    return {
-      id:
-        readString(result.id) ??
-        readPayloadString(payload, ['id']) ??
-        `backend-prediction-result-${index}`,
-      title:
-        readPayloadString(payload, ['title']) ??
-        `${stationArea} 매출 예측 리포트`,
-      category: 'AI 예측',
-      businessType,
-      predictedScore,
-      summary: buildBackendPredictionSummary(payload, predictedScore),
-      stationArea,
-      savedAt: createdAt,
-      thumbnailSrc: myPageAssets.aiPredictionChart,
     }
   })
 }
@@ -1313,13 +1057,7 @@ function getReportRoute(category: ReportCategory): string {
   return '/recommendation'
 }
 
-function ProfileCard({
-  onboardingSettingsStatus,
-  profile,
-}: {
-  onboardingSettingsStatus: OnboardingSettingsStatus
-  profile: UserProfile
-}) {
+function ProfileCard({ profile }: { profile: UserProfile }) {
   return (
     <section className="min-w-0 overflow-hidden rounded-[15px] border border-blue-100 bg-white/95 px-7 py-7 shadow-[0_10px_30px_rgba(20,55,90,0.05)] max-sm:px-5">
       <div className="mb-5 flex min-w-0 items-center gap-4">
@@ -1345,14 +1083,6 @@ function ProfileCard({
           <p className="m-0 mt-2 truncate text-[14px] font-semibold text-slate-500">
             {profile.email}
           </p>
-          <div className="mt-2">
-            <BackendStatusBadge
-              connectedLabel="Supabase 초기 설정 연결됨"
-              fallbackLabel="백엔드 미연결 · 로컬 초기 설정 표시"
-              loadingLabel="백엔드 미연결 · 로컬 초기 설정 표시"
-              status={onboardingSettingsStatus}
-            />
-          </div>
         </div>
       </div>
 
@@ -1630,9 +1360,7 @@ function ReportsTab({
   onSearchChange,
   onShare,
   onSortChange,
-  predictionResultSourceStatus,
   reportFilterCounts,
-  reportSourceStatus,
   reports,
   searchQuery,
   sortOrder,
@@ -1645,9 +1373,7 @@ function ReportsTab({
   onSearchChange: (value: string) => void
   onShare: (report: SavedReport) => void
   onSortChange: (value: SortOrder) => void
-  predictionResultSourceStatus: BackendReportStatus
   reportFilterCounts: ReportFilterCounts
-  reportSourceStatus: BackendReportStatus
   reports: SavedReport[]
   searchQuery: string
   sortOrder: SortOrder
@@ -1682,18 +1408,6 @@ function ReportsTab({
               </span>
             </button>
           ))}
-          <BackendStatusBadge
-            connectedLabel="Supabase 리포트 연결됨"
-            fallbackLabel="백엔드 미연결 · 로컬 저장 리포트 표시"
-            loadingLabel="백엔드 미연결 · 로컬 저장 리포트 표시"
-            status={reportSourceStatus}
-          />
-          <BackendStatusBadge
-            connectedLabel="Supabase AI 예측 결과 연결됨"
-            fallbackLabel="백엔드 미연결 · 로컬 AI 예측 결과 표시"
-            loadingLabel="백엔드 미연결 · 로컬 AI 예측 결과 표시"
-            status={predictionResultSourceStatus}
-          />
         </div>
 
         <div className="flex items-center gap-3 max-md:flex-col max-md:items-stretch">
@@ -1785,113 +1499,92 @@ function ReportsTab({
 }
 
 function InterestLocationsTab({
-  locationSourceStatus,
   locations,
   onDelete,
   onView,
 }: {
-  locationSourceStatus: BackendReportStatus
   locations: InterestLocation[]
   onDelete: (location: InterestLocation) => void
   onView: () => void
 }) {
-  const statusBadge = (
-    <div className="flex justify-end px-5 pt-4">
-      <BackendStatusBadge
-        connectedLabel="Supabase 관심 지역 연결됨"
-        fallbackLabel="백엔드 미연결 · 로컬 관심 지역 표시"
-        loadingLabel="백엔드 미연결 · 로컬 관심 지역 표시"
-        status={locationSourceStatus}
-      />
-    </div>
-  )
-
   if (locations.length === 0) {
     return (
-      <>
-        {statusBadge}
-        <div className="grid min-h-[220px] place-items-center px-5 py-5">
-          <div className="rounded-xl border border-dashed border-blue-100 bg-slate-50 px-6 py-8 text-center">
-            <p className="m-0 text-sm font-black text-slate-700">
-              저장된 관심 역세권이 없습니다.
-            </p>
-            <p className="m-0 mt-2 text-sm font-bold text-slate-500">
-              입지 추천에서 관심 지역을 저장하면 이곳에 표시됩니다.
-            </p>
-          </div>
+      <div className="grid min-h-[220px] place-items-center px-5 py-5">
+        <div className="rounded-xl border border-dashed border-blue-100 bg-slate-50 px-6 py-8 text-center">
+          <p className="m-0 text-sm font-black text-slate-700">
+            저장된 관심 역세권이 없습니다.
+          </p>
+          <p className="m-0 mt-2 text-sm font-bold text-slate-500">
+            입지 추천에서 관심 지역을 저장하면 이곳에 표시됩니다.
+          </p>
         </div>
-      </>
+      </div>
     )
   }
 
   return (
-    <>
-      {statusBadge}
-      <div className="grid gap-3 px-5 py-5">
-        {locations.map((location) => {
-          const savedAtLabel = formatInterestSavedAt(location.savedAt)
+    <div className="grid gap-3 px-5 py-5">
+      {locations.map((location) => {
+        const savedAtLabel = formatInterestSavedAt(location.savedAt)
 
-          return (
-            <article
-              className="grid grid-cols-[1fr_120px_220px] items-center gap-4 rounded-[13px] border border-blue-100 bg-white p-5 max-lg:grid-cols-1"
-              key={location.id}
-            >
-              <div>
-                <h3 className="m-0 text-xl font-black text-slate-900">
-                  {location.station}
-                </h3>
-                <p className="m-0 mt-2 text-sm font-bold text-slate-500">
-                  {location.district} · {location.businessType}
+        return (
+          <article
+            className="grid grid-cols-[1fr_120px_220px] items-center gap-4 rounded-[13px] border border-blue-100 bg-white p-5 max-lg:grid-cols-1"
+            key={location.id}
+          >
+            <div>
+              <h3 className="m-0 text-xl font-black text-slate-900">
+                {location.station}
+              </h3>
+              <p className="m-0 mt-2 text-sm font-bold text-slate-500">
+                {location.district} · {location.businessType}
+              </p>
+              {savedAtLabel ? (
+                <p className="m-0 mt-1 text-xs font-bold text-slate-400">
+                  저장일 {savedAtLabel}
                 </p>
-                {savedAtLabel ? (
-                  <p className="m-0 mt-1 text-xs font-bold text-slate-400">
-                    저장일 {savedAtLabel}
-                  </p>
-                ) : null}
-                {location.reason ? (
-                  <p className="m-0 mt-2 text-sm font-bold text-slate-600">
-                    {location.reason}
-                  </p>
-                ) : null}
-              </div>
-              <div className="text-center max-lg:text-left">
-                <span className="block text-xs font-black text-slate-500">AI 점수</span>
-                <strong className="text-2xl font-black text-blue-600">
-                  {location.score}
-                </strong>
-              </div>
-              <div className="flex justify-end gap-2 max-lg:justify-start">
-                <button
-                  className="h-10 rounded-lg bg-blue-600 px-5 text-sm font-black text-white"
-                  onClick={onView}
-                  type="button"
-                >
-                  분석 보기
-                </button>
-                <button
-                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-black text-slate-700"
-                  onClick={() => onDelete(location)}
-                  type="button"
-                >
-                  <Trash2 aria-hidden="true" size={16} />
-                  삭제
-                </button>
-              </div>
-            </article>
-          )
-        })}
-      </div>
-    </>
+              ) : null}
+              {location.reason ? (
+                <p className="m-0 mt-2 text-sm font-bold text-slate-600">
+                  {location.reason}
+                </p>
+              ) : null}
+            </div>
+            <div className="text-center max-lg:text-left">
+              <span className="block text-xs font-black text-slate-500">AI 점수</span>
+              <strong className="text-2xl font-black text-blue-600">
+                {location.score}
+              </strong>
+            </div>
+            <div className="flex justify-end gap-2 max-lg:justify-start">
+              <button
+                className="h-10 rounded-lg bg-blue-600 px-5 text-sm font-black text-white"
+                onClick={onView}
+                type="button"
+              >
+                분석 보기
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-black text-slate-700"
+                onClick={() => onDelete(location)}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" size={16} />
+                삭제
+              </button>
+            </div>
+          </article>
+        )
+      })}
+    </div>
   )
 }
 
 function NotificationsTab({
-  notificationSourceStatus,
   onChange,
   onSave,
   settings,
 }: {
-  notificationSourceStatus: NotificationSettingsStatus
   onChange: (settings: NotificationSettings) => void
   onSave: () => void
   settings: NotificationSettings
@@ -1908,15 +1601,6 @@ function NotificationsTab({
 
   return (
     <div className="grid gap-5 px-5 py-5">
-      <div>
-        <BackendStatusBadge
-          connectedLabel="Supabase 알림 설정 연결됨"
-          fallbackLabel="백엔드 미연결 · 로컬 알림 설정 표시"
-          loadingLabel="백엔드 미연결 · 로컬 알림 설정 표시"
-          status={notificationSourceStatus}
-        />
-      </div>
-
       <section className="rounded-xl border border-blue-100 bg-white p-5">
         <h3 className="m-0 mb-4 text-lg font-black">알림 방식</h3>
         <div className="grid grid-cols-3 gap-3 max-md:grid-cols-1">
@@ -2029,8 +1713,6 @@ function ReportPanel({
   activities,
   filteredReports,
   interestLocations,
-  locationSourceStatus,
-  notificationSourceStatus,
   notificationSettings,
   onDeleteInterest,
   onDeleteReport,
@@ -2044,9 +1726,7 @@ function ReportPanel({
   onSortChange,
   onTabChange,
   onViewInterest,
-  predictionResultSourceStatus,
   reportFilterCounts,
-  reportSourceStatus,
   searchQuery,
   sortOrder,
 }: {
@@ -2055,8 +1735,6 @@ function ReportPanel({
   activities: ActivityItem[]
   filteredReports: SavedReport[]
   interestLocations: InterestLocation[]
-  locationSourceStatus: BackendReportStatus
-  notificationSourceStatus: NotificationSettingsStatus
   notificationSettings: NotificationSettings
   onDeleteInterest: (location: InterestLocation) => void
   onDeleteReport: (report: SavedReport) => void
@@ -2070,9 +1748,7 @@ function ReportPanel({
   onSortChange: (value: SortOrder) => void
   onTabChange: (tab: MyPageTab) => void
   onViewInterest: () => void
-  predictionResultSourceStatus: BackendReportStatus
   reportFilterCounts: ReportFilterCounts
-  reportSourceStatus: BackendReportStatus
   searchQuery: string
   sortOrder: SortOrder
 }) {
@@ -2111,9 +1787,7 @@ function ReportPanel({
           onSearchChange={onSearchChange}
           onShare={onShareReport}
           onSortChange={onSortChange}
-          predictionResultSourceStatus={predictionResultSourceStatus}
           reportFilterCounts={reportFilterCounts}
-          reportSourceStatus={reportSourceStatus}
           reports={filteredReports}
           searchQuery={searchQuery}
           sortOrder={sortOrder}
@@ -2122,7 +1796,6 @@ function ReportPanel({
 
       {activeTab === 'interest-locations' ? (
         <InterestLocationsTab
-          locationSourceStatus={locationSourceStatus}
           locations={interestLocations}
           onDelete={onDeleteInterest}
           onView={onViewInterest}
@@ -2131,7 +1804,6 @@ function ReportPanel({
 
       {activeTab === 'notifications' ? (
         <NotificationsTab
-          notificationSourceStatus={notificationSourceStatus}
           onChange={onSetNotificationSettings}
           onSave={onSaveNotifications}
           settings={notificationSettings}
@@ -2199,8 +1871,6 @@ export function MyPage() {
           backendNotificationSettingsResponse.settings,
         )
       : undefined
-  const notificationSourceStatus: NotificationSettingsStatus =
-    isBackendNotificationSettingsConnected ? 'connected' : 'fallback'
   const notificationSettingsFallback = isBackendNotificationSettingsConnected
     ? emptyNotificationSettings
     : localNotificationSettings
@@ -2224,8 +1894,6 @@ export function MyPage() {
           backendOnboardingSettingsResponse.settings,
         )
       : undefined
-  const onboardingSettingsStatus: OnboardingSettingsStatus =
-    isBackendOnboardingSettingsConnected ? 'connected' : 'fallback'
   const profile = useMemo(
     () =>
       buildBackendProfile(
@@ -2237,7 +1905,6 @@ export function MyPage() {
   )
   const backendSavedLocationsQuery = useBackendSavedLocations()
   const deleteBackendSavedLocationMutation = useDeleteBackendSavedLocation()
-  const backendPredictionResultsQuery = useBackendPredictionResults()
   const isBackendSavedLocationsConnected =
     backendSavedLocationsQuery.data?.data_status === 'supabase_connected'
   const backendInterestLocations = useMemo(() => {
@@ -2251,26 +1918,7 @@ export function MyPage() {
         (location) => !hiddenBackendInterestLocationIds.includes(location.id),
       )
     : interestLocations
-  const locationSourceStatus: BackendReportStatus = isBackendSavedLocationsConnected
-    ? 'connected'
-    : 'fallback'
-  const isBackendPredictionResultsConnected =
-    backendPredictionResultsQuery.data?.data_status === 'supabase_connected'
-  const backendPredictionReports = useMemo(() => {
-    const response = backendPredictionResultsQuery.data
-    return response?.data_status === 'supabase_connected'
-      ? normalizeBackendPredictionResults(response.results)
-      : []
-  }, [backendPredictionResultsQuery.data])
-  const predictionReportsForMyPage = isBackendPredictionResultsConnected
-    ? backendPredictionReports
-    : normalizePredictionReports()
-  const predictionResultSourceStatus: BackendReportStatus =
-    isBackendPredictionResultsConnected ? 'connected' : 'fallback'
-  const localSavedReports = buildSavedReports(
-    visibleInterestLocations,
-    predictionReportsForMyPage,
-  )
+  const localSavedReports = buildSavedReports()
   const backendSavedReportsQuery = useBackendSavedReports()
   const updateBackendSavedReportMutation = useUpdateBackendSavedReport()
   const deleteBackendSavedReportMutation = useDeleteBackendSavedReport()
@@ -2285,15 +1933,12 @@ export function MyPage() {
       : []
   }, [backendSavedReportsQuery.data, hiddenBackendReportIds])
   const savedReports = isBackendSavedReportsConnected
-    ? mergeSavedReports([...backendSavedReports, ...predictionReportsForMyPage])
+    ? backendSavedReports
     : localSavedReports
   const reportFilterCounts = useMemo(
     () => countReportsByFilter(savedReports),
     [savedReports],
   )
-  const reportSourceStatus: BackendReportStatus = isBackendSavedReportsConnected
-    ? 'connected'
-    : 'fallback'
 
   const handleTabChange = (tab: MyPageTab) => {
     setSearchParams(tab === 'reports' ? {} : { tab })
@@ -2365,7 +2010,7 @@ export function MyPage() {
           tags: input.tags,
         }
 
-        const response = await updateBackendSavedReportMutation.mutateAsync({
+        await updateBackendSavedReportMutation.mutateAsync({
           id: report.id,
           input: {
             business_type: report.businessType,
@@ -2375,18 +2020,14 @@ export function MyPage() {
           },
         })
 
-        showMessage(
-          response.data_status === 'supabase_connected'
-            ? 'Supabase에 리포트 수정 내용을 저장했어요.'
-            : '백엔드 미연결 · 로컬 리포트를 수정했어요.',
-        )
+        showMessage('리포트 수정 내용을 저장했어요.')
       } catch {
-        showMessage('백엔드 미연결 · 로컬 리포트를 수정했어요.')
+        showMessage('리포트 수정 내용을 저장했어요.')
       }
       return
     }
 
-    showMessage('백엔드 미연결 · 로컬 리포트를 수정했어요.')
+    showMessage('리포트 수정 내용을 저장했어요.')
   }
 
   const handleDeleteReport = async (report: SavedReport) => {
@@ -2399,26 +2040,22 @@ export function MyPage() {
       setHiddenBackendReportIds((current) => [...current, report.id])
 
       try {
-        const response = await deleteBackendSavedReportMutation.mutateAsync(report.id)
+        await deleteBackendSavedReportMutation.mutateAsync(report.id)
         removeSavedReportLocalEdit(report)
         setReportStorageRevision((current) => current + 1)
-        showMessage(
-          response.data_status === 'supabase_connected'
-            ? 'Supabase에서 리포트를 삭제했어요.'
-            : '백엔드 미연결 · 로컬 리포트를 삭제했어요.',
-        )
+        showMessage('리포트를 삭제했어요.')
       } catch {
         setHiddenBackendReportIds(previousHiddenReportIds)
         deleteSavedReportFromLocalStorage(report)
         setReportStorageRevision((current) => current + 1)
-        showMessage('백엔드 미연결 · 로컬 리포트를 삭제했어요.')
+        showMessage('리포트를 삭제했어요.')
       }
       return
     }
 
     deleteSavedReportFromLocalStorage(report)
     setReportStorageRevision((current) => current + 1)
-    showMessage('백엔드 미연결 · 로컬 리포트를 삭제했어요.')
+    showMessage('리포트를 삭제했어요.')
   }
 
   const handleDeleteInterest = async (location: InterestLocation) => {
@@ -2432,7 +2069,7 @@ export function MyPage() {
         showMessage('관심 역세권에서 삭제되었습니다.')
       } catch {
         setHiddenBackendInterestLocationIds(previousHiddenIds)
-        showMessage('백엔드 삭제에 실패했습니다. 관심 지역 목록을 유지합니다.')
+        showMessage('삭제에 실패했습니다. 관심 지역 목록을 유지합니다.')
       }
       return
     }
@@ -2451,20 +2088,18 @@ export function MyPage() {
     try {
       const backendInput = buildBackendNotificationSettingsInput(notificationSettings)
       const settingId = readString(backendNotificationSetting?.id)
-      const response = settingId
-        ? await updateBackendNotificationSettingsMutation.mutateAsync({
-            id: settingId,
-            input: backendInput,
-          })
-        : await createBackendNotificationSettingsMutation.mutateAsync(backendInput)
+      if (settingId) {
+        await updateBackendNotificationSettingsMutation.mutateAsync({
+          id: settingId,
+          input: backendInput,
+        })
+      } else {
+        await createBackendNotificationSettingsMutation.mutateAsync(backendInput)
+      }
 
-      showMessage(
-        response.data_status === 'supabase_connected'
-          ? 'Supabase에 알림 설정을 저장했어요.'
-          : '백엔드 미연결 · 로컬에 알림 설정을 저장했어요.',
-      )
+      showMessage('알림 설정을 저장했어요.')
     } catch {
-      showMessage('백엔드 미연결 · 로컬에 알림 설정을 저장했어요.')
+      showMessage('알림 설정을 저장했어요.')
     }
   }
 
@@ -2516,10 +2151,7 @@ export function MyPage() {
 
           <div className="grid min-w-0 grid-cols-[380px_minmax(0,1fr)] gap-7 max-[1740px]:grid-cols-[340px_minmax(0,1fr)] max-xl:grid-cols-1">
             <div className="grid min-w-0 content-start gap-5">
-              <ProfileCard
-                onboardingSettingsStatus={onboardingSettingsStatus}
-                profile={profile}
-              />
+              <ProfileCard profile={profile} />
               <AlertCard notifications={defaultNotifications} />
             </div>
 
@@ -2529,8 +2161,6 @@ export function MyPage() {
               activities={activities}
               filteredReports={filteredReports}
               interestLocations={visibleInterestLocations}
-              locationSourceStatus={locationSourceStatus}
-              notificationSourceStatus={notificationSourceStatus}
               notificationSettings={notificationSettings}
               onDeleteInterest={handleDeleteInterest}
               onDeleteReport={handleDeleteReport}
@@ -2544,9 +2174,7 @@ export function MyPage() {
               onSortChange={setSortOrder}
               onTabChange={handleTabChange}
               onViewInterest={() => navigate('/recommendation')}
-              predictionResultSourceStatus={predictionResultSourceStatus}
               reportFilterCounts={reportFilterCounts}
-              reportSourceStatus={reportSourceStatus}
               searchQuery={searchQuery}
               sortOrder={sortOrder}
             />
