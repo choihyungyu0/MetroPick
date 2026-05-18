@@ -280,6 +280,49 @@ describe('RecommendationPage', () => {
     expect(screen.queryAllByTestId('recommendation-map-marker')).toHaveLength(0)
   })
 
+  it('stores recommendation metrics and coordinates for report rendering', async () => {
+    const user = userEvent.setup()
+    mockRecommendationResponse({
+      dataStatus: 'recommendation_csv',
+      displayStationName: '서남동 예정역',
+      stationName: '2호선_215',
+    })
+
+    renderRecommendationPage()
+
+    expect(await screen.findByRole('heading', { name: '서남동 예정역' })).toBeInTheDocument()
+    const reportButtons = await screen.findAllByRole('button', { name: /리포트 보기/ })
+    await user.click(reportButtons[0] as HTMLElement)
+
+    const raw = window.localStorage.getItem('metropick-selected-recommendation')
+    expect(raw).not.toBeNull()
+
+    const selectedRecommendation = JSON.parse(raw ?? '{}') as {
+      competition?: number
+      dataStatus?: string
+      growth?: number
+      lat?: number
+      lng?: number
+      score?: number
+      sourceLabel?: string
+      stability?: number
+      station?: string
+      stationId?: string
+    }
+    expect(selectedRecommendation).toMatchObject({
+      station: '서남동 예정역',
+      stationId: '2호선_215',
+      score: 73,
+      growth: 79,
+      stability: 76,
+      competition: 50,
+      lat: 35.14,
+      lng: 126.84,
+      dataStatus: 'recommendation_csv',
+      sourceLabel: 'FastAPI 추천 CSV',
+    })
+  })
+
   it('saves an interest location through the backend and syncs localStorage', async () => {
     const fetchMock = mockSavedLocationCreate()
     const user = userEvent.setup()

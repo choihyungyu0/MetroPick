@@ -11,16 +11,21 @@ export type LocationRecommendationRiskLevel = '위험 낮음' | '위험 보통' 
 export type LocationRecommendationItem = {
   accessibility: number
   competition: number
+  dataStatus?: string
   district: string
   growth: number
   id: string
+  lat?: number
   line: string
+  lng?: number
   rank: number
   reason: string
   riskLevel: LocationRecommendationRiskLevel
   score: number
+  sourceLabel?: string
   stability: number
   station: string
+  stationId?: string
 }
 
 type RecommendationSeed = {
@@ -184,8 +189,11 @@ export const mockLocationRecommendations: LocationRecommendationItem[] =
       id: item.id,
       rank: item.rank,
       station: station.name,
+      stationId: station.id,
       line: station.line.replace('광주 ', ''),
       district: station.district,
+      lat: station.latitude,
+      lng: station.longitude,
       score: item.score,
       growth: item.scoreBreakdown.growth,
       stability: item.scoreBreakdown.stability,
@@ -193,5 +201,7 @@ export const mockLocationRecommendations: LocationRecommendationItem[] =
       accessibility: item.scoreBreakdown.accessibility,
       riskLevel: item.riskLevel,
       reason: item.reason,
+      dataStatus: 'mock_fixture',
+      sourceLabel: '목업 추천 데이터',
     }
   })

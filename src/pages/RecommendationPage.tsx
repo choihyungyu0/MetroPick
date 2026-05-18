@@ -207,31 +207,43 @@ function buildRecommendationItems(
     return mockLocationRecommendations
   }
 
-  const mergedItems = backendItems.slice(0, 5).map((backendItem, index) => {
-    const fallbackItem = mockLocationRecommendations[index] ?? mockLocationRecommendations[0]
-    const stationName =
-      backendItem.display_station_name?.trim() || backendItem.station_name
-    const dataSourceLabel =
-      backendItem.data_status === 'recommendation_csv'
-        ? 'FastAPI 추천 CSV 기준입니다.'
-        : 'FastAPI 샘플 추천 기준입니다.'
+  const mergedItems: Array<LocationRecommendationItem | null> = backendItems
+    .slice(0, 5)
+    .map((backendItem, index) => {
+      const fallbackItem = mockLocationRecommendations[index] ?? mockLocationRecommendations[0]
+      const stationName =
+        backendItem.display_station_name?.trim() || backendItem.station_name
+      const sourceLabel =
+        backendItem.data_status === 'recommendation_csv'
+          ? 'FastAPI 추천 CSV'
+          : 'FastAPI 샘플 추천'
+      const dataSourceLabel =
+        backendItem.data_status === 'recommendation_csv'
+          ? 'FastAPI 추천 CSV 기준입니다.'
+          : 'FastAPI 샘플 추천 기준입니다.'
 
-    if (!fallbackItem) {
-      return null
-    }
+      if (!fallbackItem) {
+        return null
+      }
 
-    return {
-      ...fallbackItem,
-      id: buildRecommendationItemId(backendItem, index),
-      rank: index + 1,
-      station: stationName,
-      score: clampRecommendationScore(backendItem.startup_suitability_score),
-      growth: clampRecommendationScore(backendItem.floating_demand_index),
-      stability: clampRecommendationScore(backendItem.business_diversity_index),
-      competition: clampRecommendationScore(backendItem.competition_index),
-      reason: `${backendItem.recommendation_label} · ${dataSourceLabel}`,
-    } satisfies LocationRecommendationItem
-  })
+      return {
+        ...fallbackItem,
+        id: buildRecommendationItemId(backendItem, index),
+        rank: index + 1,
+        station: stationName,
+        stationId: backendItem.station_id,
+        line: backendItem.line || fallbackItem.line,
+        ...(backendItem.lat !== null ? { lat: backendItem.lat } : {}),
+        ...(backendItem.lng !== null ? { lng: backendItem.lng } : {}),
+        score: clampRecommendationScore(backendItem.startup_suitability_score),
+        growth: clampRecommendationScore(backendItem.floating_demand_index),
+        stability: clampRecommendationScore(backendItem.business_diversity_index),
+        competition: clampRecommendationScore(backendItem.competition_index),
+        reason: `${backendItem.recommendation_label} · ${dataSourceLabel}`,
+        dataStatus: backendItem.data_status,
+        sourceLabel,
+      } satisfies LocationRecommendationItem
+    })
 
   return mergedItems.filter((item): item is LocationRecommendationItem => item !== null)
 }
@@ -657,8 +669,21 @@ export function RecommendationPage() {
   const handleViewReport = (item: LocationRecommendationItem) => {
     writeStorage('metropick-selected-recommendation', {
       station: item.station,
+      stationId: item.stationId,
+      line: item.line,
+      district: item.district,
       businessType: filters.businessType,
       score: item.score,
+      growth: item.growth,
+      stability: item.stability,
+      competition: item.competition,
+      accessibility: item.accessibility,
+      riskLevel: item.riskLevel,
+      reason: item.reason,
+      lat: item.lat ?? null,
+      lng: item.lng ?? null,
+      dataStatus: item.dataStatus,
+      sourceLabel: item.sourceLabel,
       createdAt: new Date().toISOString(),
     })
     navigate('/report')

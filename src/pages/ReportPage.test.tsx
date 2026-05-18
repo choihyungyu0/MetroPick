@@ -1,9 +1,29 @@
+import type { ReactNode } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ReportPage } from './ReportPage'
+
+vi.mock('react-leaflet', async () => {
+  const React = await import('react')
+
+  const Layer = ({ children }: { children?: ReactNode }) =>
+    React.createElement('div', null, children)
+
+  return {
+    Circle: Layer,
+    CircleMarker: Layer,
+    MapContainer: ({ children }: { children?: ReactNode }) =>
+      React.createElement('div', { 'data-testid': 'report-leaflet-map' }, children),
+    TileLayer: () => React.createElement('div', { 'data-testid': 'osm-tile-layer' }),
+    Tooltip: Layer,
+    useMap: () => ({
+      setView: () => undefined,
+    }),
+  }
+})
 
 function renderReportPage() {
   return render(
@@ -18,7 +38,7 @@ describe('ReportPage', () => {
     window.localStorage.clear()
   })
 
-  it('renders the future sales report with local image assets', () => {
+  it('renders the future sales report with a location-based map', () => {
     renderReportPage()
 
     expect(
@@ -28,7 +48,13 @@ describe('ReportPage', () => {
       screen.getByAltText('백운광장역 개통 예정 상권 대표 이미지'),
     ).toBeInTheDocument()
     expect(screen.getByAltText('연도별 예상 매출 추이 차트')).toBeInTheDocument()
-    expect(screen.getByAltText('백운광장역 500m 상권 지도 스냅샷')).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: '백운광장역 500m 상권 위치 기반 지도' }),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('report-leaflet-map')).toBeInTheDocument()
+    expect(screen.getByTestId('osm-tile-layer')).toBeInTheDocument()
+    expect(screen.queryByAltText('백운광장역 500m 상권 지도 스냅샷')).not.toBeInTheDocument()
+    expect(screen.getByText('지도 기준: 내장 역 좌표')).toBeInTheDocument()
     expect(screen.getAllByText('백운광장역 500m 상권').length).toBeGreaterThan(0)
     expect(
       screen
@@ -55,7 +81,15 @@ describe('ReportPage', () => {
       'metropick-selected-recommendation',
       JSON.stringify({
         businessType: '카페/디저트',
+        competition: 42,
+        dataStatus: 'recommendation_csv',
+        growth: 88,
+        lat: 35.1516,
+        lng: 126.8691,
+        reason: '공공데이터 기반 추천 지표가 높습니다.',
         score: 100,
+        sourceLabel: 'FastAPI 추천 CSV',
+        stability: 81,
         station: '상무2동 예정역',
       }),
     )
@@ -68,12 +102,17 @@ describe('ReportPage', () => {
       screen.getByAltText('상무2동 예정역 개통 예정 상권 대표 이미지'),
     ).toBeInTheDocument()
     expect(
-      screen.getByAltText('상무2동 예정역 500m 상권 지도 스냅샷'),
+      screen.getByRole('region', { name: '상무2동 예정역 500m 상권 위치 기반 지도' }),
     ).toBeInTheDocument()
+    expect(screen.getByText('지도 기준: FastAPI 추천 CSV 좌표')).toBeInTheDocument()
+    expect(screen.getByText(/FastAPI 추천 CSV 지표를 반영했습니다/)).toBeInTheDocument()
+    expect(screen.getByText('종합 결론: 매우 유망 (추천 점수 100점)')).toBeInTheDocument()
+    expect(screen.getByText('100점')).toBeInTheDocument()
 
     const raw = window.localStorage.getItem('metropick-current-report')
     const report = JSON.parse(raw ?? '{}') as {
       businessType?: string
+      mapCoordinate?: { lat?: number; lng?: number }
       stationArea?: string
       title?: string
     }
@@ -81,6 +120,10 @@ describe('ReportPage', () => {
       businessType: '카페/디저트',
       stationArea: '상무2동 예정역 500m 상권',
       title: '상무2동 예정역 500m 상권 미래 매출 예측 리포트',
+    })
+    expect(report.mapCoordinate).toMatchObject({
+      lat: 35.1516,
+      lng: 126.8691,
     })
   })
 
