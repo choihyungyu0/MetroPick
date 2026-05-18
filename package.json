@@ -10,8 +10,8 @@
     "format": "prettier . --write",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --config vite.config.ts",
+    "test:watch": "vitest --config vite.config.ts",
     "e2e": "node scripts/run-e2e.mjs",
     "validate": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
