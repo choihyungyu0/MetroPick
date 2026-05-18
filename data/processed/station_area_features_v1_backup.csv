@@ -1,0 +1,10 @@
+station_id,station_name,radius_m,total_store_count,same_business_count_by_type,cafe_count,restaurant_count,convenience_count,pharmacy_count,beauty_count,academy_count,retail_count,business_type_count,business_diversity_index,bus_boarding_count,bus_alighting_count,bus_total_count,nearby_bus_stop_count,subway_pattern_score,competition_index,floating_demand_index,sales_potential_index,closure_risk_index,startup_suitability_score
+GJ-S001,시청역,500,6,1,1,2,1,1,1,0,2,6,100.0,661,677,1338,3,41.92,82.5,53.56,60.28,56.99,34.0
+GJ-S002,상무역,500,6,1,1,2,1,1,0,1,2,6,100.0,700,688,1388,3,100.0,82.5,69.85,68.42,52.91,44.21
+GJ-S003,백운광장역,500,6,1,1,2,1,0,1,1,2,6,100.0,802,818,1620,3,41.92,82.5,67.08,67.04,53.6,41.64
+GJ-S004,남광주역,500,6,1,1,2,1,1,1,0,2,6,100.0,1003,1014,2017,3,94.23,82.5,98.62,82.81,45.72,60.35
+GJ-S005,운천역,500,6,1,1,2,0,1,1,1,1,6,100.0,667,665,1332,3,71.27,82.5,60.29,63.64,55.3,38.32
+GJ-S006,금남로5가역,500,6,1,1,2,1,1,1,0,2,6,100.0,710,742,1452,3,68.73,82.5,65.44,66.22,54.02,41.18
+GJ-S007,광주역,500,6,1,1,2,1,1,0,1,2,6,100.0,862,869,1731,3,41.92,82.5,72.4,69.7,52.28,44.64
+GJ-S008,첨단지구역,500,4,1,1,2,1,0,0,1,1,4,100.0,517,507,1024,2,37.27,17.5,17.4,55.2,30.28,27.09
+GJ-S009,효천역,500,4,1,1,2,1,1,0,0,1,4,100.0,322,339,661,2,37.27,17.5,0.0,46.5,34.62,17.27
