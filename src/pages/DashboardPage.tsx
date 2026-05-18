@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import type { LucideIcon } from 'lucide-react'
 import {
   Bell,
@@ -19,22 +20,38 @@ import {
   Wallet,
 } from 'lucide-react'
 
+import { RecommendationMap } from '@/components/recommendation/RecommendationMap'
+import {
+  getBackendCommercialAnalysisMapData,
+  type BackendCommercialAnalysisMapData,
+  type BackendCommercialBusinessDistributionItem,
+  type BackendCommercialSummaryCard,
+} from '@/shared/api/backendCommercialAnalysisApi'
+import type {
+  BackendRecommendationItem,
+  BackendRecommendationMap,
+} from '@/shared/api/backendRecommendationApi'
+import { useBackendRecommendations } from '@/shared/api/hooks/useBackendRecommendations'
 import { dashboardAssets } from '@/shared/assets/dashboardAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
+import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { SimulationDisclaimer } from '@/shared/components/SimulationDisclaimer'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import {
-  businessPotentials,
+  businessPotentials as fallbackBusinessPotentials,
   dashboardInsights,
-  dashboardKpis,
+  dashboardKpis as fallbackDashboardKpis,
   dashboardNotices,
-  dashboardReports,
-  recommendedStations,
+  recommendedStations as fallbackRecommendedStations,
+  type BusinessPotential,
   type DashboardInsight,
   type DashboardKpi,
   type DashboardKpiTone,
+  type DashboardNotice,
+  type DashboardReport,
+  type RecommendedStation,
 } from '@/shared/data/mockDashboard'
 import { safeParseStorage } from '@/shared/lib/storage'
 
@@ -53,6 +70,34 @@ type StoredNotificationSetup = {
 type StoredOnboardingSummary = {
   completedAt?: string
 }
+
+type StoredCommercialAnalysisReport = {
+  createdAt?: string
+  region?: string
+  route?: string
+  selectedBusinessTypes?: string[]
+  selectedStations?: string[]
+  title?: string
+}
+
+type StoredPredictionResult = {
+  businessType?: string
+  createdAt?: string
+  recommendation_label?: string
+  stationArea?: string
+}
+
+type BackendStatus = 'connected' | 'fallback' | 'loading'
+
+type DashboardDemandPoint = {
+  label: string
+  value: number
+}
+
+const dashboardMapLayers = ['line_2', 'stations', 'density'] as const
+
+const apiSummaryIconKeys = ['users', 'store', 'alert', 'wallet'] as const
+const apiSummaryTones = ['blue', 'green', 'red', 'orange'] as const
 
 const kpiIcons = {
   alert: ShieldAlert,
@@ -80,6 +125,291 @@ const sparklineToneClasses = {
   orange: 'text-teal-500',
   red: 'text-rose-500',
 } satisfies Record<DashboardKpiTone, string>
+
+function formatPoint(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '0.0'
+  }
+
+  return value.toFixed(1)
+}
+
+function buildDashboardKpis(
+  summaryCards: BackendCommercialSummaryCard[] | undefined,
+): DashboardKpi[] {
+  if (!summaryCards?.length) {
+    return fallbackDashboardKpis
+  }
+
+  return summaryCards.slice(0, 4).map((card, index) => ({
+    id: `api-summary-${index}-${card.title}`,
+    label: card.title,
+    value: card.value,
+    change: card.change,
+    caption: card.desc,
+    iconKey: apiSummaryIconKeys[index] ?? 'store',
+    tone: apiSummaryTones[index] ?? 'blue',
+  }))
+}
+
+function buildBusinessPotentials(
+  distribution: BackendCommercialBusinessDistributionItem[] | undefined,
+): BusinessPotential[] {
+  if (!distribution?.length) {
+    return fallbackBusinessPotentials
+  }
+
+  return distribution.slice(0, 5).map((item) => ({
+    businessType: item.name,
+    value: `${item.count.toLocaleString()}개`,
+    percentage: `${formatPoint(item.percent)}%`,
+  }))
+}
+
+function buildRecommendedStations(
+  items: BackendRecommendationItem[] | undefined,
+): RecommendedStation[] {
+  if (!items?.length) {
+    return fallbackRecommendedStations
+  }
+
+  return items.slice(0, 5).map((item, index) => ({
+    rank: item.rank || index + 1,
+    station: item.display_station_name?.trim() || item.station_name,
+    score: Number(formatPoint(item.startup_suitability_score)),
+    strengths: [
+      item.recommended_business_type || item.recommendation_label,
+      `수요 ${formatPoint(item.floating_demand_index)}점`,
+      `위험 ${item.risk_level || '확인 필요'}`,
+    ],
+  }))
+}
+
+function buildDemandPoints(
+  items: BackendRecommendationItem[] | undefined,
+): DashboardDemandPoint[] {
+  if (!items?.length) {
+    return fallbackRecommendedStations.map((item) => ({
+      label: item.station,
+      value: item.score,
+    }))
+  }
+
+  return items.slice(0, 5).map((item) => ({
+    label: item.display_station_name?.trim() || item.station_name,
+    value: Math.max(0, Math.min(100, item.floating_demand_index)),
+  }))
+}
+
+function parseReportDate(value: string | undefined): number {
+  if (!value) {
+    return 0
+  }
+
+  const timestamp = new Date(value).getTime()
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function formatReportDate(value: string | undefined): string {
+  if (!value) {
+    return '저장일 없음'
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+    .format(date)
+    .replace(/\. /g, '.')
+    .replace(/\.$/, '')
+}
+
+function buildStoredDashboardReports(): DashboardReport[] {
+  const commercialReports =
+    safeParseStorage<StoredCommercialAnalysisReport[]>(
+      'metropick-saved-commercial-analysis-reports',
+    ) ?? []
+  const predictionResults =
+    safeParseStorage<StoredPredictionResult[]>('metropick-ai-prediction-results') ?? []
+  const reportsWithSort = [
+    ...commercialReports.map((report) => {
+      const businessLabel = report.selectedBusinessTypes?.[0]
+      const stationLabel = report.selectedStations?.[0]
+
+      return {
+        date: formatReportDate(report.createdAt),
+        location:
+          [report.region, report.route, stationLabel].filter(Boolean).join(' · ') ||
+          '광주광역시',
+        sortAt: parseReportDate(report.createdAt),
+        tag: businessLabel ? `상권 분석 · ${businessLabel}` : '상권 분석',
+        title: report.title?.trim() || '역세권 상권 분석 리포트',
+      }
+    }),
+    ...predictionResults.map((result) => ({
+      date: formatReportDate(result.createdAt),
+      location: result.stationArea || '선택 역세권',
+      sortAt: parseReportDate(result.createdAt),
+      tag: result.businessType ? `AI 예측 · ${result.businessType}` : 'AI 예측',
+      title: result.recommendation_label || 'AI 예측 결과 리포트',
+    })),
+  ]
+
+  return reportsWithSort
+    .sort((first, second) => second.sortAt - first.sortAt)
+    .slice(0, 3)
+    .map((report) => ({
+      date: report.date,
+      location: report.location,
+      tag: report.tag,
+      title: report.title,
+    }))
+}
+
+function buildDashboardInsights({
+  commercialMapData,
+  recommendationItems,
+}: {
+  commercialMapData: BackendCommercialAnalysisMapData | null
+  recommendationItems: BackendRecommendationItem[] | undefined
+}): DashboardInsight[] {
+  if (!commercialMapData && !recommendationItems?.length) {
+    return dashboardInsights
+  }
+
+  const apiInsights: DashboardInsight[] =
+    commercialMapData?.insight_summaries.slice(0, 2).map((message, index) => ({
+      id: `commercial-map-insight-${index}`,
+      iconKey: index === 0 ? 'target' : 'building',
+      message,
+      title: index === 0 ? '공공 상가 CSV 요약' : '선택 조건 기반 업종 분포',
+      tone: index === 0 ? 'green' : 'blue',
+    })) ?? []
+  const topRecommendation = recommendationItems?.[0]
+  if (topRecommendation) {
+    apiInsights.push({
+      id: 'recommendation-top-station',
+      iconKey: 'target',
+      message: `${topRecommendation.recommended_business_type || '추천 업종'} 기준 적합도 ${formatPoint(
+        topRecommendation.startup_suitability_score,
+      )}점, 유동수요 ${formatPoint(topRecommendation.floating_demand_index)}점입니다.`,
+      title: `${topRecommendation.display_station_name || topRecommendation.station_name} 추천 CSV 1순위`,
+      tone: 'green',
+    })
+  }
+
+  return apiInsights.slice(0, 3)
+}
+
+function buildDashboardNotices({
+  commercialMapData,
+  recommendationItems,
+}: {
+  commercialMapData: BackendCommercialAnalysisMapData | null
+  recommendationItems: BackendRecommendationItem[] | undefined
+}): DashboardNotice[] {
+  if (!commercialMapData && !recommendationItems?.length) {
+    return dashboardNotices
+  }
+
+  const notices: DashboardNotice[] = []
+  if (commercialMapData) {
+    notices.push({
+      label: '정보',
+      title: commercialMapData.message,
+      description: `상권 데이터 상태: ${commercialMapData.data_status}`,
+      type: 'info',
+    })
+
+    const denseStation =
+      commercialMapData.comparison_rows.find((row) => row.densityTone === 'danger') ??
+      commercialMapData.comparison_rows[0]
+    if (denseStation) {
+      notices.push({
+        label: '주의',
+        title: `${denseStation.station} 경쟁 강도 ${denseStation.competitionLevel}`,
+        description: '공공 상가 CSV 기준 점포 밀집도입니다.',
+        type: 'warning',
+      })
+    }
+  }
+
+  const topRecommendation = recommendationItems?.[0]
+  if (topRecommendation) {
+    notices.push({
+      label: '정보',
+      title: `${topRecommendation.display_station_name || topRecommendation.station_name} 추천 CSV 1순위`,
+      description: `추천 업종: ${
+        topRecommendation.recommended_business_type || '업종 미정'
+      } · 위험 수준: ${topRecommendation.risk_level || '정보 없음'}`,
+      type: 'info',
+    })
+  }
+
+  return notices.slice(0, 3)
+}
+
+function getDashboardBackendStatus({
+  commercialDataStatus,
+  isCommercialLoading,
+  isRecommendationLoading,
+  recommendationDataStatus,
+}: {
+  commercialDataStatus?: string
+  isCommercialLoading: boolean
+  isRecommendationLoading: boolean
+  recommendationDataStatus?: string
+}): BackendStatus {
+  if (isCommercialLoading || isRecommendationLoading) {
+    return 'loading'
+  }
+
+  if (
+    commercialDataStatus === 'public_store_csv' &&
+    recommendationDataStatus === 'recommendation_csv'
+  ) {
+    return 'connected'
+  }
+
+  return 'fallback'
+}
+
+function getDashboardFallbackLabel({
+  commercialDataStatus,
+  recommendationDataStatus,
+}: {
+  commercialDataStatus?: string
+  recommendationDataStatus?: string
+}): string {
+  if (
+    commercialDataStatus === 'sample_fixture' ||
+    recommendationDataStatus === 'sample_fixture'
+  ) {
+    return 'FastAPI 샘플 데이터 표시'
+  }
+
+  return '백엔드 미연결 · 목업 데이터 표시'
+}
+
+function formatDashboardTimestamp(date: Date): string {
+  return new Intl.DateTimeFormat('ko-KR', {
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false,
+    minute: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+    .format(date)
+    .replace(/\. /g, '.')
+    .replace(/\.$/, '')
+}
 
 function DashboardControls({
   notificationCount,
@@ -227,73 +557,115 @@ function PanelTopLink({ title }: { title: string }) {
   )
 }
 
-function MapPanel() {
+function MapPanel({
+  recommendationItems,
+  recommendationMap,
+}: {
+  recommendationItems: BackendRecommendationItem[]
+  recommendationMap?: BackendRecommendationMap
+}) {
+  const hasRecommendationMap = recommendationItems.length > 0
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-[18px] shadow-[0_8px_22px_rgba(12,33,70,0.06)] lg:row-span-2">
       <div className="flex items-center justify-between gap-3">
-        <PanelTitle info>광주 2호선 상권 변화 지도</PanelTitle>
+        <PanelTitle info>광주 2호선 추천 역세권 지도</PanelTitle>
         <button
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-700"
           type="button"
         >
-          히트맵: 유동인구 변화율
+          CSV 추천 위치
         </button>
       </div>
 
       <div className="relative mt-3.5 h-[440px] overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50 max-sm:h-[320px]">
-        <ImageWithFallback
-          alt="광주 2호선 상권 변화 지도"
-          className="h-full w-full object-cover"
-          draggable={false}
-          fallbackText="상권 변화 지도를 불러올 수 없습니다."
-          src={dashboardAssets.commercialChangeMap}
-        />
-        <div className="absolute bottom-5 right-3.5 grid gap-2">
-          {['+', '⌖', '⛶'].map((label) => (
-            <button
-              aria-label={`지도 컨트롤 ${label}`}
-              className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-lg font-extrabold text-slate-700 shadow-sm"
-              key={label}
-              type="button"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {hasRecommendationMap ? (
+          <RecommendationMap items={recommendationItems} map={recommendationMap} />
+        ) : (
+          <>
+            <ImageWithFallback
+              alt="광주 2호선 상권 변화 지도"
+              className="h-full w-full object-cover"
+              draggable={false}
+              fallbackText="상권 변화 지도를 불러올 수 없습니다."
+              src={dashboardAssets.commercialChangeMap}
+            />
+            <div className="absolute bottom-5 right-3.5 grid gap-2">
+              {['+', '⌖', '⛶'].map((label) => (
+                <button
+                  aria-label={`지도 컨트롤 ${label}`}
+                  className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-lg font-extrabold text-slate-700 shadow-sm"
+                  key={label}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   )
 }
 
-function PopulationTrendChart() {
-  const xLabels = ['2024.12', '2025.01', '2025.02', '2025.03', '2025.04', '2025.05']
+function DemandIndexChart({ points }: { points: DashboardDemandPoint[] }) {
+  const chartPoints = points.slice(0, 5)
+  const width = 400
+  const height = 200
+  const topPadding = 20
+  const bottomPadding = 30
+  const drawableHeight = height - topPadding - bottomPadding
+  const lastIndex = Math.max(chartPoints.length - 1, 1)
+  const coordinates = chartPoints.map((point, index) => {
+    const x = (index / lastIndex) * width
+    const y = topPadding + drawableHeight - (point.value / 100) * drawableHeight
+
+    return { ...point, x, y }
+  })
+  const linePath = coordinates
+    .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`)
+    .join(' ')
+  const areaPath = coordinates.length
+    ? `${linePath} L${coordinates.at(-1)?.x ?? 0} ${height - bottomPadding} L0 ${
+        height - bottomPadding
+      } Z`
+    : ''
+  const highlightedPoint =
+    coordinates.reduce<(typeof coordinates)[number] | null>((highest, point) => {
+      if (!highest || point.value > highest.value) {
+        return point
+      }
+
+      return highest
+    }, null)
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-[18px] shadow-[0_8px_22px_rgba(12,33,70,0.06)]">
       <div className="flex items-center justify-between">
         <PanelTitle>
-          유동인구 추이{' '}
-          <small className="text-xs text-slate-600">(광주 2호선 전체)</small>
+          추천 역세권 수요 지표{' '}
+          <small className="text-xs text-slate-600">(CSV Top 5)</small>
         </PanelTitle>
         <button
           className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-700"
           type="button"
         >
-          월간
+          수요 지수
           <ChevronDown aria-hidden="true" size={14} />
         </button>
       </div>
 
       <div className="relative mt-3 h-[215px] pl-11">
         <div className="absolute left-0 top-4 flex h-[200px] flex-col justify-between text-xs font-extrabold text-slate-600">
-          {['200K', '150K', '100K', '50K', '0'].map((label) => (
+          {['100', '75', '50', '25', '0'].map((label) => (
             <span key={label}>{label}</span>
           ))}
         </div>
         <svg
-          aria-label="유동인구 월간 추이 차트"
+          aria-label="추천 역세권 유동수요 지표 차트"
           className="h-[200px] w-full"
-          viewBox="0 0 440 250"
+          viewBox="0 0 440 230"
         >
           {[0, 1, 2, 3, 4].map((y) => (
             <line
@@ -315,42 +687,42 @@ function PopulationTrendChart() {
               y2="220"
             />
           ))}
+          <path d={areaPath} fill="#2473ff" opacity="0.08" />
           <path
-            d="M0 160 L80 150 L160 153 L240 145 L320 130 L400 105"
+            d={linePath}
             fill="none"
             stroke="#2473ff"
             strokeLinecap="round"
             strokeWidth="4"
           />
-          <path
-            d="M0 160 L80 150 L160 153 L240 145 L320 130 L400 105 L400 220 L0 220 Z"
-            fill="#2473ff"
-            opacity="0.08"
-          />
-          {[0, 80, 160, 240, 320, 400].map((x, index) => {
-            const y = [160, 150, 153, 145, 130, 105][index] ?? 160
-
-            return (
-              <circle
-                cx={x}
-                cy={y}
-                fill="#fff"
-                key={x}
-                r={index === 5 ? 8 : 5}
-                stroke="#2473ff"
-                strokeWidth="4"
-              />
-            )
-          })}
+          {coordinates.map((point) => (
+            <circle
+              cx={point.x}
+              cy={point.y}
+              fill="#fff"
+              key={point.label}
+              r={point === highlightedPoint ? 8 : 5}
+              stroke="#2473ff"
+              strokeWidth="4"
+            />
+          ))}
         </svg>
-        <div className="absolute bottom-10 right-4 w-32 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-lg">
-          <span className="font-extrabold text-slate-500">2025.05</span>
-          <strong className="mt-1 block text-base text-slate-950">125,430명</strong>
-          <p className="m-0 mt-1 font-black text-emerald-600">↗ 12.4%</p>
-        </div>
+        {highlightedPoint ? (
+          <div className="absolute bottom-10 right-4 w-36 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-lg">
+            <span className="font-extrabold text-slate-500">
+              {highlightedPoint.label}
+            </span>
+            <strong className="mt-1 block text-base text-slate-950">
+              {formatPoint(highlightedPoint.value)}점
+            </strong>
+            <p className="m-0 mt-1 font-black text-emerald-600">수요 지표</p>
+          </div>
+        ) : null}
         <div className="mt-[-4px] flex justify-between text-xs font-extrabold text-slate-500">
-          {xLabels.map((label) => (
-            <span key={label}>{label}</span>
+          {chartPoints.map((point) => (
+            <span className="max-w-16 truncate" key={point.label}>
+              {point.label}
+            </span>
           ))}
         </div>
       </div>
@@ -359,27 +731,29 @@ function PopulationTrendChart() {
 }
 
 function BusinessPotentialPanel({
+  items,
   selectedBusinessLabels,
 }: {
+  items: BusinessPotential[]
   selectedBusinessLabels: string[]
 }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-[18px] shadow-[0_8px_22px_rgba(12,33,70,0.06)]">
       <div className="flex items-center justify-between">
         <PanelTitle>
-          업종별 매출 잠재력 <small className="text-xs text-slate-600">(상위 5)</small>
+          업종별 점포 분포 <small className="text-xs text-slate-600">(상위 5)</small>
         </PanelTitle>
         <button
           className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-700"
           type="button"
         >
-          매출 잠재력 순
+          점포 수 기준
           <ChevronDown aria-hidden="true" size={14} />
         </button>
       </div>
 
       <div className="mt-6 grid gap-[18px]">
-        {businessPotentials.map((item) => {
+        {items.map((item) => {
           const percentage = Number.parseFloat(item.percentage)
           const width = Number.isFinite(percentage) ? Math.min(100, percentage * 3.2) : 40
           const isSelected = selectedBusinessLabels.includes(item.businessType)
@@ -414,10 +788,10 @@ function BusinessPotentialPanel({
   )
 }
 
-function RecommendedStationTable() {
+function RecommendedStationTable({ items }: { items: RecommendedStation[] }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-[18px] shadow-[0_8px_22px_rgba(12,33,70,0.06)] lg:col-span-2">
-      <PanelTitle info>AI 추천 역세권 TOP 5</PanelTitle>
+      <PanelTitle info>CSV 추천 역세권 TOP 5</PanelTitle>
 
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[680px] border-collapse text-sm">
@@ -438,7 +812,7 @@ function RecommendedStationTable() {
             </tr>
           </thead>
           <tbody>
-            {recommendedStations.map((item) => (
+            {items.map((item) => (
               <tr key={item.rank}>
                 <td className="h-10 border-b border-slate-100 px-4 text-center font-black text-slate-950">
                   {item.rank}
@@ -470,38 +844,48 @@ function RecommendedStationTable() {
   )
 }
 
-function RecentReportsPanel() {
+function RecentReportsPanel({ reports }: { reports: DashboardReport[] }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-[18px] shadow-[0_8px_22px_rgba(12,33,70,0.06)]">
       <PanelTopLink title="최근 저장한 리포트" />
 
       <div className="mt-3.5 grid">
-        {dashboardReports.map((report) => (
-          <div
-            className="grid min-h-[60px] grid-cols-[44px_1fr_auto] items-center gap-3 border-b border-slate-100 last:border-b-0 max-sm:grid-cols-[44px_1fr]"
-            key={report.title}
-          >
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600">
-              <FileText aria-hidden="true" size={21} />
+        {reports.length > 0 ? (
+          reports.map((report) => (
+            <div
+              className="grid min-h-[60px] grid-cols-[44px_1fr_auto] items-center gap-3 border-b border-slate-100 last:border-b-0 max-sm:grid-cols-[44px_1fr]"
+              key={`${report.title}-${report.date}`}
+            >
+              <div className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                <FileText aria-hidden="true" size={21} />
+              </div>
+              <div>
+                <strong className="block text-sm text-slate-900">{report.title}</strong>
+                <span className="mt-1 block text-xs text-slate-500">
+                  {report.location}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 max-sm:col-span-2 max-sm:ml-11">
+                <span className="text-xs font-extrabold text-slate-500">
+                  {report.date}
+                </span>
+                <em className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-black not-italic text-blue-600">
+                  {report.tag}
+                </em>
+              </div>
             </div>
-            <div>
-              <strong className="block text-sm text-slate-900">{report.title}</strong>
-              <span className="mt-1 block text-xs text-slate-500">{report.location}</span>
-            </div>
-            <div className="flex items-center gap-3 max-sm:col-span-2 max-sm:ml-11">
-              <span className="text-xs font-extrabold text-slate-500">{report.date}</span>
-              <em className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-black not-italic text-blue-600">
-                {report.tag}
-              </em>
-            </div>
+          ))
+        ) : (
+          <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm font-bold text-slate-500">
+            저장된 리포트가 없습니다.
           </div>
-        ))}
+        )}
       </div>
     </section>
   )
 }
 
-function InsightsPanel() {
+function InsightsPanel({ insights }: { insights: DashboardInsight[] }) {
   const toneClasses = {
     blue: 'bg-blue-400',
     green: 'bg-emerald-300',
@@ -513,7 +897,7 @@ function InsightsPanel() {
       <PanelTopLink title="AI 인사이트 요약" />
 
       <div className="mt-3.5 grid">
-        {dashboardInsights.map((item) => {
+        {insights.map((item) => {
           const Icon = insightIcons[item.iconKey]
 
           return (
@@ -540,7 +924,7 @@ function InsightsPanel() {
   )
 }
 
-function NoticesPanel() {
+function NoticesPanel({ notices }: { notices: DashboardNotice[] }) {
   const labelClasses = {
     danger: 'bg-rose-50 text-rose-600',
     info: 'bg-blue-50 text-blue-600',
@@ -552,7 +936,7 @@ function NoticesPanel() {
       <PanelTopLink title="알림 및 공지" />
 
       <div className="mt-3.5 grid">
-        {dashboardNotices.map((notice) => (
+        {notices.map((notice) => (
           <button
             className="grid min-h-16 grid-cols-[58px_1fr_24px] items-center gap-3 border-b border-slate-100 text-left last:border-b-0"
             key={notice.title}
@@ -590,8 +974,22 @@ export function DashboardPage() {
   const onboardingSummary = safeParseStorage<StoredOnboardingSummary>(
     'metropick-onboarding-summary',
   )
+  const commercialMapQuery = useQuery({
+    queryKey: ['dashboard-commercial-map-data'],
+    queryFn: () =>
+      getBackendCommercialAnalysisMapData({
+        layers: [...dashboardMapLayers],
+        line: '2호선',
+        radiusM: 500,
+        region: '광주광역시',
+      }),
+    retry: false,
+  })
+  const backendRecommendationsQuery = useBackendRecommendations(5)
 
-  const [lastUpdated, setLastUpdated] = useState('2025.05.20 09:30')
+  const [lastUpdated, setLastUpdated] = useState(() =>
+    formatDashboardTimestamp(new Date()),
+  )
   const stationCount = stationSetup?.selectedStations?.length ?? 0
   const selectedBusinessLabels = businessSetup?.selectedBusinessLabels ?? []
   const notificationCount = Math.max(
@@ -601,21 +999,60 @@ export function DashboardPage() {
   const completedLabel = onboardingSummary?.completedAt
     ? `온보딩 완료: ${onboardingSummary.completedAt}`
     : '온보딩 기본 설정'
+  const commercialMapData = commercialMapQuery.isSuccess
+    ? commercialMapQuery.data
+    : null
+  const recommendationItems = backendRecommendationsQuery.isSuccess
+    ? backendRecommendationsQuery.data.items
+    : undefined
+  const dashboardKpiItems = useMemo(
+    () => buildDashboardKpis(commercialMapData?.summary_cards),
+    [commercialMapData?.summary_cards],
+  )
+  const businessPotentialItems = useMemo(
+    () => buildBusinessPotentials(commercialMapData?.business_distribution),
+    [commercialMapData?.business_distribution],
+  )
+  const recommendedStationItems = useMemo(
+    () => buildRecommendedStations(recommendationItems),
+    [recommendationItems],
+  )
+  const demandPoints = useMemo(
+    () => buildDemandPoints(recommendationItems),
+    [recommendationItems],
+  )
+  const dashboardInsightItems = useMemo(
+    () =>
+      buildDashboardInsights({
+        commercialMapData,
+        recommendationItems,
+      }),
+    [commercialMapData, recommendationItems],
+  )
+  const dashboardNoticeItems = useMemo(
+    () =>
+      buildDashboardNotices({
+        commercialMapData,
+        recommendationItems,
+      }),
+    [commercialMapData, recommendationItems],
+  )
+  const recentReports = useMemo(() => buildStoredDashboardReports(), [])
+  const backendStatus = getDashboardBackendStatus({
+    commercialDataStatus: commercialMapQuery.data?.data_status,
+    isCommercialLoading: commercialMapQuery.isLoading,
+    isRecommendationLoading: backendRecommendationsQuery.isLoading,
+    recommendationDataStatus: backendRecommendationsQuery.data?.data_status,
+  })
+  const backendFallbackLabel = getDashboardFallbackLabel({
+    commercialDataStatus: commercialMapQuery.data?.data_status,
+    recommendationDataStatus: backendRecommendationsQuery.data?.data_status,
+  })
 
   const handleRefresh = () => {
-    const now = new Date()
-    const formatted = new Intl.DateTimeFormat('ko-KR', {
-      day: '2-digit',
-      hour: '2-digit',
-      hour12: false,
-      minute: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-      .format(now)
-      .replace(/\. /g, '.')
-      .replace(/\.$/, '')
-    setLastUpdated(formatted)
+    void commercialMapQuery.refetch()
+    void backendRecommendationsQuery.refetch()
+    setLastUpdated(formatDashboardTimestamp(new Date()))
   }
 
   return (
@@ -631,9 +1068,17 @@ export function DashboardPage() {
 
           <div className="mb-5 flex items-start justify-between gap-4 max-xl:flex-col">
             <div>
-              <h1 className="m-0 text-[31px] font-black tracking-[-0.8px] text-slate-950">
-                광주 2호선 상권 변화 대시보드
-              </h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="m-0 text-[31px] font-black tracking-[-0.8px] text-slate-950">
+                  광주 2호선 상권 변화 대시보드
+                </h1>
+                <BackendStatusBadge
+                  connectedLabel="FastAPI CSV 데이터 연결됨"
+                  fallbackLabel={backendFallbackLabel}
+                  loadingLabel="FastAPI 데이터 확인 중"
+                  status={backendStatus}
+                />
+              </div>
               <p className="m-0 mt-2 text-sm font-bold text-slate-500">
                 데이터 업데이트: {lastUpdated}
               </p>
@@ -666,22 +1111,28 @@ export function DashboardPage() {
           ) : null}
 
           <div className="grid grid-cols-4 gap-4 max-[1880px]:grid-cols-2 max-sm:grid-cols-1">
-            {dashboardKpis.map((kpi) => (
+            {dashboardKpiItems.map((kpi) => (
               <SummaryCard key={kpi.id} kpi={kpi} />
             ))}
           </div>
 
           <div className="mt-3.5 grid grid-cols-[1.45fr_0.85fr_0.85fr] gap-3.5 max-[1880px]:grid-cols-2 max-lg:grid-cols-1">
-            <MapPanel />
-            <PopulationTrendChart />
-            <BusinessPotentialPanel selectedBusinessLabels={selectedBusinessLabels} />
-            <RecommendedStationTable />
+            <MapPanel
+              recommendationItems={recommendationItems ?? []}
+              recommendationMap={backendRecommendationsQuery.data?.map}
+            />
+            <DemandIndexChart points={demandPoints} />
+            <BusinessPotentialPanel
+              items={businessPotentialItems}
+              selectedBusinessLabels={selectedBusinessLabels}
+            />
+            <RecommendedStationTable items={recommendedStationItems} />
           </div>
 
           <div className="mt-3.5 grid grid-cols-3 gap-3.5 max-xl:grid-cols-1">
-            <RecentReportsPanel />
-            <InsightsPanel />
-            <NoticesPanel />
+            <RecentReportsPanel reports={recentReports} />
+            <InsightsPanel insights={dashboardInsightItems} />
+            <NoticesPanel notices={dashboardNoticeItems} />
           </div>
         </section>
       </main>
