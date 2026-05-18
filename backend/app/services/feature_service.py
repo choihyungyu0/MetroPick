@@ -18,6 +18,11 @@ from ml.public_store_ingestion import (
     normalize_public_store_columns,
 )
 from ml.station_area_store_summary import build_station_area_store_summary
+from backend.app.services.station_identity import (
+    INTERNAL_LINE2_STATION_PATTERN,
+    display_station_name_for,
+    load_line2_station_display_names,
+)
 
 
 def _load_or_build_features() -> pd.DataFrame:
@@ -141,7 +146,6 @@ RECOMMENDATION_REQUIRED_COLUMNS = {
     "risk_reason",
     "strategy_comment",
 }
-INTERNAL_LINE2_STATION_PATTERN = re.compile(r"^2호선_(\d+)$")
 GWANGJU_CENTER = {"lat": 35.1595, "lng": 126.8526}
 LINE1_ROUTE_ORDER = {
     "평동": 1,
@@ -296,29 +300,7 @@ def _feature_string(feature: pd.Series | None, column: str) -> str:
 
 
 def _load_line2_station_display_names() -> dict[str, str]:
-    if not config.LINE2_STATION_COORDINATES_PATH.exists():
-        return {}
-
-    try:
-        coordinates = pd.read_csv(config.LINE2_STATION_COORDINATES_PATH)
-    except (OSError, pd.errors.ParserError, UnicodeDecodeError):
-        return {}
-
-    if coordinates.empty or not {"역번호", "행정동"}.issubset(coordinates.columns):
-        return {}
-
-    display_names: dict[str, str] = {}
-    for _, row in coordinates.iterrows():
-        station_number = _clean_string(row.get("역번호"))
-        district = _clean_string(row.get("행정동"))
-        if not station_number or not district:
-            continue
-
-        display_name = f"{district} 예정역"
-        display_names[station_number] = display_name
-        display_names[f"2호선_{station_number}"] = display_name
-
-    return display_names
+    return load_line2_station_display_names()
 
 
 def _display_station_name(
@@ -327,18 +309,12 @@ def _display_station_name(
     district: str,
     line2_display_names: dict[str, str],
 ) -> str | None:
-    for candidate in [station_name, station_id]:
-        if candidate in line2_display_names:
-            return line2_display_names[candidate]
-
-        match = INTERNAL_LINE2_STATION_PATTERN.match(candidate)
-        if match is not None and match.group(1) in line2_display_names:
-            return line2_display_names[match.group(1)]
-
-    if INTERNAL_LINE2_STATION_PATTERN.match(station_name) is not None and district:
-        return f"{district} 예정역"
-
-    return None
+    return display_station_name_for(
+        station_name=station_name,
+        station_id=station_id,
+        district=district,
+        line2_display_names=line2_display_names,
+    )
 
 
 def _competition_index_from_risk(risk_level: str) -> float:

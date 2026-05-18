@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 import re
 
 import pandas as pd
 
+from backend.app.services.station_identity import (
+    clean_station_text,
+    display_station_name_for,
+    line2_display_name_to_internal_name,
+    line2_identifier_to_internal_name,
+    load_line2_station_display_names,
+    normalize_station_key,
+)
 from ml import config
 from ml.predict import predict_startup_suitability
 
@@ -35,13 +42,20 @@ FEATURE_COLUMNS = [
     "sales_potential_index",
     "closure_risk_index",
 ]
-STATION_PARENTHESES_PATTERN = re.compile(r"\s*\([^)]*\)")
 
 
 @dataclass(frozen=True)
 class BusinessTypeProfile:
     count_columns: tuple[str, ...]
     strategy_comment: str
+
+
+@dataclass(frozen=True)
+class StationFeatureMatch:
+    row: pd.Series
+    station_id: str
+    station_name: str
+    display_station_name: str
 
 
 class PredictionStationNotFoundError(ValueError):
@@ -85,14 +99,11 @@ BUSINESS_TYPE_PROFILES = {
 
 
 def _clean_text(value: object) -> str:
-    if value is None or pd.isna(value):
-        return ""
-    return str(value).strip()
+    return clean_station_text(value)
 
 
-def _normalize_station_name(value: str) -> str:
-    cleaned = STATION_PARENTHESES_PATTERN.sub("", value).strip()
-    return cleaned.replace(" ", "")
+def _normalize_station_name(value: object) -> str:
+    return normalize_station_key(value)
 
 
 def _normalize_business_type(value: str) -> str:
@@ -138,29 +149,125 @@ def _load_station_features() -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def _load_line2_display_aliases(path: Path | None = None) -> dict[str, str]:
-    path = path or config.LINE2_STATION_COORDINATES_PATH
-    if not path.exists():
-        return {}
-    try:
-        coordinates = pd.read_csv(path)
-    except (OSError, pd.errors.ParserError, UnicodeDecodeError):
-        return {}
-    if coordinates.empty or not {"역번호", "행정동"}.issubset(coordinates.columns):
-        return {}
+def _load_line2_display_aliases() -> dict[str, str]:
+    return load_line2_station_display_names()
 
+
+def _load_recommendation_top5() -> pd.DataFrame:
+    if not config.RECOMMENDATION_TOP5_PATH.exists():
+        return pd.DataFrame()
+
+    try:
+        return pd.read_csv(config.RECOMMENDATION_TOP5_PATH)
+    except (OSError, pd.errors.ParserError, UnicodeDecodeError):
+        return pd.DataFrame()
+
+
+def _recommendation_display_station_name(
+    row: pd.Series,
+    line2_display_names: dict[str, str],
+) -> str:
+    explicit_display_name = _clean_text(row.get("display_station_name"))
+    if explicit_display_name:
+        return explicit_display_name
+
+    station_name = _clean_text(row.get("station_name"))
+    station_id = _clean_text(row.get("station_id"))
+    district = _clean_text(row.get("district"))
+    return (
+        display_station_name_for(
+            station_name=station_name,
+            station_id=station_id,
+            district=district,
+            line2_display_names=line2_display_names,
+        )
+        or station_name
+    )
+
+
+def _build_recommendation_station_aliases(
+    recommendations: pd.DataFrame,
+    line2_display_names: dict[str, str],
+) -> dict[str, str]:
     aliases: dict[str, str] = {}
-    for _, row in coordinates.iterrows():
-        station_number = _clean_text(row.get("역번호"))
-        district = _clean_text(row.get("행정동"))
-        if station_number and district:
-            aliases[f"2호선_{station_number}"] = f"{district} 예정역"
+    if recommendations.empty:
+        return aliases
+
+    for _, row in recommendations.iterrows():
+        station_name = _clean_text(row.get("station_name"))
+        if not station_name:
+            continue
+
+        station_id = _clean_text(row.get("station_id")) or station_name
+        display_name = _recommendation_display_station_name(row, line2_display_names)
+        for candidate in [station_name, station_id, display_name]:
+            normalized = _normalize_station_name(candidate)
+            if normalized:
+                aliases.setdefault(normalized, station_name)
+
     return aliases
 
 
-def _station_aliases(station_name: str, station_id: str) -> set[str]:
+def _append_lookup_token(tokens: list[str], value: object) -> None:
+    token = _clean_text(value)
+    if token and token not in tokens:
+        tokens.append(token)
+
+
+def _append_resolved_lookup_tokens(
+    tokens: list[str],
+    value: object,
+    line2_display_names: dict[str, str],
+    recommendation_aliases: dict[str, str],
+) -> None:
+    cleaned = _clean_text(value)
+    if not cleaned:
+        return
+
+    normalized = _normalize_station_name(cleaned)
+    display_aliases = line2_display_name_to_internal_name(line2_display_names)
+    for candidate in [
+        line2_identifier_to_internal_name(cleaned, line2_display_names),
+        recommendation_aliases.get(normalized),
+        display_aliases.get(normalized),
+        cleaned,
+    ]:
+        _append_lookup_token(tokens, candidate)
+
+
+def _station_lookup_tokens(
+    station_id: str | None,
+    station_name: str | None,
+    display_station_name: str | None,
+    line2_display_names: dict[str, str],
+    recommendation_aliases: dict[str, str],
+) -> list[str]:
+    tokens: list[str] = []
+    for value in [station_id, station_name, display_station_name]:
+        _append_resolved_lookup_tokens(
+            tokens=tokens,
+            value=value,
+            line2_display_names=line2_display_names,
+            recommendation_aliases=recommendation_aliases,
+        )
+    return tokens
+
+
+def _station_aliases(
+    station_name: str,
+    station_id: str,
+    display_station_name: str = "",
+) -> set[str]:
     normalized_name = _normalize_station_name(station_name)
-    aliases = {normalized_name, _normalize_station_name(station_id)}
+    aliases = {
+        alias
+        for alias in [
+            normalized_name,
+            _normalize_station_name(station_id),
+            _normalize_station_name(display_station_name),
+        ]
+        if alias
+    }
     if normalized_name == "첨단지구역":
         aliases.add("첨단역")
     if normalized_name.endswith("지구역"):
@@ -168,20 +275,211 @@ def _station_aliases(station_name: str, station_id: str) -> set[str]:
     return aliases
 
 
-def _find_station_feature_row(features: pd.DataFrame, station_name: str) -> pd.Series:
-    requested = _normalize_station_name(station_name)
-    if features.empty:
-        raise PredictionStationNotFoundError("Station feature data is not available.")
+def _display_name_for_row(
+    row: pd.Series,
+    line2_display_names: dict[str, str],
+) -> str:
+    station_name = _clean_text(row.get("station_name"))
+    station_id = _clean_text(row.get("station_id"))
+    explicit_display_name = _clean_text(row.get("display_station_name"))
+    if explicit_display_name:
+        return explicit_display_name
+
+    return (
+        display_station_name_for(
+            station_name=station_name,
+            station_id=station_id,
+            district=_clean_text(row.get("district")),
+            line2_display_names=line2_display_names,
+        )
+        or station_name
+    )
+
+
+def _station_match_from_row(
+    row: pd.Series,
+    line2_display_names: dict[str, str],
+) -> StationFeatureMatch:
+    station_name = _clean_text(row.get("station_name"))
+    station_id = _clean_text(row.get("station_id")) or station_name
+    return StationFeatureMatch(
+        row=row,
+        station_id=station_id,
+        station_name=station_name,
+        display_station_name=_display_name_for_row(row, line2_display_names),
+    )
+
+
+def _feature_row_matches(
+    row: pd.Series,
+    lookup_tokens: list[str],
+    line2_display_names: dict[str, str],
+) -> bool:
+    aliases = _station_aliases(
+        _clean_text(row.get("station_name")),
+        _clean_text(row.get("station_id")),
+        _display_name_for_row(row, line2_display_names),
+    )
+    return any(_normalize_station_name(token) in aliases for token in lookup_tokens)
+
+
+def _risk_level_to_competition_index(risk_level: str) -> float:
+    if "높" in risk_level:
+        return 82.5
+    if "낮" in risk_level:
+        return 17.5
+    return 50.0
+
+
+def _risk_level_to_closure_risk_index(risk_level: str) -> float:
+    if "높" in risk_level:
+        return 68.0
+    if "낮" in risk_level:
+        return 36.0
+    return 52.0
+
+
+def _business_diversity_from_reason(reason: str) -> float | None:
+    match = re.search(r"상권 다양성 지수\s*([0-9]+(?:\.[0-9]+)?)", reason)
+    if match is None:
+        return None
+
+    value = _safe_float(match.group(1), -1.0)
+    if value < 0:
+        return None
+    if value <= 1:
+        value *= 100
+    return _clamp_score(value)
+
+
+def _feature_row_from_recommendation(row: pd.Series) -> pd.Series:
+    station_name = _clean_text(row.get("station_name"))
+    station_id = _clean_text(row.get("station_id")) or station_name
+    score = _safe_float(row.get("startup_suitability_score"), 50.0)
+    growth_score = _safe_float(row.get("growth_score"), 50.0)
+    risk_level = _clean_text(row.get("risk_level"))
+    main_reason = _clean_text(row.get("main_reason"))
+    competition_index = _risk_level_to_competition_index(risk_level)
+    diversity_index = _business_diversity_from_reason(main_reason)
+    if diversity_index is None:
+        diversity_index = 50.0
+
+    bus_total = max(0.0, growth_score * 20.0)
+    base_values: dict[str, object] = {
+        "station_id": station_id,
+        "station_name": station_name,
+        "radius_m": config.DEFAULT_RADIUS_M,
+        "total_store_count": 7.0,
+        "same_business_count_by_type": 1.0,
+        "cafe_count": 1.0,
+        "restaurant_count": 1.0,
+        "convenience_count": 1.0,
+        "pharmacy_count": 1.0,
+        "beauty_count": 1.0,
+        "academy_count": 1.0,
+        "retail_count": 1.0,
+        "business_type_count": 7.0,
+        "business_diversity_index": diversity_index,
+        "bus_boarding_count": round(bus_total * 0.5, 2),
+        "bus_alighting_count": round(bus_total * 0.5, 2),
+        "bus_total_count": round(bus_total, 2),
+        "nearby_bus_stop_count": 2.0,
+        "subway_pattern_score": _clamp_score(growth_score),
+        "competition_index": competition_index,
+        "floating_demand_index": _clamp_score(growth_score),
+        "sales_potential_index": _clamp_score((score + growth_score) / 2.0),
+        "closure_risk_index": _risk_level_to_closure_risk_index(risk_level),
+        "startup_suitability_score": score,
+        "district": _clean_text(row.get("district")),
+        "display_station_name": _clean_text(row.get("display_station_name")),
+    }
+    return pd.Series(base_values)
+
+
+def _available_station_candidates(
+    features: pd.DataFrame,
+    recommendations: pd.DataFrame,
+    line2_display_names: dict[str, str],
+    limit: int = 8,
+) -> list[str]:
+    candidates: list[str] = []
+
+    def add_candidate(value: object) -> None:
+        candidate = _clean_text(value)
+        if candidate and candidate not in candidates:
+            candidates.append(candidate)
 
     for _, row in features.iterrows():
-        aliases = _station_aliases(
-            _clean_text(row.get("station_name")),
-            _clean_text(row.get("station_id")),
-        )
-        if requested in aliases:
-            return row
+        add_candidate(_display_name_for_row(row, line2_display_names))
+        add_candidate(row.get("station_name"))
+        add_candidate(row.get("station_id"))
+        if len(candidates) >= limit:
+            return candidates[:limit]
 
-    raise PredictionStationNotFoundError(f"Station not found: {station_name}")
+    for _, row in recommendations.iterrows():
+        add_candidate(_recommendation_display_station_name(row, line2_display_names))
+        add_candidate(row.get("station_name"))
+        add_candidate(row.get("station_id"))
+        if len(candidates) >= limit:
+            return candidates[:limit]
+
+    return candidates[:limit]
+
+
+def _station_not_found_message(
+    requested_label: str,
+    candidates: list[str],
+) -> str:
+    if candidates:
+        return (
+            f"Station not found: {requested_label}. "
+            f"Available candidates include: {', '.join(candidates)}"
+        )
+    return f"Station not found: {requested_label}. Available candidates include: none"
+
+
+def _find_station_feature_match(
+    features: pd.DataFrame,
+    station_id: str | None,
+    station_name: str | None,
+    display_station_name: str | None,
+) -> StationFeatureMatch:
+    line2_display_names = _load_line2_display_aliases()
+    recommendations = _load_recommendation_top5()
+    recommendation_aliases = _build_recommendation_station_aliases(
+        recommendations,
+        line2_display_names,
+    )
+    lookup_tokens = _station_lookup_tokens(
+        station_id=station_id,
+        station_name=station_name,
+        display_station_name=display_station_name,
+        line2_display_names=line2_display_names,
+        recommendation_aliases=recommendation_aliases,
+    )
+    candidates = _available_station_candidates(
+        features=features,
+        recommendations=recommendations,
+        line2_display_names=line2_display_names,
+    )
+    requested_label = _clean_text(station_id) or _clean_text(station_name) or _clean_text(display_station_name)
+    if not lookup_tokens:
+        raise PredictionStationNotFoundError(
+            _station_not_found_message("missing station identifier", candidates),
+        )
+
+    for _, row in features.iterrows():
+        if _feature_row_matches(row, lookup_tokens, line2_display_names):
+            return _station_match_from_row(row, line2_display_names)
+
+    for _, row in recommendations.iterrows():
+        feature_row = _feature_row_from_recommendation(row)
+        if _feature_row_matches(feature_row, lookup_tokens, line2_display_names):
+            return _station_match_from_row(feature_row, line2_display_names)
+
+    raise PredictionStationNotFoundError(
+        _station_not_found_message(requested_label, candidates),
+    )
 
 
 def _business_count(row: pd.Series, profile: BusinessTypeProfile) -> float:
@@ -288,13 +586,21 @@ def get_startup_suitability_prediction(input_features: dict[str, object]) -> dic
 
 
 def simulate_prediction(
-    station_name: str,
     business_type: str,
+    station_id: str | None = None,
+    station_name: str | None = None,
+    display_station_name: str | None = None,
     scenario: str | None = None,
     radius_m: float = config.DEFAULT_RADIUS_M,
 ) -> dict[str, object]:
     features = _load_station_features()
-    row = _find_station_feature_row(features, station_name)
+    match = _find_station_feature_match(
+        features=features,
+        station_id=station_id,
+        station_name=station_name,
+        display_station_name=display_station_name,
+    )
+    row = match.row
     payload, business_pressure = _build_feature_payload(row, business_type, radius_m)
     prediction = predict_startup_suitability(payload)
     predicted_score = _safe_float(prediction.get("predicted_score"), 0.0)
@@ -306,14 +612,11 @@ def simulate_prediction(
         and config.STARTUP_SUITABILITY_FEATURES_PATH.exists()
         else "model_missing"
     )
-    matched_station_name = _clean_text(row.get("station_name"))
-    line2_aliases = _load_line2_display_aliases()
-    display_station_name = line2_aliases.get(matched_station_name, matched_station_name)
-
     return {
         "data_status": data_status,
-        "station_name": matched_station_name,
-        "display_station_name": display_station_name,
+        "station_id": match.station_id,
+        "station_name": match.station_name,
+        "display_station_name": match.display_station_name,
         "business_type": business_type,
         "scenario": scenario,
         "radius_m": radius_m,

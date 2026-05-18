@@ -39,7 +39,9 @@ export type BackendPredictionConfidenceMetric = {
 }
 
 export type BackendPredictionSimulationInput = {
-  station_name: string
+  station_id?: string
+  station_name?: string
+  display_station_name?: string
   business_type: string
   scenario?: string
   radius_m?: number
@@ -47,6 +49,7 @@ export type BackendPredictionSimulationInput = {
 
 export type BackendPredictionSimulationResponse = {
   data_status: string
+  station_id: string
   station_name: string
   display_station_name: string
   business_type: string

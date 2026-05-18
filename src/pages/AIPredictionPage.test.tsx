@@ -28,17 +28,45 @@ function mockPredictionApis({
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
 
+    if (url.includes('/api/recommendations')) {
+      return {
+        ok: true,
+        json: async () => ({
+          data_status: 'recommendation_csv',
+          message: '로컬 추천 Top 5 CSV 기반 결과입니다.',
+          items: [
+            {
+              station_id: '2호선_215',
+              station_name: '2호선_215',
+              display_station_name: '서남동 예정역',
+              recommendation_label: '추가 검토',
+              startup_suitability_score: 72.8,
+              floating_demand_index: 79.2,
+              competition_index: 50,
+              business_diversity_index: 76,
+              data_status: 'recommendation_csv',
+            },
+          ],
+        }),
+      } satisfies Pick<Response, 'json' | 'ok'>
+    }
+
     if (url.includes('/api/prediction/simulate')) {
       const body = JSON.parse(String(init?.body ?? '{}')) as {
         business_type?: string
+        station_id?: string
         station_name?: string
       }
-      const stationName = body.station_name ?? '상무역(2호선)'
+      const stationName = body.station_name ?? body.station_id ?? '상무역'
       const businessType = body.business_type ?? '커피전문점'
-      const displayStationName = stationName.includes('첨단')
+      const displayStationName = stationName === '2호선_215'
+        ? '서남동 예정역'
+        : stationName.includes('첨단')
         ? '첨단지구역'
-        : stationName.replace('(2호선)', '')
-      const stationScore = stationName.includes('백운')
+        : stationName
+      const stationScore = stationName === '2호선_215'
+        ? 72
+        : stationName.includes('백운')
         ? 74.2
         : stationName.includes('첨단')
           ? 58.6
@@ -56,7 +84,8 @@ function mockPredictionApis({
         ok: true,
         json: async () => ({
           data_status: 'ml_model',
-          station_name: displayStationName,
+          station_id: body.station_id ?? stationName,
+          station_name: stationName,
           display_station_name: displayStationName,
           business_type: businessType,
           scenario: '광주 2호선 2단계 개통 - 2026년 예정',
@@ -192,6 +221,51 @@ describe('AIPredictionPage', () => {
       business_type: '외식업',
       radius_m: 500,
     })
+  })
+
+  it('sends a matchable internal station when selecting a display station name', async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockPredictionApis()
+    renderAIPredictionPage()
+
+    await screen.findByRole('option', { name: '서남동 예정역' })
+    await user.selectOptions(screen.getByLabelText('역세권 선택'), '서남동 예정역')
+    await user.click(screen.getByRole('button', { name: '시뮬레이션 실행' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('72.0점')).toBeInTheDocument()
+    })
+
+    const simulationCall = fetchMock.mock.calls.find(([input]) =>
+      String(input).includes('/api/prediction/simulate'),
+    )
+    const simulationBody = JSON.parse(String(simulationCall?.[1]?.body ?? '{}')) as {
+      station_id?: string
+      station_name?: string
+    }
+    expect(simulationBody).toMatchObject({
+      station_id: '2호선_215',
+      station_name: '2호선_215',
+    })
+
+    const saveCall = fetchMock.mock.calls.find(([input]) =>
+      String(input).includes('/api/prediction-results'),
+    )
+    const saveBody = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
+      result_payload?: { title?: string }
+      station_area?: string
+    }
+    expect(saveBody).toMatchObject({
+      station_area: '서남동 예정역',
+      result_payload: {
+        title: '서남동 예정역 커피전문점 AI 예측 결과',
+      },
+    })
+    expect(screen.getAllByText('서남동 예정역').length).toBeGreaterThan(0)
+    expect(
+      screen.getByText('커피전문점 동종 점포 비중을 반영했습니다.'),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText('+37.4%').length).toBeGreaterThan(0)
   })
 
   it('changing station changes the simulation request payload', async () => {

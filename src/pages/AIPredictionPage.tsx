@@ -20,7 +20,9 @@ import type {
   BackendStartupSuitabilityResponse,
 } from '@/shared/api/backendPredictionApi'
 import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
+import type { BackendRecommendationItem } from '@/shared/api/backendRecommendationApi'
 import { useCreateBackendPredictionResult } from '@/shared/api/hooks/useBackendPredictionResults'
+import { useBackendRecommendations } from '@/shared/api/hooks/useBackendRecommendations'
 import { useBackendPredictionSimulation } from '@/shared/api/hooks/useBackendStartupSuitability'
 import { aiPredictionAssets } from '@/shared/assets/aiPredictionAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
@@ -81,6 +83,12 @@ type StoredBusinessSetup = {
 
 type BackendStatus = 'connected' | 'fallback' | 'loading'
 
+type StationOption = {
+  displayName: string
+  stationName: string
+  stationId?: string
+}
+
 const PredictionReportDownloadButton = lazy(
   () => import('@/features/prediction/PredictionReportDownloadButton'),
 )
@@ -88,14 +96,21 @@ const PredictionReportDownloadButton = lazy(
 const defaultFilters: PredictionFilters = {
   scenario: '광주 2호선 2단계 개통 - 2026년 예정',
   businessType: '커피전문점',
-  stationArea: '상무역(2호선)',
+  stationArea: '상무역',
   region: '광주광역시 전체',
   date: '2026년 4월 18일',
 }
 
 const scenarioOptions = ['광주 2호선 2단계 개통 - 2026년 예정']
 const businessTypeOptions = ['커피전문점', '편의점', '외식업', '베이커리']
-const stationOptions = ['시청역', '상무역(2호선)', '백운광장역', '광주역', '첨단역']
+const defaultStationOptions: StationOption[] = [
+  { displayName: '시청역', stationName: '시청역', stationId: 'GJ-S001' },
+  { displayName: '상무역', stationName: '상무역', stationId: 'GJ-S002' },
+  { displayName: '백운광장역', stationName: '백운광장역', stationId: 'GJ-S003' },
+  { displayName: '광주역', stationName: '광주역', stationId: 'GJ-S007' },
+  { displayName: '첨단역', stationName: '첨단역', stationId: 'GJ-S008' },
+  { displayName: '서남동 예정역', stationName: '2호선_215', stationId: '2호선_215' },
+]
 const regionOptions = ['광주광역시 전체']
 const dateOptions = ['2026년 4월 18일']
 
@@ -127,6 +142,82 @@ const defaultRiskReasons = [
   '주말 유동인구 변동성 높음',
 ]
 
+function normalizeStationOptionKey(value: string): string {
+  return value.replace(/\s*\([^)]*\)/g, '').replace(/\s/g, '')
+}
+
+function stationOptionMatches(option: StationOption, value: string): boolean {
+  const normalizedValue = normalizeStationOptionKey(value)
+  return [option.displayName, option.stationName, option.stationId ?? ''].some(
+    (candidate) => normalizeStationOptionKey(candidate) === normalizedValue,
+  )
+}
+
+function findStationOption(
+  value: string,
+  options: StationOption[] = defaultStationOptions,
+): StationOption | undefined {
+  return options.find((option) => stationOptionMatches(option, value))
+}
+
+function toStationDisplayName(value: string): string {
+  const matchedOption = findStationOption(value)
+  return matchedOption?.displayName ?? value
+}
+
+function stationOptionFromRecommendation(
+  item: BackendRecommendationItem,
+): StationOption {
+  const displayName = item.display_station_name?.trim() || item.station_name
+  return {
+    displayName,
+    stationName: item.station_name,
+    stationId: item.station_id,
+  }
+}
+
+function mergeStationOptions(
+  recommendationItems: BackendRecommendationItem[] | undefined,
+): StationOption[] {
+  const mergedOptions: StationOption[] = []
+
+  const addOption = (option: StationOption) => {
+    const alreadyAdded = mergedOptions.some((currentOption) =>
+      stationOptionMatches(currentOption, option.displayName),
+    )
+    if (!alreadyAdded) {
+      mergedOptions.push(option)
+    }
+  }
+
+  const recommendationOptions =
+    recommendationItems?.map(stationOptionFromRecommendation) ?? []
+  recommendationOptions.forEach(addOption)
+  defaultStationOptions.forEach(addOption)
+  return mergedOptions
+}
+
+function stationOptionLabelsFor(
+  selectedStationArea: string,
+  options: StationOption[],
+): string[] {
+  const labels = options.map((option) => option.displayName)
+  return labels.includes(selectedStationArea)
+    ? labels
+    : [selectedStationArea, ...labels]
+}
+
+function buildPredictionStationPayload(
+  selectedStationArea: string,
+  options: StationOption[],
+): { station_id?: string; station_name: string } {
+  const matchedOption = findStationOption(selectedStationArea, options)
+  return {
+    station_id: matchedOption?.stationId,
+    station_name: matchedOption?.stationName ?? selectedStationArea,
+  }
+}
+
 function normalizeBusinessType(label: string) {
   if (label.includes('카페') || label.includes('커피')) {
     return '커피전문점'
@@ -156,7 +247,7 @@ function buildInitialFilters(): PredictionFilters {
 
   return {
     ...defaultFilters,
-    stationArea: station ? `${station} (2호선)` : defaultFilters.stationArea,
+    stationArea: station ? toStationDisplayName(station) : defaultFilters.stationArea,
     businessType: businessType
       ? normalizeBusinessType(businessType)
       : defaultFilters.businessType,
@@ -379,10 +470,12 @@ function FilterBar({
   filters,
   onChange,
   onRun,
+  stationOptionLabels,
 }: {
   filters: PredictionFilters
   onChange: (next: PredictionFilters) => void
   onRun: () => void
+  stationOptionLabels: string[]
 }) {
   return (
     <section className="mb-5 grid min-h-20 grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.95fr)_minmax(190px,220px)] items-center gap-8 rounded-xl border border-blue-100 bg-white px-7 py-4 shadow-[0_10px_24px_rgba(23,72,137,0.08)] max-[1700px]:gap-5 max-[1500px]:grid-cols-2 max-lg:grid-cols-1">
@@ -402,11 +495,7 @@ function FilterBar({
       <FilterSelect
         label="역세권 선택"
         onChange={(stationArea) => onChange({ ...filters, stationArea })}
-        options={
-          stationOptions.includes(filters.stationArea)
-            ? stationOptions
-            : [filters.stationArea, ...stationOptions]
-        }
+        options={stationOptionLabels}
         value={filters.stationArea}
       />
       <button
@@ -712,7 +801,7 @@ function CommentSection({
       )}, 매출 잠재력 변화는 ${formatSignedPercent(
         simulationResult.predicted_sales_change_rate,
       )}로 계산되며, ${simulationResult.strategy_comment} 이 결과는 실제 매출을 보장하지 않는 참고용 시나리오입니다.`
-    : '상무역(2호선) 일대는 개통 이후 유동인구 증가와 20~30대 생활인구 비중 확대가 예상되어 커피전문점의 매출 성장 잠재력이 높게 보입니다. 특히 개통 후 6개월부터 의미 있는 상승 전환이 예상되며, 24개월 뒤에는 현재 대비 약 47.6%의 매출 상승을 참고 시나리오로 볼 수 있습니다. 다만 경쟁 점포 증가와 신규 상업시설 공급 변화를 지속적으로 모니터링하는 것이 좋습니다.'
+    : '상무역 일대는 개통 이후 유동인구 증가와 20~30대 생활인구 비중 확대가 예상되어 커피전문점의 매출 성장 잠재력이 높게 보입니다. 특히 개통 후 6개월부터 의미 있는 상승 전환이 예상되며, 24개월 뒤에는 현재 대비 약 47.6%의 매출 상승을 참고 시나리오로 볼 수 있습니다. 다만 경쟁 점포 증가와 신규 상업시설 공급 변화를 지속적으로 모니터링하는 것이 좋습니다.'
 
   return (
     <section className="rounded-xl border border-blue-100 bg-gradient-to-b from-white to-blue-50 px-6 py-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
@@ -736,8 +825,17 @@ export function AIPredictionPage() {
   const [lastSimulated, setLastSimulated] = useState('')
   const [simulationResult, setSimulationResult] =
     useState<BackendPredictionSimulationResponse | null>(null)
+  const backendRecommendationsQuery = useBackendRecommendations(5)
   const predictionSimulationMutation = useBackendPredictionSimulation()
   const createPredictionResultMutation = useCreateBackendPredictionResult()
+  const stationOptions = useMemo(
+    () => mergeStationOptions(backendRecommendationsQuery.data?.items),
+    [backendRecommendationsQuery.data?.items],
+  )
+  const stationOptionLabels = useMemo(
+    () => stationOptionLabelsFor(filters.stationArea, stationOptions),
+    [filters.stationArea, stationOptions],
+  )
 
   const stationSummary = useMemo(
     () => simulationResult?.display_station_name || filters.stationArea,
@@ -773,8 +871,12 @@ export function AIPredictionPage() {
     let result: PredictionResult
 
     try {
+      const stationPayload = buildPredictionStationPayload(
+        filters.stationArea,
+        stationOptions,
+      )
       const prediction = await predictionSimulationMutation.mutateAsync({
-        station_name: filters.stationArea,
+        ...stationPayload,
         business_type: filters.businessType,
         scenario: filters.scenario,
         radius_m: 500,
@@ -895,6 +997,7 @@ export function AIPredictionPage() {
             filters={filters}
             onChange={setFilters}
             onRun={handleRunSimulation}
+            stationOptionLabels={stationOptionLabels}
           />
 
           <div className="mb-4">

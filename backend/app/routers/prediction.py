@@ -27,7 +27,9 @@ def predict_startup_suitability_endpoint(payload: StartupSuitabilityInput) -> di
 def simulate_prediction_endpoint(payload: PredictionSimulationInput) -> dict[str, object]:
     try:
         return simulate_prediction(
+            station_id=payload.station_id,
             station_name=payload.station_name,
+            display_station_name=payload.display_station_name,
             business_type=payload.business_type,
             scenario=payload.scenario,
             radius_m=payload.radius_m,

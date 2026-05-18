@@ -46,7 +46,9 @@ class StartupSuitabilityResponse(BaseModel):
 
 
 class PredictionSimulationInput(BaseModel):
-    station_name: str = Field(min_length=1)
+    station_id: str | None = Field(default=None, min_length=1)
+    station_name: str | None = Field(default=None, min_length=1)
+    display_station_name: str | None = Field(default=None, min_length=1)
     business_type: str = Field(min_length=1)
     scenario: str | None = None
     radius_m: float = Field(default=500.0, ge=0)
