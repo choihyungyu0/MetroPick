@@ -16,6 +16,7 @@ from backend.app.services.station_identity import (
     normalize_station_key,
 )
 from ml import config
+from ml.data_loader import load_processed_station_area_features
 from ml.predict import predict_startup_suitability
 
 
@@ -144,7 +145,7 @@ def _load_station_features() -> pd.DataFrame:
     if not config.STATION_AREA_FEATURES_PATH.exists():
         return pd.DataFrame()
     try:
-        return pd.read_csv(config.STATION_AREA_FEATURES_PATH)
+        return load_processed_station_area_features()
     except (OSError, pd.errors.ParserError, UnicodeDecodeError):
         return pd.DataFrame()
 

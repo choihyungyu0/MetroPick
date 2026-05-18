@@ -15,7 +15,7 @@ from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
 from ml import config
-from ml.data_loader import load_sample_raw_data
+from ml.data_loader import load_processed_station_area_features, load_sample_raw_data
 from ml.evaluate import regression_metrics
 from ml.feature_engineering import build_station_area_features
 
@@ -30,16 +30,22 @@ def _feature_columns(features: pd.DataFrame) -> list[str]:
 
 
 def train_startup_suitability_model() -> dict[str, object]:
-    raw_data = load_sample_raw_data()
-    features = build_station_area_features(
-        raw_data.stores,
-        raw_data.bus,
-        raw_data.subway,
-        raw_data.stations,
-        radius_m=config.DEFAULT_RADIUS_M,
-    )
+    if config.STATION_AREA_FEATURES_PATH.exists():
+        features = load_processed_station_area_features(validate_required_columns=True)
+        feature_source = "processed_station_area_features"
+    else:
+        raw_data = load_sample_raw_data()
+        features = build_station_area_features(
+            raw_data.stores,
+            raw_data.bus,
+            raw_data.subway,
+            raw_data.stations,
+            radius_m=config.DEFAULT_RADIUS_M,
+        )
+        feature_source = "sample_raw_data"
+
     if features.empty:
-        raise ValueError("No station-area features were generated from sample data.")
+        raise ValueError("No station-area features are available for model training.")
 
     feature_columns = _feature_columns(features)
     target_column = "startup_suitability_score"
@@ -81,6 +87,7 @@ def train_startup_suitability_model() -> dict[str, object]:
     return {
         "model_version": config.MODEL_VERSION,
         "best_model": best_model_name,
+        "feature_source": feature_source,
         "metrics": results,
         "feature_columns": feature_columns,
         "processed_features_path": str(config.STATION_AREA_FEATURES_PATH),
