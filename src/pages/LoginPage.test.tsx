@@ -192,7 +192,7 @@ describe('LoginPage', () => {
     expect(screen.queryByText('초기 설정')).not.toBeInTheDocument()
   })
 
-  it('uses backend onboarding settings before local fallback after login', async () => {
+  it('keeps same-user local onboarding fallback when backend has no settings after login', async () => {
     const user = userEvent.setup()
     window.localStorage.setItem('metropick-onboarding-completed', 'true')
     window.localStorage.setItem('metropick-onboarding-owner', 'id:auth-user-id')
@@ -236,13 +236,15 @@ describe('LoginPage', () => {
     await user.type(screen.getByLabelText('비밀번호'), 'secure-password')
     await user.click(screen.getByRole('button', { name: '로그인' }))
 
-    expect(await screen.findByText('초기 설정')).toBeInTheDocument()
-    expect(screen.queryByText('대시보드')).not.toBeInTheDocument()
+    expect(await screen.findByText('대시보드')).toBeInTheDocument()
+    expect(screen.queryByText('초기 설정')).not.toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith(
       'http://127.0.0.1:8000/api/onboarding-settings?user_id=auth-user-id',
       expect.objectContaining({}),
     )
-    expect(window.localStorage.getItem('metropick-onboarding-completed')).toBeNull()
+    expect(window.localStorage.getItem('metropick-onboarding-completed')).toBe(
+      'true',
+    )
   })
 
   it('routes users with backend onboarding settings to the dashboard', async () => {

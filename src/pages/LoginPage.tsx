@@ -116,6 +116,10 @@ function LoginCard() {
           return '/dashboard'
         }
 
+        if (hasStoredAuthUserCompletedOnboarding()) {
+          return '/dashboard'
+        }
+
         clearStoredOnboardingState()
         return '/onboarding'
       }
