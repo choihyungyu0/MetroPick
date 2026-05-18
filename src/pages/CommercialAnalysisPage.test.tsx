@@ -255,6 +255,25 @@ describe('CommercialAnalysisPage', () => {
     expect(url.searchParams.get('region')).toBe('광주광역시')
   })
 
+  it('does not auto-apply stale onboarding station selections', async () => {
+    window.localStorage.setItem(
+      'metropick-onboarding-stations',
+      JSON.stringify({
+        radius: '500m',
+        route: '광주 2호선 (예정)',
+        selectedStations: ['양산역', '상무역', '월드컵경기장역'],
+      }),
+    )
+    renderCommercialAnalysisPage()
+
+    await screen.findByText('FastAPI 실데이터 지도 연결됨')
+
+    const firstUrl = new URL(String(vi.mocked(fetch).mock.calls[0]?.[0]))
+    expect(firstUrl.searchParams.get('line')).toBe('2호선')
+    expect(firstUrl.searchParams.has('station_ids')).toBe(false)
+    expect(screen.getByText(/선택 영역 요약/)).toHaveTextContent('2개 역')
+  })
+
   it('sends the changed radius request param', async () => {
     const user = userEvent.setup()
     renderCommercialAnalysisPage()

@@ -46,7 +46,6 @@ type CommercialAnalysisFilters = {
 type StoredStationSetup = {
   radius?: RadiusOption
   route?: string
-  selectedStations?: string[]
 }
 
 type StoredBusinessSetup = {
@@ -187,6 +186,22 @@ const businessTypeOptions = [
 const regionOptions = ['광주광역시', '동구', '서구', '남구', '북구', '광산구']
 const routeOptions = ['전체', '1호선', '2호선']
 
+function normalizeStoredRoute(route: string | undefined): string {
+  if (!route) {
+    return defaultFilters.route
+  }
+  if (routeOptions.includes(route)) {
+    return route
+  }
+  if (route.includes('1')) {
+    return '1호선'
+  }
+  if (route.includes('2')) {
+    return '2호선'
+  }
+  return defaultFilters.route
+}
+
 function cloneFilters(filters: CommercialAnalysisFilters): CommercialAnalysisFilters {
   return {
     ...filters,
@@ -205,11 +220,8 @@ function buildInitialFilters(): CommercialAnalysisFilters {
 
   return {
     ...defaultFilters,
-    route: stationSetup?.route ?? defaultFilters.route,
-    selectedStations:
-      stationSetup?.selectedStations && stationSetup.selectedStations.length > 0
-        ? stationSetup.selectedStations
-        : defaultFilters.selectedStations,
+    route: normalizeStoredRoute(stationSetup?.route),
+    selectedStations: defaultFilters.selectedStations,
     radius: stationSetup?.radius ?? defaultFilters.radius,
     businessType:
       businessSetup?.selectedBusinessLabels &&

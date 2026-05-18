@@ -989,8 +989,16 @@ def _filter_station_markers(
         and _station_matches_region(marker, region)
     ]
     if selected_tokens:
-        return [marker for marker in filtered if marker.get("selected") is True]
+        selected_markers = [marker for marker in filtered if marker.get("selected") is True]
+        if selected_markers:
+            return selected_markers
     return filtered
+
+
+def _matched_selected_markers(
+    markers: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    return [marker for marker in markers if marker.get("selected") is True]
 
 
 def _route_lines(markers: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -1389,11 +1397,12 @@ def _sample_map_data(
         markers.append(marker)
 
     filtered_markers = _filter_station_markers(markers, line, region, selected_tokens)
+    matched_selected_markers = _matched_selected_markers(filtered_markers)
     stores = _filter_stores(
         raw_data.stores,
         business_key=business_key,
         region=region,
-        selected_markers=filtered_markers if selected_tokens else [],
+        selected_markers=matched_selected_markers,
         radius_m=radius_m,
     )
     business_label = _business_label_for_key(business_key) if business_key else "전체 업종"
@@ -1401,12 +1410,12 @@ def _sample_map_data(
     return {
         "data_status": "sample_fixture",
         "filters": _filters_payload(region, line, station_ids, radius_m, business_type, layers),
-        "map": _map_view(filtered_markers or markers, bool(selected_tokens)),
+        "map": _map_view(filtered_markers or markers, bool(matched_selected_markers)),
         "route_lines": _route_lines(markers),
         "station_markers": filtered_markers,
         "density_points": _density_points(stores),
-        "selected_station_circles": _selected_station_circles(filtered_markers, radius_m)
-        if selected_tokens
+        "selected_station_circles": _selected_station_circles(matched_selected_markers, radius_m)
+        if matched_selected_markers
         else [],
         "bus_stop_markers": [],
         "summary_cards": _summary_cards(
@@ -1471,18 +1480,19 @@ def get_commercial_analysis_map_data(
     coordinates = _coordinate_lookup(radius_rows, line2_coordinates, bus_stops, stores)
     all_markers = _build_station_markers(radius_rows, coordinates, selected_tokens)
     filtered_markers = _filter_station_markers(all_markers, line, region, selected_tokens)
+    matched_selected_markers = _matched_selected_markers(filtered_markers)
     stores_for_map = _filter_stores(
         stores,
         business_key=business_key,
         region=region,
-        selected_markers=filtered_markers if selected_tokens else [],
+        selected_markers=matched_selected_markers,
         radius_m=safe_radius_m,
     )
     business_label = _business_label_for_key(business_key) if business_key else "전체 업종"
     distribution = _business_distribution(stores_for_map)
     selected_circles = (
-        _selected_station_circles(filtered_markers, safe_radius_m)
-        if selected_tokens
+        _selected_station_circles(matched_selected_markers, safe_radius_m)
+        if matched_selected_markers
         else []
     )
 
@@ -1496,7 +1506,7 @@ def get_commercial_analysis_map_data(
             business_type,
             layers,
         ),
-        "map": _map_view(filtered_markers or all_markers, bool(selected_tokens)),
+        "map": _map_view(filtered_markers or all_markers, bool(matched_selected_markers)),
         "route_lines": _route_lines(all_markers),
         "station_markers": filtered_markers,
         "density_points": _density_points(stores_for_map),
@@ -1504,7 +1514,7 @@ def get_commercial_analysis_map_data(
         "bus_stop_markers": _bus_stop_markers(
             bus_stops,
             region=region,
-            selected_markers=filtered_markers if selected_tokens else [],
+            selected_markers=matched_selected_markers,
             radius_m=safe_radius_m,
         )
         if "bus_stops" in layers_list
