@@ -160,5 +160,5 @@ input {
 }
 
 .leaflet-control-attribution {
-  display: none;
+  font-size: 10px;
 }
