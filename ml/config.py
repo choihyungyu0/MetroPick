@@ -18,6 +18,7 @@ PUBLIC_STORE_SUMMARY_PATH = PUBLIC_STORE_PROCESSED_DIR / "station_area_store_sum
 PUBLIC_STORE_TEMPLATE_FILENAME = "example_public_store_template.csv"
 
 STATION_AREA_FEATURES_PATH = PROCESSED_DATA_DIR / "station_area_features.csv"
+RECOMMENDATION_TOP5_PATH = PROCESSED_DATA_DIR / "recommendation_top5.csv"
 STARTUP_SUITABILITY_MODEL_PATH = MODEL_DIR / "startup_suitability_model.joblib"
 STARTUP_SUITABILITY_FEATURES_PATH = MODEL_DIR / "startup_suitability_features.json"
 
