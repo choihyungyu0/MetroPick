@@ -20,10 +20,65 @@ function renderAIPredictionPage() {
   )
 }
 
+type MockMonthlySalesSeriesItem = {
+  after_opening_value: number | null
+  before_opening_value: number | null
+  label: string
+}
+
+function buildMockMonthlySalesSeries(
+  score: number,
+  predictedSalesChangeRate: number,
+): MockMonthlySalesSeriesItem[] {
+  const openingValue = Math.round((1450 + score * 8) / 10) * 10
+  const targetValue = Math.round((openingValue * (1 + predictedSalesChangeRate / 100)) / 10) * 10
+  const lift = targetValue - openingValue
+
+  return [
+    {
+      label: '-12개월',
+      before_opening_value: openingValue - 260,
+      after_opening_value: null,
+    },
+    {
+      label: '-6개월',
+      before_opening_value: openingValue - 130,
+      after_opening_value: null,
+    },
+    {
+      label: '개통 시점',
+      before_opening_value: openingValue,
+      after_opening_value: openingValue,
+    },
+    {
+      label: '+6개월',
+      before_opening_value: null,
+      after_opening_value: Math.round((openingValue + lift * 0.34) / 10) * 10,
+    },
+    {
+      label: '+12개월',
+      before_opening_value: null,
+      after_opening_value: Math.round((openingValue + lift * 0.58) / 10) * 10,
+    },
+    {
+      label: '+18개월',
+      before_opening_value: null,
+      after_opening_value: Math.round((openingValue + lift * 0.8) / 10) * 10,
+    },
+    {
+      label: '+24개월',
+      before_opening_value: null,
+      after_opening_value: targetValue,
+    },
+  ]
+}
+
 function mockPredictionApis({
   failPredictionResult = false,
+  omitMonthlySalesSeries = false,
 }: {
   failPredictionResult?: boolean
+  omitMonthlySalesSeries?: boolean
 } = {}) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
@@ -79,6 +134,8 @@ function mockPredictionApis({
           ? 4.7
           : 0
       const score = Math.round((stationScore + businessAdjustment) * 10) / 10
+      const predictedGrowthRate = Math.round((score * 0.52) * 10) / 10
+      const predictedSalesChangeRate = Math.round((score * 0.41) * 10) / 10
 
       return {
         ok: true,
@@ -92,8 +149,16 @@ function mockPredictionApis({
           radius_m: 500,
           startup_suitability_score: score,
           predicted_score: score,
-          predicted_growth_rate: Math.round((score * 0.52) * 10) / 10,
-          predicted_sales_change_rate: Math.round((score * 0.41) * 10) / 10,
+          predicted_growth_rate: predictedGrowthRate,
+          predicted_sales_change_rate: predictedSalesChangeRate,
+          ...(omitMonthlySalesSeries
+            ? {}
+            : {
+                monthly_sales_series: buildMockMonthlySalesSeries(
+                  score,
+                  predictedSalesChangeRate,
+                ),
+              }),
           floating_demand_index: Math.round((score * 0.8) * 10) / 10,
           competition_index: businessType.includes('편의') ? 68.2 : 42.1,
           business_diversity_index: 76.4,
@@ -145,7 +210,7 @@ describe('AIPredictionPage', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
   })
 
-  it('renders the AI prediction layout with the sales forecast chart image', async () => {
+  it('renders the AI prediction layout with a dynamic sales forecast chart', async () => {
     renderAIPredictionPage()
 
     expect(
@@ -158,9 +223,64 @@ describe('AIPredictionPage', () => {
         { timeout: 10000 },
       ),
     ).toBeInTheDocument()
-    expect(screen.getByAltText('개통 전후 매출 전망 예측 차트')).toBeInTheDocument()
+    expect(
+      screen.getByRole('img', {
+        name: '상무역 커피전문점 개통 전후 매출 전망 차트',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByAltText('개통 전후 매출 전망 예측 차트')).not.toBeInTheDocument()
     expect(screen.getByText('선택 역세권 예측 요약')).toBeInTheDocument()
     expect(screen.getAllByText('+47.6%').length).toBeGreaterThan(0)
+  })
+
+  it('renders chart labels from a successful ml_model monthly sales series', async () => {
+    const user = userEvent.setup()
+    mockPredictionApis()
+    renderAIPredictionPage()
+
+    await user.click(screen.getByRole('button', { name: '시뮬레이션 실행' }))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('-12개월').length).toBeGreaterThan(0)
+    })
+    expect(screen.getAllByText('개통 시점').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('+24개월').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('개통 전').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('개통 후').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('+34.2%').length).toBeGreaterThan(0)
+  })
+
+  it('updates the chart percentage when the prediction response changes', async () => {
+    const user = userEvent.setup()
+    mockPredictionApis()
+    renderAIPredictionPage()
+
+    await user.click(screen.getByRole('button', { name: '시뮬레이션 실행' }))
+    await waitFor(() => {
+      expect(screen.getAllByText('+34.2%').length).toBeGreaterThan(0)
+    })
+
+    await user.selectOptions(screen.getByLabelText('업종 선택'), '편의점')
+    await user.click(screen.getByRole('button', { name: '시뮬레이션 실행' }))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('+31.7%').length).toBeGreaterThan(0)
+    })
+    expect(screen.queryByText('+34.2%')).not.toBeInTheDocument()
+  })
+
+  it('renders a fallback chart when monthly_sales_series is missing', async () => {
+    const user = userEvent.setup()
+    mockPredictionApis({ omitMonthlySalesSeries: true })
+    renderAIPredictionPage()
+
+    await user.click(screen.getByRole('button', { name: '시뮬레이션 실행' }))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('-6개월').length).toBeGreaterThan(0)
+    })
+    expect(screen.getAllByText('+24개월').length).toBeGreaterThan(0)
+    expect(screen.queryByAltText('개통 전후 매출 전망 예측 차트')).not.toBeInTheDocument()
   })
 
   it('saves a fallback simulation result to localStorage', async () => {

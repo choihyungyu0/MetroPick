@@ -14,8 +14,18 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 import type {
+  BackendPredictionMonthlySalesSeriesItem,
   BackendPredictionSimulationResponse,
   BackendStartupSuitabilityResponse,
 } from '@/shared/api/backendPredictionApi'
@@ -24,11 +34,9 @@ import type { BackendRecommendationItem } from '@/shared/api/backendRecommendati
 import { useCreateBackendPredictionResult } from '@/shared/api/hooks/useBackendPredictionResults'
 import { useBackendRecommendations } from '@/shared/api/hooks/useBackendRecommendations'
 import { useBackendPredictionSimulation } from '@/shared/api/hooks/useBackendStartupSuitability'
-import { aiPredictionAssets } from '@/shared/assets/aiPredictionAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
 import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
-import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { SimulationDisclaimer } from '@/shared/components/SimulationDisclaimer'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
@@ -64,6 +72,12 @@ type PredictionResult = {
 type GrowthRateItem = {
   label: string
   value: number
+}
+
+type SalesForecastChartDatum = {
+  afterOpeningValue: number | null
+  beforeOpeningValue: number | null
+  label: string
 }
 
 type ConfidenceMetric = {
@@ -419,6 +433,154 @@ function buildGrowthRates(
   return [{ label: businessType, value: selectedRate }, ...otherRates].slice(0, 5)
 }
 
+function getBusinessSalesModifier(businessType: string): number {
+  if (businessType.includes('커피') || businessType.includes('카페')) {
+    return 1.08
+  }
+
+  if (businessType.includes('외식') || businessType.includes('음식')) {
+    return 1.12
+  }
+
+  if (businessType.includes('편의')) {
+    return 0.94
+  }
+
+  if (businessType.includes('베이커리') || businessType.includes('빵')) {
+    return 1.02
+  }
+
+  return 1
+}
+
+function roundSalesSeriesValue(value: number): number {
+  return Math.round(value / 10) * 10
+}
+
+function buildFallbackMonthlySalesSeries(
+  simulationResult: BackendPredictionSimulationResponse | null,
+  businessType: string,
+): BackendPredictionMonthlySalesSeriesItem[] {
+  const startupSuitabilityScore = simulationResult?.startup_suitability_score ?? 68
+  const predictedGrowthRate = simulationResult?.predicted_growth_rate ?? 47.6
+  const predictedSalesChangeRate =
+    simulationResult?.predicted_sales_change_rate ?? 47.6
+  const floatingDemandIndex = simulationResult?.floating_demand_index ?? 62
+  const competitionIndex = simulationResult?.competition_index ?? 44
+  const diversityIndex = simulationResult?.business_diversity_index ?? 70
+  const businessModifier = getBusinessSalesModifier(businessType)
+
+  const openingValue = Math.max(
+    900,
+    (1150 +
+      startupSuitabilityScore * 8.8 +
+      predictedGrowthRate * 7.4 +
+      floatingDemandIndex * 4.2 +
+      diversityIndex * 1.8 -
+      competitionIndex * 3.2) *
+      businessModifier,
+  )
+  const beforeSlope =
+    Math.max(
+      90,
+      predictedGrowthRate * 4.8 + floatingDemandIndex * 2.6 - competitionIndex * 1.5,
+    ) * businessModifier
+  const afterTarget = openingValue * (1 + predictedSalesChangeRate / 100)
+  const afterLift = afterTarget - openingValue
+  const earlyMomentum = Math.max(
+    0.22,
+    Math.min(0.42, (floatingDemandIndex - competitionIndex + 70) / 260),
+  )
+
+  return [
+    {
+      label: '-12개월',
+      before_opening_value: roundSalesSeriesValue(openingValue - beforeSlope * 2),
+      after_opening_value: null,
+    },
+    {
+      label: '-6개월',
+      before_opening_value: roundSalesSeriesValue(openingValue - beforeSlope),
+      after_opening_value: null,
+    },
+    {
+      label: '개통 시점',
+      before_opening_value: roundSalesSeriesValue(openingValue),
+      after_opening_value: roundSalesSeriesValue(openingValue),
+    },
+    {
+      label: '+6개월',
+      before_opening_value: null,
+      after_opening_value: roundSalesSeriesValue(
+        openingValue + afterLift * earlyMomentum,
+      ),
+    },
+    {
+      label: '+12개월',
+      before_opening_value: null,
+      after_opening_value: roundSalesSeriesValue(openingValue + afterLift * 0.58),
+    },
+    {
+      label: '+18개월',
+      before_opening_value: null,
+      after_opening_value: roundSalesSeriesValue(openingValue + afterLift * 0.8),
+    },
+    {
+      label: '+24개월',
+      before_opening_value: null,
+      after_opening_value: roundSalesSeriesValue(afterTarget),
+    },
+  ]
+}
+
+function normalizeSalesSeriesValue(value: number | null): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function resolveMonthlySalesSeries(
+  simulationResult: BackendPredictionSimulationResponse | null,
+  businessType: string,
+): BackendPredictionMonthlySalesSeriesItem[] {
+  const responseSeries = simulationResult?.monthly_sales_series
+
+  if (
+    responseSeries?.some(
+      (item) =>
+        normalizeSalesSeriesValue(item.before_opening_value) !== null ||
+        normalizeSalesSeriesValue(item.after_opening_value) !== null,
+    )
+  ) {
+    return responseSeries
+  }
+
+  return buildFallbackMonthlySalesSeries(simulationResult, businessType)
+}
+
+function toSalesForecastChartData(
+  series: BackendPredictionMonthlySalesSeriesItem[],
+): SalesForecastChartDatum[] {
+  return series.map((item) => ({
+    label: item.label,
+    beforeOpeningValue: normalizeSalesSeriesValue(item.before_opening_value),
+    afterOpeningValue: normalizeSalesSeriesValue(item.after_opening_value),
+  }))
+}
+
+function salesForecastChartDomain(data: SalesForecastChartDatum[]): [number, number] {
+  const values = data.flatMap((item) =>
+    [item.beforeOpeningValue, item.afterOpeningValue].filter(
+      (value): value is number => value !== null,
+    ),
+  )
+  const minimum = Math.min(...values)
+  const maximum = Math.max(...values)
+
+  return [
+    Math.max(0, Math.floor((minimum * 0.9) / 100) * 100),
+    Math.ceil((maximum * 1.08) / 100) * 100,
+  ]
+}
+
 function buildConfidenceMetrics(
   simulationResult: BackendPredictionSimulationResponse | null,
 ): ConfidenceMetric[] {
@@ -520,23 +682,117 @@ function SalesForecastChartCard({
   simulationResult: BackendPredictionSimulationResponse | null
   stationArea: string
 }) {
-  const headline = simulationResult
-    ? `${stationArea} · ${businessType} 매출 변화 ${formatSignedPercent(
-        simulationResult.predicted_sales_change_rate,
-      )}`
-    : `${stationArea} · ${businessType} 샘플 전망`
+  const monthlySalesSeries = resolveMonthlySalesSeries(simulationResult, businessType)
+  const chartData = toSalesForecastChartData(monthlySalesSeries)
+  const yAxisDomain = salesForecastChartDomain(chartData)
+  const salesChangeRate = simulationResult?.predicted_sales_change_rate ?? 47.6
+  const chartLabel = `${stationArea} ${businessType} 개통 전후 매출 전망 차트`
 
   return (
     <section className="h-[360px] rounded-xl border border-blue-100 bg-white p-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
-      <h3 className="mb-2 text-sm font-black text-slate-900">{headline}</h3>
-      <div className="h-[calc(100%-28px)] overflow-hidden rounded-xl border border-slate-100 bg-white">
-        <ImageWithFallback
-          alt="개통 전후 매출 전망 예측 차트"
-          className="h-full w-full object-contain"
-          draggable={false}
-          fallbackText="매출 전망 차트를 불러오지 못했습니다."
-          src={aiPredictionAssets.salesForecastChart}
-        />
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="m-0 text-sm font-black text-slate-900">
+            개통 전·후 매출 전망
+          </h3>
+          <p className="mt-1 truncate text-xs font-bold text-slate-500">
+            {stationArea} · {businessType}
+          </p>
+        </div>
+        <strong
+          aria-label="예측 매출 변화율"
+          className="rounded-full bg-blue-50 px-3 py-1 text-lg leading-none font-black whitespace-nowrap text-blue-600"
+        >
+          {formatSignedPercent(salesChangeRate)}
+        </strong>
+      </div>
+      <div
+        aria-label={chartLabel}
+        className="grid h-[calc(100%-44px)] grid-rows-[minmax(0,1fr)_24px] overflow-hidden rounded-xl border border-slate-100 bg-white px-2 pt-2"
+        role="img"
+      >
+        <div className="min-h-0 overflow-x-auto overflow-y-hidden">
+          <div className="h-full min-w-[700px]">
+            <LineChart
+              data={chartData}
+              height={244}
+              margin={{ bottom: 4, left: 0, right: 18, top: 18 }}
+              width={700}
+            >
+              <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                axisLine={false}
+                dataKey="label"
+                interval={0}
+                tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }}
+                tickLine={false}
+              />
+              <YAxis
+                axisLine={false}
+                domain={yAxisDomain}
+                tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
+                tickFormatter={(value: number) => `${Math.round(value / 10) / 100}천`}
+                tickLine={false}
+                width={44}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderColor: '#dbeafe',
+                  borderRadius: 8,
+                  boxShadow: '0 8px 22px rgba(22,72,140,0.12)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+                cursor={{ stroke: '#bfdbfe', strokeWidth: 1 }}
+                labelStyle={{ color: '#0f172a', fontWeight: 900 }}
+              />
+              <ReferenceLine
+                label={{
+                  fill: '#1d4ed8',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  position: 'top',
+                  value: '개통 시점',
+                }}
+                stroke="#1d4ed8"
+                strokeDasharray="4 4"
+                x="개통 시점"
+              />
+              <Line
+                connectNulls={false}
+                dataKey="beforeOpeningValue"
+                dot={{ fill: '#ffffff', r: 4, stroke: '#2563eb', strokeWidth: 2 }}
+                isAnimationActive={false}
+                name="개통 전"
+                stroke="#2563eb"
+                strokeLinecap="round"
+                strokeWidth={3}
+                type="monotone"
+              />
+              <Line
+                connectNulls={false}
+                dataKey="afterOpeningValue"
+                dot={{ fill: '#ffffff', r: 4, stroke: '#0f766e', strokeWidth: 2 }}
+                isAnimationActive={false}
+                name="개통 후"
+                stroke="#0f766e"
+                strokeLinecap="round"
+                strokeWidth={3}
+                type="monotone"
+              />
+            </LineChart>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-4 pr-3 text-[11px] font-black text-slate-600">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-4 rounded-full bg-blue-600" />
+            개통 전
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-4 rounded-full bg-teal-700" />
+            개통 후
+          </span>
+        </div>
       </div>
     </section>
   )

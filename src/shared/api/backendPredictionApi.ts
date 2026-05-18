@@ -38,6 +38,12 @@ export type BackendPredictionConfidenceMetric = {
   score: number
 }
 
+export type BackendPredictionMonthlySalesSeriesItem = {
+  label: string
+  before_opening_value: number | null
+  after_opening_value: number | null
+}
+
 export type BackendPredictionSimulationInput = {
   station_id?: string
   station_name?: string
@@ -59,6 +65,7 @@ export type BackendPredictionSimulationResponse = {
   predicted_score: number
   predicted_growth_rate: number
   predicted_sales_change_rate: number
+  monthly_sales_series?: BackendPredictionMonthlySalesSeriesItem[]
   floating_demand_index: number
   competition_index: number
   business_diversity_index: number

@@ -551,6 +551,92 @@ def _growth_rate(payload: dict[str, object], predicted_score: float, business_pr
     return _clamp_score(growth)
 
 
+def _business_sales_modifier(business_type: str) -> float:
+    modifiers = {
+        "coffee": 1.08,
+        "restaurant": 1.12,
+        "convenience": 0.94,
+        "bakery": 1.02,
+        "retail": 0.98,
+        "pharmacy": 1.04,
+        "academy": 0.9,
+        "beauty": 0.96,
+    }
+    return modifiers[_normalize_business_type(business_type)]
+
+
+def _monthly_sales_series(
+    payload: dict[str, object],
+    business_type: str,
+    startup_suitability_score: float,
+    predicted_growth_rate: float,
+    predicted_sales_change_rate: float,
+) -> list[dict[str, object]]:
+    floating = _clamp_score(_safe_float(payload.get("floating_demand_index"), 50.0))
+    competition = _clamp_score(_safe_float(payload.get("competition_index"), 50.0))
+    diversity = _clamp_score(_safe_float(payload.get("business_diversity_index"), 50.0))
+    business_modifier = _business_sales_modifier(business_type)
+
+    opening_value = (
+        1150.0
+        + (startup_suitability_score * 8.8)
+        + (predicted_growth_rate * 7.4)
+        + (floating * 4.2)
+        + (diversity * 1.8)
+        - (competition * 3.2)
+    ) * business_modifier
+    opening_value = max(900.0, opening_value)
+
+    before_slope = max(
+        90.0,
+        (predicted_growth_rate * 4.8) + (floating * 2.6) - (competition * 1.5),
+    ) * business_modifier
+    after_target = opening_value * (1.0 + (predicted_sales_change_rate / 100.0))
+    after_lift = after_target - opening_value
+    early_momentum = max(0.22, min(0.42, (floating - competition + 70.0) / 260.0))
+
+    def value(amount: float) -> int:
+        return int(round(amount / 10.0) * 10)
+
+    return [
+        {
+            "label": "-12개월",
+            "before_opening_value": value(opening_value - (before_slope * 2.0)),
+            "after_opening_value": None,
+        },
+        {
+            "label": "-6개월",
+            "before_opening_value": value(opening_value - before_slope),
+            "after_opening_value": None,
+        },
+        {
+            "label": "개통 시점",
+            "before_opening_value": value(opening_value),
+            "after_opening_value": value(opening_value),
+        },
+        {
+            "label": "+6개월",
+            "before_opening_value": None,
+            "after_opening_value": value(opening_value + (after_lift * early_momentum)),
+        },
+        {
+            "label": "+12개월",
+            "before_opening_value": None,
+            "after_opening_value": value(opening_value + (after_lift * 0.58)),
+        },
+        {
+            "label": "+18개월",
+            "before_opening_value": None,
+            "after_opening_value": value(opening_value + (after_lift * 0.8)),
+        },
+        {
+            "label": "+24개월",
+            "before_opening_value": None,
+            "after_opening_value": value(after_target),
+        },
+    ]
+
+
 def _confidence_metrics(payload: dict[str, object], predicted_score: float) -> list[dict[str, object]]:
     floating = _safe_float(payload.get("floating_demand_index"), 50.0)
     diversity = _safe_float(payload.get("business_diversity_index"), 50.0)
@@ -624,6 +710,13 @@ def simulate_prediction(
         "predicted_score": predicted_score,
         "predicted_growth_rate": growth_rate,
         "predicted_sales_change_rate": sales_change_rate,
+        "monthly_sales_series": _monthly_sales_series(
+            payload=payload,
+            business_type=business_type,
+            startup_suitability_score=predicted_score,
+            predicted_growth_rate=growth_rate,
+            predicted_sales_change_rate=sales_change_rate,
+        ),
         "floating_demand_index": _clamp_score(_safe_float(payload.get("floating_demand_index"), 50.0)),
         "competition_index": _clamp_score(_safe_float(payload.get("competition_index"), 50.0)),
         "business_diversity_index": _clamp_score(_safe_float(payload.get("business_diversity_index"), 50.0)),

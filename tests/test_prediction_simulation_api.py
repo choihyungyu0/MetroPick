@@ -89,6 +89,17 @@ def test_prediction_simulate_returns_ml_model_status() -> None:
     assert body["business_type"] == "커피전문점"
     assert 0 <= body["startup_suitability_score"] <= 100
     assert 0 <= body["predicted_growth_rate"] <= 100
+    series = body["monthly_sales_series"]
+    assert series
+    assert series[0] == {
+        "label": "-12개월",
+        "before_opening_value": series[0]["before_opening_value"],
+        "after_opening_value": None,
+    }
+    assert series[2]["label"] == "개통 시점"
+    assert series[2]["before_opening_value"] == series[2]["after_opening_value"]
+    assert series[-1]["label"] == "+24개월"
+    assert series[-1]["before_opening_value"] is None
     assert body["risk_factors"]
     assert body["strategy_comment"]
     assert body["confidence_metrics"]
@@ -107,10 +118,20 @@ def test_prediction_simulate_changes_for_station_and_business_inputs() -> None:
             body["startup_suitability_score"],
             body["predicted_growth_rate"],
             body["competition_index"],
+            tuple(
+                (
+                    item["label"],
+                    item["before_opening_value"],
+                    item["after_opening_value"],
+                )
+                for item in body["monthly_sales_series"]
+            ),
         )
         for body in [first, second, third]
     }
     assert len(signatures) == 3
+    assert first["monthly_sales_series"] != second["monthly_sales_series"]
+    assert second["monthly_sales_series"] != third["monthly_sales_series"]
 
 
 def test_prediction_simulate_accepts_line2_internal_and_display_names(
