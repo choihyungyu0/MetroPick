@@ -188,6 +188,13 @@ function mapDataResponse(input: RequestInfo | URL) {
   }
 }
 
+function mapDataFetchResponse(input: RequestInfo | URL): Response {
+  return new Response(JSON.stringify(mapDataResponse(input)), {
+    headers: { 'Content-Type': 'application/json' },
+    status: 200,
+  })
+}
+
 function renderCommercialAnalysisPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -296,6 +303,41 @@ describe('CommercialAnalysisPage', () => {
     await waitFor(() =>
       expect(getLastFetchUrl().searchParams.get('business_type')).toBe('카페/디저트'),
     )
+    expect(await screen.findByText('17개')).toBeInTheDocument()
+  })
+
+  it('keeps previous real map data visible while analysis refreshes', async () => {
+    const user = userEvent.setup()
+    let requestCount = 0
+    let resolveRefresh: ((value: Response) => void) | undefined
+
+    vi.mocked(fetch).mockImplementation((input: RequestInfo | URL) => {
+      requestCount += 1
+      const response = mapDataFetchResponse(input)
+
+      if (requestCount === 1) {
+        return Promise.resolve(response)
+      }
+
+      return new Promise<Response>((resolve) => {
+        resolveRefresh = resolve
+      })
+    })
+
+    renderCommercialAnalysisPage()
+
+    await screen.findByText('FastAPI 실데이터 지도 연결됨')
+    expect(screen.getAllByText('42개').length).toBeGreaterThan(0)
+
+    await user.selectOptions(screen.getByLabelText('업종 선택'), '카페/디저트')
+    await user.click(screen.getByRole('button', { name: '분석 적용' }))
+
+    expect(screen.getByRole('button', { name: '분석 갱신 중' })).toBeDisabled()
+    expect(screen.queryByText('12,843개')).not.toBeInTheDocument()
+    expect(screen.getAllByText('42개').length).toBeGreaterThan(0)
+
+    resolveRefresh?.(mapDataFetchResponse(getLastFetchUrl().toString()))
+
     expect(await screen.findByText('17개')).toBeInTheDocument()
   })
 

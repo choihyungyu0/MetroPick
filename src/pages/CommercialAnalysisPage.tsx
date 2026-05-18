@@ -772,6 +772,7 @@ export function CommercialAnalysisPage() {
         region: appliedFilters.region,
         stationIds: appliedFilters.selectedStations,
       }),
+    placeholderData: (previousData) => previousData,
     retry: false,
   })
 
