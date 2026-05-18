@@ -1,4 +1,5 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { LatLngExpression } from 'leaflet'
 import type { LucideIcon } from 'lucide-react'
 import {
   ArrowRight,
@@ -12,12 +13,23 @@ import {
   TrainFront,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import {
+  Circle,
+  CircleMarker,
+  MapContainer,
+  Polyline,
+  Popup,
+  TileLayer,
+  Tooltip,
+  useMap,
+} from 'react-leaflet'
 
 import { AppFooter } from '@/shared/components/AppFooter'
-import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { TopNavigation } from '@/shared/components/TopNavigation'
 import { onboardingAssets } from '@/shared/assets/onboardingAssets'
+import { mockStations } from '@/shared/data/mockStations'
 import { safeParseStorage, writeStorage } from '@/shared/lib/storage'
+import type { StationArea } from '@/shared/types/station'
 
 type RadiusOption = '300m' | '500m' | '1km'
 
@@ -48,6 +60,22 @@ const defaultSetup: OnboardingStationSetup = {
   selectedStations: ['시청역', '상무역', '백운광장역', '남광주역'],
   radius: '500m',
 }
+
+const radiusMetersByOption: Record<RadiusOption, number> = {
+  '300m': 300,
+  '500m': 500,
+  '1km': 1000,
+}
+
+const gwangjuCenter: [number, number] = [35.1595, 126.8526]
+
+const stationMapStations = availableStations
+  .map((stationName) => mockStations.find((station) => station.name === stationName))
+  .filter((station): station is StationArea => station !== undefined)
+
+const stationMapPositions = stationMapStations.map(
+  (station) => [station.latitude, station.longitude] as [number, number],
+)
 
 const stepItems = [
   { label: '관심 지역 설정', status: 'completed' },
@@ -210,21 +238,152 @@ function RadiusButton({
   )
 }
 
-function SelectedStationMap() {
+function StationMapViewport({
+  center,
+  positions,
+  zoom,
+}: {
+  center: LatLngExpression
+  positions: Array<[number, number]>
+  zoom: number
+}) {
+  const map = useMap()
+
+  useEffect(() => {
+    const firstPosition = positions[0]
+
+    if (positions.length === 1 && firstPosition) {
+      map.setView(firstPosition, 15)
+      return
+    }
+
+    if (positions.length > 1) {
+      map.fitBounds(positions, { maxZoom: 14, padding: [36, 36] })
+      return
+    }
+
+    map.setView(center, zoom)
+  }, [center, map, positions, zoom])
+
+  return null
+}
+
+function SelectedStationMap({
+  radius,
+  selectedStations,
+}: Pick<OnboardingStationSetup, 'radius' | 'selectedStations'>) {
+  const selectedMapStations = useMemo(
+    () => stationMapStations.filter((station) => selectedStations.includes(station.name)),
+    [selectedStations],
+  )
+  const selectedPositions = useMemo(
+    () =>
+      selectedMapStations.map(
+        (station) => [station.latitude, station.longitude] as [number, number],
+      ),
+    [selectedMapStations],
+  )
+  const viewportPositions = selectedPositions.length ? selectedPositions : stationMapPositions
+  const radiusMeters = radiusMetersByOption[radius]
+  const center = selectedPositions[0] ?? gwangjuCenter
+
   return (
     <section className="rounded-2xl border border-[#dce9f7] bg-white/95 p-6 shadow-[0_14px_38px_rgba(14,59,116,0.06)]">
       <h2 className="text-[22px] font-black tracking-[-0.03em] text-[#07152f]">
-        선택 역세권 미리보기
+        선택 역세권 지도
       </h2>
 
-      <div className="mt-4 h-[168px] overflow-hidden rounded-xl border border-[#dbe7f4] bg-white shadow-sm max-lg:h-auto">
-        <ImageWithFallback
-          alt="선택한 광주 2호선 역세권 미리보기 지도"
-          className="block h-full w-full object-cover"
-          draggable={false}
-          fallbackText="역세권 미리보기 지도를 불러올 수 없습니다."
-          src={onboardingAssets.stationPreviewMap}
-        />
+      <div
+        aria-label="선택 역세권 인터랙티브 지도"
+        className="relative mt-4 h-[280px] overflow-hidden rounded-xl border border-[#dbe7f4] bg-white shadow-sm"
+        role="region"
+      >
+        <MapContainer
+          center={center}
+          className="h-full w-full"
+          scrollWheelZoom={false}
+          zoom={12}
+          zoomControl={false}
+        >
+          <TileLayer
+            attribution="&copy; OpenStreetMap contributors"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <StationMapViewport center={center} positions={viewportPositions} zoom={12} />
+
+          {selectedPositions.length >= 2 ? (
+            <Polyline
+              color="#10b981"
+              opacity={0.78}
+              pathOptions={{ dashArray: '8 8' }}
+              positions={selectedPositions}
+              weight={4}
+            />
+          ) : null}
+
+          {selectedMapStations.map((station) => (
+            <Circle
+              center={[station.latitude, station.longitude]}
+              color="#096bff"
+              fillColor="#096bff"
+              fillOpacity={0.1}
+              key={`${station.id}-radius`}
+              radius={radiusMeters}
+              weight={2}
+            />
+          ))}
+
+          {stationMapStations.map((station) => {
+            const isSelected = selectedStations.includes(station.name)
+            const markerColor = isSelected ? '#096bff' : '#7a8aa0'
+
+            return (
+              <CircleMarker
+                center={[station.latitude, station.longitude]}
+                color="#ffffff"
+                fillColor={markerColor}
+                fillOpacity={isSelected ? 0.95 : 0.72}
+                key={station.id}
+                radius={isSelected ? 8 : 5}
+                weight={2}
+              >
+                <Tooltip direction="top" offset={[0, -8]}>
+                  {station.name}
+                  {isSelected ? ` · 반경 ${radius}` : ''}
+                </Tooltip>
+                <Popup>
+                  <div className="min-w-40 text-sm">
+                    <p className="font-black text-[#07152f]">{station.name}</p>
+                    <p className="mt-1 text-xs font-semibold text-[#64748b]">
+                      {station.line} · {station.district}
+                    </p>
+                    <p className="mt-2 text-xs font-bold text-[#096bff]">
+                      {isSelected ? `분석 반경 ${radius}` : '선택 가능 역'}
+                    </p>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            )
+          })}
+        </MapContainer>
+
+        <div className="absolute right-3 bottom-3 z-[500] grid gap-2 rounded-lg border border-[#dce8f5] bg-white/95 px-3 py-3 text-xs font-bold text-[#334155] shadow-[0_10px_26px_rgba(15,23,42,0.12)]">
+          <span className="inline-flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-[#096bff]" aria-hidden="true" />
+            선택 역
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span
+              className="h-3 w-3 rounded-full border border-[#096bff] bg-[#096bff]/10"
+              aria-hidden="true"
+            />
+            분석 반경
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-[#7a8aa0]" aria-hidden="true" />
+            선택 가능 역
+          </span>
+        </div>
       </div>
     </section>
   )
@@ -516,7 +675,10 @@ export function OnboardingStationPage() {
                 </div>
               </section>
 
-              <SelectedStationMap />
+              <SelectedStationMap
+                radius={setup.radius}
+                selectedStations={setup.selectedStations}
+              />
             </div>
 
             <div>
