@@ -587,6 +587,12 @@ function SummaryPanel({
     buildDistributionDonutBackground(topDistribution)
   const insights = mapData?.insight_summaries ?? fallbackInsights
   const stationCount = mapData?.station_markers.length ?? 8
+  const analysisBasisLabel =
+    mapData?.data_status === 'public_store_csv'
+      ? '분석 기준: 공공 CSV'
+      : mapData?.data_status === 'sample_fixture'
+        ? '분석 기준: 샘플 fixture'
+        : '분석 기준: FastAPI 확인 중'
 
   return (
     <aside className="min-w-0 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.07)]">
@@ -600,7 +606,7 @@ function SummaryPanel({
             </span>
           </h3>
           <p className="mb-4 mt-2 text-xs font-extrabold text-slate-500">
-            분석 기준일: 2024.05.18
+            {analysisBasisLabel}
           </p>
         </div>
         <button aria-label="요약 새로고침" className="text-slate-600" type="button">

@@ -196,7 +196,7 @@ function DashboardPreview() {
               광주 2호선 상권 변화 대시보드
             </h2>
             <p className="text-[10px] font-semibold text-[#8a98aa]">
-              데이터 업데이트: 2024.05.20
+              데이터 기준: 공공 CSV 연결
             </p>
           </div>
 

@@ -18,7 +18,11 @@ vi.mock('react-leaflet', async () => {
 
   return {
     MapContainer: ({ children }: { children?: ReactNode }) =>
-      React.createElement('div', { 'data-testid': 'dashboard-recommendation-map' }, children),
+      React.createElement(
+        'div',
+        { 'data-testid': 'dashboard-recommendation-map' },
+        children,
+      ),
     Marker: Layer,
     Polyline: Layer,
     Popup: Layer,
@@ -133,16 +137,24 @@ function createRecommendationsResponse() {
   }
 }
 
-function mockDashboardFetch() {
+type DashboardFetchOptions = {
+  mapData?: ReturnType<typeof createMapDataResponse>
+  recommendations?: ReturnType<typeof createRecommendationsResponse>
+}
+
+function mockDashboardFetch({
+  mapData = createMapDataResponse(),
+  recommendations = createRecommendationsResponse(),
+}: DashboardFetchOptions = {}) {
   globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input)
 
     if (url.includes('/api/commercial-analysis/map-data')) {
-      return Response.json(createMapDataResponse())
+      return Response.json(mapData)
     }
 
     if (url.includes('/api/recommendations')) {
-      return Response.json(createRecommendationsResponse())
+      return Response.json(recommendations)
     }
 
     return Response.json({}, { status: 404 })
@@ -186,14 +198,50 @@ describe('DashboardPage', () => {
     expect(screen.getByText('74,205개')).toBeInTheDocument()
     expect(screen.getByText('음식점')).toBeInTheDocument()
     expect(screen.getAllByText('상무2동 예정역').length).toBeGreaterThan(0)
+    expect(screen.getByTestId('dashboard-data-source-status')).toHaveTextContent(
+      '공공 상가 CSV',
+    )
+    expect(screen.getByTestId('dashboard-data-source-status')).toHaveTextContent(
+      '추천 CSV',
+    )
+    expect(screen.getByText('실제 CSV 기준')).toBeInTheDocument()
+    expect(screen.queryByText('125,430명')).not.toBeInTheDocument()
+    expect(screen.queryByText('2,845억 원')).not.toBeInTheDocument()
+    expect(screen.queryByText('2024.05.18 기준')).not.toBeInTheDocument()
     expect(screen.getByTestId('dashboard-recommendation-map')).toBeInTheDocument()
     expect(screen.getByText('최근 저장한 리포트')).toBeInTheDocument()
+  })
+
+  it('does not replace empty CSV recommendation responses with mock rows', async () => {
+    mockDashboardFetch({
+      recommendations: {
+        ...createRecommendationsResponse(),
+        items: [],
+        map: {
+          center: [35.145721, 126.855924],
+          route: [],
+          zoom: 13,
+        },
+      },
+    })
+    renderDashboardPage()
+
+    expect(await screen.findByText('FastAPI CSV 데이터 연결됨')).toBeInTheDocument()
+    expect(
+      screen.getByText('실제 추천 CSV 응답에 표시할 Top 5 데이터가 없습니다.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('추천 CSV 지도 데이터가 없습니다.')).toBeInTheDocument()
+    expect(screen.queryByText('상무역')).not.toBeInTheDocument()
+    expect(screen.queryByText('첨단역')).not.toBeInTheDocument()
   })
 
   it('links the sidebar mypage route without separate mypage section shortcuts', () => {
     renderDashboardPage()
 
-    expect(screen.getByRole('link', { name: '마이페이지' })).toHaveAttribute('href', '/mypage')
+    expect(screen.getByRole('link', { name: '마이페이지' })).toHaveAttribute(
+      'href',
+      '/mypage',
+    )
     expect(screen.queryByRole('link', { name: '관심 역세권' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '설정' })).not.toBeInTheDocument()
   })

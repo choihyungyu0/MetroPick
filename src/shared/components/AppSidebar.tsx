@@ -79,7 +79,7 @@ function SidebarInsights({ isCollapsed }: { isCollapsed: boolean }) {
       {sidebarStatusCards.map((item) => {
         const Icon = item.icon
         const description =
-          item.label === '데이터 업데이트' ? '2024.05.18 기준' : 'FAQ · 고객센터'
+          item.label === '데이터 업데이트' ? '실제 CSV 기준' : 'FAQ · 고객센터'
 
         return (
           <Link
