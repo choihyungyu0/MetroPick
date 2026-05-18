@@ -45,6 +45,13 @@ class StartupSuitabilityResponse(BaseModel):
     top_reasons: list[str]
 
 
+class PredictionSimulationInput(BaseModel):
+    station_name: str = Field(min_length=1)
+    business_type: str = Field(min_length=1)
+    scenario: str | None = None
+    radius_m: float = Field(default=500.0, ge=0)
+
+
 class ProfileCreate(BaseModel):
     email: str = Field(min_length=1)
     name: str = Field(min_length=1)

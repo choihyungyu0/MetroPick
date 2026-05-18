@@ -32,11 +32,58 @@ export type BackendStartupSuitabilityResponse = {
   top_reasons: string[]
 }
 
+export type BackendPredictionConfidenceMetric = {
+  label: string
+  level: string
+  score: number
+}
+
+export type BackendPredictionSimulationInput = {
+  station_name: string
+  business_type: string
+  scenario?: string
+  radius_m?: number
+}
+
+export type BackendPredictionSimulationResponse = {
+  data_status: string
+  station_name: string
+  display_station_name: string
+  business_type: string
+  scenario?: string | null
+  radius_m: number
+  startup_suitability_score: number
+  predicted_score: number
+  predicted_growth_rate: number
+  predicted_sales_change_rate: number
+  floating_demand_index: number
+  competition_index: number
+  business_diversity_index: number
+  risk_level: string
+  recommendation_label: string
+  risk_factors: string[]
+  strategy_comment: string
+  confidence_metrics: BackendPredictionConfidenceMetric[]
+  feature_payload?: Record<string, number>
+}
+
 export function predictBackendStartupSuitability(
   input: BackendStartupSuitabilityInput,
 ): Promise<BackendStartupSuitabilityResponse> {
   return fetchBackendJson<BackendStartupSuitabilityResponse>(
     '/api/prediction/startup-suitability',
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    },
+  )
+}
+
+export function simulateBackendPrediction(
+  input: BackendPredictionSimulationInput,
+): Promise<BackendPredictionSimulationResponse> {
+  return fetchBackendJson<BackendPredictionSimulationResponse>(
+    '/api/prediction/simulate',
     {
       method: 'POST',
       body: JSON.stringify(input),

@@ -16,12 +16,12 @@ import {
 } from 'lucide-react'
 
 import type {
-  BackendStartupSuitabilityInput,
+  BackendPredictionSimulationResponse,
   BackendStartupSuitabilityResponse,
 } from '@/shared/api/backendPredictionApi'
 import type { BackendPredictionResult } from '@/shared/api/backendPredictionResultsApi'
 import { useCreateBackendPredictionResult } from '@/shared/api/hooks/useBackendPredictionResults'
-import { useBackendStartupSuitability } from '@/shared/api/hooks/useBackendStartupSuitability'
+import { useBackendPredictionSimulation } from '@/shared/api/hooks/useBackendStartupSuitability'
 import { aiPredictionAssets } from '@/shared/assets/aiPredictionAssets'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
@@ -40,6 +40,7 @@ type PredictionFilters = {
 }
 
 type PredictionResult = {
+  backendPredictionSimulation?: BackendPredictionSimulationResponse
   backendStartupSuitability?: BackendStartupSuitabilityResponse
   businessType: string
   createdAt: string
@@ -50,9 +51,11 @@ type PredictionResult = {
   predicted_score?: number
   recommendation_label?: string
   risk_level?: string
+  riskFactors?: string[]
   riskLevel: '낮음' | '보통' | '높음'
   scenario: string
   stationArea: string
+  strategyComment?: string
   top_reasons?: string[]
 }
 
@@ -92,11 +95,11 @@ const defaultFilters: PredictionFilters = {
 
 const scenarioOptions = ['광주 2호선 2단계 개통 - 2026년 예정']
 const businessTypeOptions = ['커피전문점', '편의점', '외식업', '베이커리']
-const stationOptions = ['상무역(2호선)', '광주역', '전남대역']
+const stationOptions = ['시청역', '상무역(2호선)', '백운광장역', '광주역', '첨단역']
 const regionOptions = ['광주광역시 전체']
 const dateOptions = ['2026년 4월 18일']
 
-const growthRates: GrowthRateItem[] = [
+const baseGrowthRates: GrowthRateItem[] = [
   { label: '커피전문점', value: 47.6 },
   { label: '편의점', value: 38.2 },
   { label: '외식업', value: 34.7 },
@@ -123,31 +126,6 @@ const defaultRiskReasons = [
   '신규 상업시설 공급 계획 존재',
   '주말 유동인구 변동성 높음',
 ]
-
-const sampleStartupSuitabilityPayload: BackendStartupSuitabilityInput = {
-  radius_m: 500,
-  total_store_count: 120,
-  same_business_count_by_type: 28,
-  cafe_count: 28,
-  restaurant_count: 42,
-  convenience_count: 9,
-  pharmacy_count: 4,
-  beauty_count: 13,
-  academy_count: 8,
-  retail_count: 16,
-  business_type_count: 7,
-  business_diversity_index: 78,
-  bus_boarding_count: 850,
-  bus_alighting_count: 920,
-  bus_total_count: 1770,
-  nearby_bus_stop_count: 9,
-  subway_pattern_score: 72,
-  competition_index: 58,
-  floating_demand_index: 81,
-  sales_potential_index: 76,
-  closure_risk_index: 35,
-  accessibility_score: 84,
-}
 
 function normalizeBusinessType(label: string) {
   if (label.includes('카페') || label.includes('커피')) {
@@ -192,17 +170,27 @@ function appendPredictionResult(result: PredictionResult) {
 }
 
 function buildPredictionResultInput(result: PredictionResult) {
+  const simulation = result.backendPredictionSimulation
   return {
     station_area: result.stationArea,
     business_type: result.businessType,
-    predicted_score: result.backendStartupSuitability?.predicted_score ?? null,
+    predicted_score: result.predicted_score ?? null,
     result_payload: {
+      title: `${result.stationArea} ${result.businessType} AI 예측 결과`,
       scenario: result.scenario,
+      score: result.predicted_score ?? null,
+      risk_level: result.risk_level ?? result.riskLevel,
+      growth_rate: simulation?.predicted_growth_rate ?? result.predictedSalesGrowthRate,
+      sales_change_rate:
+        simulation?.predicted_sales_change_rate ?? result.predictedSalesGrowthRate,
+      risk_factors: result.riskFactors ?? [],
+      strategy_comment: result.strategyComment ?? '',
       predictedSalesGrowthRate: result.predictedSalesGrowthRate,
       predictedSalesIncrease: result.predictedSalesIncrease,
       predictedFloatingPopulationGrowthRate:
         result.predictedFloatingPopulationGrowthRate,
       riskLevel: result.riskLevel,
+      backendPredictionSimulation: simulation,
       backendStartupSuitability: result.backendStartupSuitability,
       createdAt: result.createdAt,
     },
@@ -245,32 +233,115 @@ function buildMockPredictionResult(filters: PredictionFilters): PredictionResult
   }
 }
 
+function normalizeRiskLevel(value: string): PredictionResult['riskLevel'] {
+  if (value === '낮음' || value === '보통' || value === '높음') {
+    return value
+  }
+
+  return '보통'
+}
+
+function formatSignedPercent(value: number): string {
+  return `+${value.toFixed(1)}%`
+}
+
+function deriveFloatingPopulationGrowth(result: BackendPredictionSimulationResponse): number {
+  return Math.max(0, Math.min(75, Math.round(result.floating_demand_index * 0.6 * 10) / 10))
+}
+
+function toStartupSuitabilityResponse(
+  result: BackendPredictionSimulationResponse | null,
+): BackendStartupSuitabilityResponse | null {
+  if (!result) {
+    return null
+  }
+
+  return {
+    predicted_score: result.startup_suitability_score,
+    risk_level: result.risk_level,
+    recommendation_label: result.recommendation_label,
+    top_reasons: result.risk_factors,
+  }
+}
+
 function buildBackendPredictionResult(
   filters: PredictionFilters,
-  prediction: BackendStartupSuitabilityResponse,
+  prediction: BackendPredictionSimulationResponse,
 ): PredictionResult {
+  const stationArea = prediction.display_station_name || prediction.station_name
+  const backendStartupSuitability = toStartupSuitabilityResponse(prediction)
+
   return {
-    ...buildMockPredictionResult(filters),
-    backendStartupSuitability: prediction,
-    predicted_score: prediction.predicted_score,
+    ...buildMockPredictionResult({
+      ...filters,
+      businessType: prediction.business_type,
+      stationArea,
+    }),
+    backendPredictionSimulation: prediction,
+    backendStartupSuitability: backendStartupSuitability ?? undefined,
+    businessType: prediction.business_type,
+    stationArea,
+    predictedFloatingPopulationGrowthRate: deriveFloatingPopulationGrowth(prediction),
+    predictedSalesGrowthRate: prediction.predicted_growth_rate,
+    predictedSalesIncrease: formatSignedPercent(prediction.predicted_sales_change_rate),
+    predicted_score: prediction.startup_suitability_score,
     risk_level: prediction.risk_level,
     recommendation_label: prediction.recommendation_label,
-    top_reasons: prediction.top_reasons,
+    riskFactors: prediction.risk_factors,
+    riskLevel: normalizeRiskLevel(prediction.risk_level),
+    strategyComment: prediction.strategy_comment,
+    top_reasons: prediction.risk_factors,
   }
 }
 
 function getPredictionBackendStatus({
-  backendPrediction,
+  simulationResult,
   isPending,
 }: {
-  backendPrediction: BackendStartupSuitabilityResponse | null
+  simulationResult: BackendPredictionSimulationResponse | null
   isPending: boolean
 }): BackendStatus {
   if (isPending) {
     return 'loading'
   }
 
-  return backendPrediction ? 'connected' : 'fallback'
+  return simulationResult?.data_status === 'ml_model' ? 'connected' : 'fallback'
+}
+
+function buildGrowthRates(
+  businessType: string,
+  simulationResult: BackendPredictionSimulationResponse | null,
+): GrowthRateItem[] {
+  if (!simulationResult) {
+    return baseGrowthRates
+  }
+
+  const selectedRate = simulationResult.predicted_growth_rate
+  const otherRates = baseGrowthRates
+    .filter((item) => item.label !== businessType)
+    .slice(0, 4)
+    .map((item, index) => ({
+      ...item,
+      value: Math.max(8, Math.round((selectedRate * (0.86 - index * 0.07)) * 10) / 10),
+    }))
+
+  return [{ label: businessType, value: selectedRate }, ...otherRates].slice(0, 5)
+}
+
+function buildConfidenceMetrics(
+  simulationResult: BackendPredictionSimulationResponse | null,
+): ConfidenceMetric[] {
+  if (!simulationResult) {
+    return confidenceMetrics
+  }
+
+  const icons = [ShieldCheck, Coins, BrainCircuit, Target] as const
+  return simulationResult.confidence_metrics.map((metric, index) => ({
+    label: metric.label,
+    level: metric.level,
+    score: Math.round(metric.score),
+    icon: icons[index] ?? Target,
+  }))
 }
 
 function FilterSelect({
@@ -351,11 +422,25 @@ function FilterBar({
   )
 }
 
-function SalesForecastChartCard() {
+function SalesForecastChartCard({
+  businessType,
+  simulationResult,
+  stationArea,
+}: {
+  businessType: string
+  simulationResult: BackendPredictionSimulationResponse | null
+  stationArea: string
+}) {
+  const headline = simulationResult
+    ? `${stationArea} · ${businessType} 매출 변화 ${formatSignedPercent(
+        simulationResult.predicted_sales_change_rate,
+      )}`
+    : `${stationArea} · ${businessType} 샘플 전망`
+
   return (
     <section className="h-[360px] rounded-xl border border-blue-100 bg-white p-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
-      <h3 className="sr-only">개통 전후 매출 전망</h3>
-      <div className="h-full overflow-hidden rounded-xl border border-slate-100 bg-white">
+      <h3 className="mb-2 text-sm font-black text-slate-900">{headline}</h3>
+      <div className="h-[calc(100%-28px)] overflow-hidden rounded-xl border border-slate-100 bg-white">
         <ImageWithFallback
           alt="개통 전후 매출 전망 예측 차트"
           className="h-full w-full object-contain"
@@ -368,7 +453,7 @@ function SalesForecastChartCard() {
   )
 }
 
-function GrowthRateCard() {
+function GrowthRateCard({ growthRates }: { growthRates: GrowthRateItem[] }) {
   return (
     <section className="h-[360px] rounded-xl border border-blue-100 bg-white p-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="text-lg font-black text-slate-900">
@@ -410,12 +495,21 @@ function GrowthRateCard() {
 }
 
 function SummaryCard({
-  backendPrediction,
+  simulationResult,
   stationArea,
 }: {
-  backendPrediction: BackendStartupSuitabilityResponse | null
+  simulationResult: BackendPredictionSimulationResponse | null
   stationArea: string
 }) {
+  const floatingGrowthRate = simulationResult
+    ? deriveFloatingPopulationGrowth(simulationResult)
+    : 42.3
+  const salesChangeRate = simulationResult
+    ? simulationResult.predicted_sales_change_rate
+    : 47.6
+  const riskLevel = simulationResult?.risk_level ?? '보통'
+  const riskFactors = simulationResult?.risk_factors ?? defaultRiskReasons
+
   return (
     <aside className="min-h-[488px] self-start rounded-xl border border-blue-100 bg-white p-5 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="text-lg font-black text-slate-900">선택 역세권 예측 요약</h3>
@@ -440,7 +534,9 @@ function SummaryCard({
             예상 유동인구 증가율
           </p>
         </div>
-        <strong className="text-2xl font-black text-blue-600">+42.3%</strong>
+        <strong className="text-2xl font-black text-blue-600">
+          {formatSignedPercent(floatingGrowthRate)}
+        </strong>
         <small className="col-start-2 text-xs font-bold text-slate-500">
           (개통 후 24개월 기준)
         </small>
@@ -453,44 +549,42 @@ function SummaryCard({
             예상 매출 잠재력 변화
           </p>
         </div>
-        <strong className="text-2xl font-black text-blue-600">+47.6%</strong>
+        <strong className="text-2xl font-black text-blue-600">
+          {formatSignedPercent(salesChangeRate)}
+        </strong>
         <small className="col-start-2 text-xs font-bold text-slate-500">
-          (+1,280만원)
+          공공데이터 기반 시나리오
         </small>
       </div>
 
-      {backendPrediction ? (
+      {simulationResult ? (
         <div className="border-b border-slate-100 py-5">
           <h4 className="mb-3 text-sm font-black text-slate-900">
-            FastAPI 창업 적합도 결과
+            FastAPI ML 예측 결과
           </h4>
           <dl className="grid gap-2 text-xs font-bold text-slate-600">
             <div className="flex items-center justify-between gap-3">
               <dt>창업 적합도 점수</dt>
               <dd className="font-black text-blue-600">
-                {backendPrediction.predicted_score.toFixed(1)}점
+                {simulationResult.startup_suitability_score.toFixed(1)}점
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3">
               <dt>위험 수준</dt>
-              <dd className="font-black text-slate-800">{backendPrediction.risk_level}</dd>
+              <dd className="font-black text-slate-800">{simulationResult.risk_level}</dd>
             </div>
             <div className="flex items-center justify-between gap-3">
               <dt>추천 판단</dt>
               <dd className="font-black text-slate-800">
-                {backendPrediction.recommendation_label}
+                {simulationResult.recommendation_label}
               </dd>
             </div>
           </dl>
 
-          <strong className="mt-4 block text-xs font-black text-slate-700">
-            주요 예측 근거
-          </strong>
-          <ul className="mt-2 list-disc space-y-2 pl-5 text-xs leading-relaxed font-bold text-slate-500">
-            {backendPrediction.top_reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
-            ))}
-          </ul>
+          <strong className="mt-4 block text-xs font-black text-slate-700">전략 코멘트</strong>
+          <p className="mt-2 text-xs leading-relaxed font-bold text-slate-500">
+            {simulationResult.strategy_comment}
+          </p>
         </div>
       ) : null}
 
@@ -499,11 +593,11 @@ function SummaryCard({
           <ShieldQuestion aria-hidden="true" className="text-rose-400" size={25} />
           <p className="m-0 font-black text-slate-700">위험 요인</p>
           <em className="ml-auto rounded-lg bg-amber-50 px-3 py-1 text-xs font-black not-italic text-amber-600">
-            보통
+            {riskLevel}
           </em>
         </div>
         <ul className="mt-4 list-disc space-y-2 pl-5 text-xs leading-relaxed font-bold text-slate-500">
-          {defaultRiskReasons.map((reason) => (
+          {riskFactors.map((reason) => (
             <li key={reason}>{reason}</li>
           ))}
         </ul>
@@ -516,14 +610,14 @@ function SummaryCard({
   )
 }
 
-function ConfidenceSection() {
+function ConfidenceSection({ metrics }: { metrics: ConfidenceMetric[] }) {
   return (
     <section className="mt-3">
       <h3 className="mb-2.5 ml-5 text-[17px] font-black text-slate-900">
         AI 예측 신뢰도
       </h3>
       <div className="grid grid-cols-4 gap-3.5 max-xl:grid-cols-2 max-sm:grid-cols-1">
-        {confidenceMetrics.map((item) => {
+        {metrics.map((item) => {
           const Icon = item.icon
 
           return (
@@ -554,14 +648,39 @@ function ConfidenceSection() {
   )
 }
 
-function EvidenceSection() {
+function EvidenceSection({
+  simulationResult,
+}: {
+  simulationResult: BackendPredictionSimulationResponse | null
+}) {
+  const items = simulationResult
+    ? [
+        {
+          title: '유동 수요 지수',
+          value: `${simulationResult.floating_demand_index.toFixed(1)}점`,
+        },
+        {
+          title: '경쟁 지수',
+          value: `${simulationResult.competition_index.toFixed(1)}점`,
+        },
+        {
+          title: '상권 다양성',
+          value: `${simulationResult.business_diversity_index.toFixed(1)}점`,
+        },
+        {
+          title: '예상 성장률',
+          value: formatSignedPercent(simulationResult.predicted_growth_rate),
+        },
+      ]
+    : evidenceItems
+
   return (
     <section className="rounded-xl border border-blue-100 bg-white px-6 py-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="flex items-center gap-1 text-lg font-black text-slate-900">
         예측 근거 <Info aria-hidden="true" className="text-slate-400" size={16} />
       </h3>
       <div className="mt-4 grid grid-cols-4 gap-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
-        {evidenceItems.map((item) => (
+        {items.map((item) => (
           <div
             className="grid min-h-[58px] place-items-center rounded-lg border border-blue-100 bg-white px-3 text-center"
             key={item.title}
@@ -578,7 +697,23 @@ function EvidenceSection() {
   )
 }
 
-function CommentSection() {
+function CommentSection({
+  businessType,
+  simulationResult,
+  stationArea,
+}: {
+  businessType: string
+  simulationResult: BackendPredictionSimulationResponse | null
+  stationArea: string
+}) {
+  const comment = simulationResult
+    ? `${stationArea} 일대의 ${businessType} 시나리오는 공공 상권·교통 지표와 학습된 적합도 모델을 함께 반영했습니다. 예상 성장률은 ${formatSignedPercent(
+        simulationResult.predicted_growth_rate,
+      )}, 매출 잠재력 변화는 ${formatSignedPercent(
+        simulationResult.predicted_sales_change_rate,
+      )}로 계산되며, ${simulationResult.strategy_comment} 이 결과는 실제 매출을 보장하지 않는 참고용 시나리오입니다.`
+    : '상무역(2호선) 일대는 개통 이후 유동인구 증가와 20~30대 생활인구 비중 확대가 예상되어 커피전문점의 매출 성장 잠재력이 높게 보입니다. 특히 개통 후 6개월부터 의미 있는 상승 전환이 예상되며, 24개월 뒤에는 현재 대비 약 47.6%의 매출 상승을 참고 시나리오로 볼 수 있습니다. 다만 경쟁 점포 증가와 신규 상업시설 공급 변화를 지속적으로 모니터링하는 것이 좋습니다.'
+
   return (
     <section className="rounded-xl border border-blue-100 bg-gradient-to-b from-white to-blue-50 px-6 py-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
       <h3 className="flex items-center gap-2 text-lg font-black text-indigo-600">
@@ -586,12 +721,7 @@ function CommentSection() {
         AI 요약 코멘트
       </h3>
       <p className="my-3 text-sm leading-5 font-bold text-slate-700">
-        상무역(2호선) 일대는 개통 이후 유동인구 증가와 20~30대 생활인구
-        비중 확대가 예상되어 커피전문점의 매출 성장 잠재력이 높게 보입니다.
-        특히 개통 후 6개월부터 의미 있는 상승 전환이 예상되며, 24개월
-        뒤에는 현재 대비 약 47.6%의 매출 상승을 참고 시나리오로 볼 수
-        있습니다. 다만 경쟁 점포 증가와 신규 상업시설 공급 변화를 지속적으로
-        모니터링하는 것이 좋습니다.
+        {comment}
       </p>
       <small className="text-xs font-semibold text-slate-500">
         이 내용은 AI가 생성한 요약으로 실제 결과와 다를 수 있습니다.
@@ -604,15 +734,30 @@ export function AIPredictionPage() {
   const [filters, setFilters] = useState<PredictionFilters>(() => buildInitialFilters())
   const [saveMessage, setSaveMessage] = useState('')
   const [lastSimulated, setLastSimulated] = useState('')
-  const [backendPrediction, setBackendPrediction] =
-    useState<BackendStartupSuitabilityResponse | null>(null)
-  const startupSuitabilityMutation = useBackendStartupSuitability()
+  const [simulationResult, setSimulationResult] =
+    useState<BackendPredictionSimulationResponse | null>(null)
+  const predictionSimulationMutation = useBackendPredictionSimulation()
   const createPredictionResultMutation = useCreateBackendPredictionResult()
 
-  const stationSummary = useMemo(() => filters.stationArea, [filters.stationArea])
+  const stationSummary = useMemo(
+    () => simulationResult?.display_station_name || filters.stationArea,
+    [filters.stationArea, simulationResult],
+  )
+  const reportBackendPrediction = useMemo(
+    () => toStartupSuitabilityResponse(simulationResult),
+    [simulationResult],
+  )
+  const visibleGrowthRates = useMemo(
+    () => buildGrowthRates(filters.businessType, simulationResult),
+    [filters.businessType, simulationResult],
+  )
+  const visibleConfidenceMetrics = useMemo(
+    () => buildConfidenceMetrics(simulationResult),
+    [simulationResult],
+  )
   const backendStatus = getPredictionBackendStatus({
-    backendPrediction,
-    isPending: startupSuitabilityMutation.isPending,
+    simulationResult,
+    isPending: predictionSimulationMutation.isPending,
   })
   const predictionReportGeneratedAt = useMemo(
     () =>
@@ -628,13 +773,16 @@ export function AIPredictionPage() {
     let result: PredictionResult
 
     try {
-      const prediction = await startupSuitabilityMutation.mutateAsync(
-        sampleStartupSuitabilityPayload,
-      )
-      setBackendPrediction(prediction)
+      const prediction = await predictionSimulationMutation.mutateAsync({
+        station_name: filters.stationArea,
+        business_type: filters.businessType,
+        scenario: filters.scenario,
+        radius_m: 500,
+      })
+      setSimulationResult(prediction)
       result = buildBackendPredictionResult(filters, prediction)
     } catch {
-      setBackendPrediction(null)
+      setSimulationResult(null)
       result = buildMockPredictionResult(filters)
     }
 
@@ -678,7 +826,7 @@ export function AIPredictionPage() {
               </h1>
               <div className="mt-2">
                 <BackendStatusBadge
-                  connectedLabel="FastAPI 예측 결과 연결됨"
+                  connectedLabel="FastAPI ML 예측 결과 연결됨"
                   fallbackLabel="백엔드 미연결 · 목업 예측 결과 표시"
                   loadingLabel="FastAPI 예측 요청 중"
                   status={backendStatus}
@@ -725,13 +873,13 @@ export function AIPredictionPage() {
                 }
               >
                 <PredictionReportDownloadButton
-                  backendPrediction={backendPrediction}
+                  backendPrediction={reportBackendPrediction}
                   businessType={filters.businessType}
-                  confidenceMetrics={confidenceMetrics}
+                  confidenceMetrics={visibleConfidenceMetrics}
                   generatedAt={predictionReportGeneratedAt}
-                  growthRates={growthRates}
+                  growthRates={visibleGrowthRates}
                   scenario={filters.scenario}
-                  stationArea={filters.stationArea}
+                  stationArea={stationSummary}
                 />
               </Suspense>
               <button aria-label="알림" className="text-slate-500" type="button">
@@ -756,22 +904,30 @@ export function AIPredictionPage() {
           <div className="grid grid-cols-[minmax(0,1fr)_390px] gap-4 max-2xl:grid-cols-1">
             <div className="min-w-0">
               <div className="grid grid-cols-[minmax(0,1.65fr)_minmax(330px,1fr)] gap-4 max-xl:grid-cols-1">
-                <SalesForecastChartCard />
-                <GrowthRateCard />
+                <SalesForecastChartCard
+                  businessType={filters.businessType}
+                  simulationResult={simulationResult}
+                  stationArea={stationSummary}
+                />
+                <GrowthRateCard growthRates={visibleGrowthRates} />
               </div>
 
-              <ConfidenceSection />
+              <ConfidenceSection metrics={visibleConfidenceMetrics} />
             </div>
 
             <SummaryCard
-              backendPrediction={backendPrediction}
+              simulationResult={simulationResult}
               stationArea={stationSummary}
             />
           </div>
 
           <div className="mt-4 grid grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] gap-4 max-xl:grid-cols-1">
-            <EvidenceSection />
-            <CommentSection />
+            <EvidenceSection simulationResult={simulationResult} />
+            <CommentSection
+              businessType={filters.businessType}
+              simulationResult={simulationResult}
+              stationArea={stationSummary}
+            />
           </div>
         </main>
       </div>
