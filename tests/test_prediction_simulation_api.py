@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from backend.app.main import app
+from backend.app.services.prediction_service import build_prediction_comment
 from ml import config
 
 
@@ -79,6 +80,28 @@ def _write_line2_coordinates_csv(path: Path) -> None:
     )
 
 
+def _prediction_comment_payload(**overrides: object) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "station_name": "테스트역",
+        "display_station_name": "테스트역",
+        "business_type": "커피전문점",
+        "startup_suitability_score": 72.0,
+        "predicted_growth_rate": 42.0,
+        "predicted_sales_change_rate": 36.0,
+        "floating_demand_index": 66.0,
+        "competition_index": 44.0,
+        "business_diversity_index": 72.0,
+        "feature_payload": {
+            "same_business_count_by_type": 3.0,
+            "total_store_count": 20.0,
+            "nearby_bus_stop_count": 4.0,
+            "bus_total_count": 1800.0,
+        },
+    }
+    payload.update(overrides)
+    return payload
+
+
 def test_prediction_simulate_returns_ml_model_status() -> None:
     body = _simulate("시청역", "커피전문점")
 
@@ -102,6 +125,10 @@ def test_prediction_simulate_returns_ml_model_status() -> None:
     assert series[-1]["before_opening_value"] is None
     assert body["risk_factors"]
     assert body["strategy_comment"]
+    assert body["ai_summary_comment"]
+    assert "공공데이터 기반 시나리오" in body["ai_summary_comment"]
+    assert "참고용 예측 결과" in body["ai_summary_comment"]
+    assert body["evidence_cards"]
     assert body["confidence_metrics"]
 
 
@@ -118,6 +145,17 @@ def test_prediction_simulate_changes_for_station_and_business_inputs() -> None:
             body["startup_suitability_score"],
             body["predicted_growth_rate"],
             body["competition_index"],
+            body["ai_summary_comment"],
+            body["strategy_comment"],
+            tuple(body["risk_factors"]),
+            tuple(
+                (
+                    item["title"],
+                    item["value"],
+                    item["comment"],
+                )
+                for item in body["evidence_cards"]
+            ),
             tuple(
                 (
                     item["label"],
@@ -132,6 +170,55 @@ def test_prediction_simulate_changes_for_station_and_business_inputs() -> None:
     assert len(signatures) == 3
     assert first["monthly_sales_series"] != second["monthly_sales_series"]
     assert second["monthly_sales_series"] != third["monthly_sales_series"]
+    assert first["ai_summary_comment"] != second["ai_summary_comment"]
+    assert second["strategy_comment"] != third["strategy_comment"]
+
+
+def test_prediction_comment_warns_when_competition_is_high() -> None:
+    comments = build_prediction_comment(
+        _prediction_comment_payload(
+            predicted_growth_rate=48.0,
+            competition_index=76.0,
+        ),
+    )
+
+    combined = " ".join(
+        [
+            *comments["risk_factors"],
+            comments["strategy_comment"],
+            comments["ai_summary_comment"],
+        ],
+    )
+    assert "경쟁 주의" in combined
+
+
+def test_prediction_comment_high_demand_has_positive_demand_comment() -> None:
+    comments = build_prediction_comment(
+        _prediction_comment_payload(
+            floating_demand_index=84.0,
+            competition_index=38.0,
+        ),
+    )
+
+    combined = " ".join(
+        [
+            *comments["risk_factors"],
+            comments["strategy_comment"],
+            comments["ai_summary_comment"],
+            *[card["comment"] for card in comments["evidence_cards"]],
+        ],
+    )
+    assert "잠재 유동수요가 높" in combined
+
+
+def test_prediction_comment_fallback_still_works() -> None:
+    comments = build_prediction_comment({})
+
+    assert comments["risk_factors"]
+    assert comments["strategy_comment"]
+    assert comments["ai_summary_comment"]
+    assert comments["evidence_cards"]
+    assert "선택 역세권" in comments["ai_summary_comment"]
 
 
 def test_prediction_simulate_accepts_line2_internal_and_display_names(

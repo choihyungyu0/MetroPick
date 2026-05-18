@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   AlertTriangle,
@@ -58,6 +58,18 @@ type FutureSalesReport = {
   title: string
 }
 
+type ReportSummary = {
+  analysisDate: string
+  businessType: string
+  expectedOpeningDate: string
+  model: string
+  radius: string
+  scenario: string
+  stationArea: string
+  stationLabel: string
+  title: string
+}
+
 type StoredRecommendation = {
   businessType?: string
   score?: number
@@ -74,7 +86,7 @@ type StoredOnboardingSummary = {
   completedAt?: string
 }
 
-const reportSummary = {
+const defaultReportSummary: ReportSummary = {
   analysisDate: '2025.05.25',
   businessType: '카페/커피전문점',
   expectedOpeningDate: '2027.12 (예정)',
@@ -82,7 +94,9 @@ const reportSummary = {
   radius: '500m',
   scenario: '2027 개통 시나리오',
   stationArea: '백운광장역 500m 상권',
-} as const
+  stationLabel: '백운광장역',
+  title: '백운광장역 500m 상권 미래 매출 예측 리포트',
+}
 
 const metricCards: ReportMetric[] = [
   {
@@ -230,10 +244,44 @@ const mapStats = [
   { label: '경쟁 카페 수', value: '24개' },
 ] as const
 
-function buildCurrentReport(): FutureSalesReport {
+function normalizeStationLabel(station?: string): string {
+  const trimmedStation = station?.trim()
+
+  if (!trimmedStation) {
+    return defaultReportSummary.stationLabel
+  }
+
+  return trimmedStation.replace(/\s*500m\s*상권$/u, '')
+}
+
+function normalizeBusinessType(businessType?: string): string {
+  const trimmedBusinessType = businessType?.trim()
+  return trimmedBusinessType || defaultReportSummary.businessType
+}
+
+function getBusinessBadgeLabel(businessType: string): string {
+  const [firstSegment] = businessType.split(/[/·,]/u)
+  return firstSegment?.trim() || businessType
+}
+
+function buildReportSummary(selectedRecommendation: StoredRecommendation | null) {
+  const stationLabel = normalizeStationLabel(selectedRecommendation?.station)
+  const businessType = normalizeBusinessType(selectedRecommendation?.businessType)
+  const stationArea = `${stationLabel} 500m 상권`
+
+  return {
+    ...defaultReportSummary,
+    businessType,
+    stationArea,
+    stationLabel,
+    title: `${stationArea} 미래 매출 예측 리포트`,
+  } satisfies ReportSummary
+}
+
+function buildCurrentReport(reportSummary: ReportSummary): FutureSalesReport {
   return {
     id: `future-sales-report-${Date.now()}`,
-    title: '백운광장역 500m 상권 미래 매출 예측 리포트',
+    title: reportSummary.title,
     stationArea: reportSummary.stationArea,
     businessType: reportSummary.businessType,
     scenario: reportSummary.scenario,
@@ -245,8 +293,8 @@ function buildCurrentReport(): FutureSalesReport {
   }
 }
 
-function saveCurrentReport() {
-  writeStorage('metropick-current-report', buildCurrentReport())
+function saveCurrentReport(reportSummary: ReportSummary) {
+  writeStorage('metropick-current-report', buildCurrentReport(reportSummary))
 }
 
 function CardTitle({ children, icon: Icon }: { children: ReactNode; icon?: LucideIcon }) {
@@ -305,12 +353,14 @@ function MetricCard({ item }: { item: ReportMetric }) {
   )
 }
 
-function HeroCard() {
+function HeroCard({ reportSummary }: { reportSummary: ReportSummary }) {
+  const businessBadgeLabel = getBusinessBadgeLabel(reportSummary.businessType)
+
   return (
     <section className="mb-3 grid min-h-[166px] min-w-0 grid-cols-[250px_minmax(0,1fr)_410px] items-center gap-5 rounded-xl border border-blue-100 bg-white/95 p-4 shadow-[0_10px_30px_rgba(25,55,90,0.06)] max-2xl:grid-cols-[250px_minmax(0,1fr)] max-lg:grid-cols-1">
       <div className="h-[136px] overflow-hidden rounded-xl bg-slate-200 max-lg:h-[210px]">
         <ImageWithFallback
-          alt="백운광장역 개통 예정 상권 대표 이미지"
+          alt={`${reportSummary.stationLabel} 개통 예정 상권 대표 이미지`}
           className="h-full w-full object-cover"
           draggable={false}
           fallbackText="상권 대표 이미지를 불러올 수 없습니다."
@@ -324,10 +374,10 @@ function HeroCard() {
             {reportSummary.stationArea}
           </h2>
           <span className="inline-flex h-8 items-center rounded-full border border-orange-300 bg-orange-50 px-3 text-sm font-black text-orange-500">
-            카페
+            {businessBadgeLabel}
           </span>
           <span className="inline-flex h-8 items-center rounded-full border border-emerald-300 bg-emerald-50 px-3 text-sm font-black text-emerald-600">
-            백운광장역 500m
+            {reportSummary.stationLabel} 500m
           </span>
           <span className="inline-flex h-8 items-center rounded-full border border-blue-300 bg-blue-50 px-3 text-sm font-black text-blue-600">
             {reportSummary.scenario}
@@ -335,8 +385,11 @@ function HeroCard() {
         </div>
 
         <p className="mt-4 text-sm leading-6 font-semibold text-slate-600">
-          광주 2호선 백운광장역 개통(2027년 예정) 시점을 기준으로 예측한{' '}
-          <strong className="font-black text-slate-900">카페 업종</strong>의 미래 매출
+          광주 2호선 {reportSummary.stationLabel} 개통(2027년 예정) 시점을 기준으로
+          예측한{' '}
+          <strong className="font-black text-slate-900">
+            {reportSummary.businessType} 업종의 미래 매출
+          </strong>
           전망 리포트입니다.
         </p>
       </div>
@@ -360,17 +413,17 @@ function HeroCard() {
   )
 }
 
-function SummaryInsightCard() {
+function SummaryInsightCard({ reportSummary }: { reportSummary: ReportSummary }) {
   return (
     <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle icon={Gauge}>
         요약 인사이트 <span className="text-sm text-slate-500">(AI 요약)</span>
       </CardTitle>
       <p className="m-0 text-sm leading-6 font-semibold text-slate-700">
-        백운광장역 500m 상권의 카페 업종은 2027년 개통 이후 꾸준한 성장세가 예상되며, 특히
-        2028~2030년에 매출 성장이 가속화될 것으로 전망됩니다. 유동인구 증가와 주변 개발
-        호재, 젊은 세대 유입이 주요 성장 요인으로 작용하며, 프리미엄 커피·디저트 특화
-        전략이 높은 성과를 기대할 수 있습니다.
+        {reportSummary.stationArea}의 {reportSummary.businessType} 업종은 선택한 추천
+        입지를 기준으로 구성한 모의 리포트입니다. 2027년 개통 시나리오와 유동인구 증가,
+        주변 개발 호재를 함께 검토하며, 세부 매출 수치는 실제 성과를 보장하지 않는 예측
+        시뮬레이션으로 제공됩니다.
       </p>
       <div className="mt-3 flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-50 to-blue-50 px-3 text-sm font-black text-emerald-700">
         <TrendingUp
@@ -417,13 +470,13 @@ function SalesTrendCard() {
   )
 }
 
-function MapSnapshotCard() {
+function MapSnapshotCard({ reportSummary }: { reportSummary: ReportSummary }) {
   return (
     <section className="rounded-xl border border-blue-100 bg-white/95 px-4 py-3.5 shadow-[0_10px_30px_rgba(25,55,90,0.06)]">
       <CardTitle>상권 지도 스냅샷</CardTitle>
       <div className="h-[190px] overflow-hidden rounded-xl border border-slate-200 bg-white">
         <ImageWithFallback
-          alt="백운광장역 500m 상권 지도 스냅샷"
+          alt={`${reportSummary.stationArea} 지도 스냅샷`}
           className="h-full w-full object-contain"
           draggable={false}
           fallbackText="상권 지도 스냅샷을 불러올 수 없습니다."
@@ -594,8 +647,12 @@ function StrategySection() {
 
 export function ReportPage() {
   const [message, setMessage] = useState('')
-  const selectedRecommendation = safeParseStorage<StoredRecommendation>(
-    'metropick-selected-recommendation',
+  const [selectedRecommendation] = useState<StoredRecommendation | null>(() =>
+    safeParseStorage<StoredRecommendation>('metropick-selected-recommendation'),
+  )
+  const reportSummary = useMemo(
+    () => buildReportSummary(selectedRecommendation),
+    [selectedRecommendation],
   )
   const predictionResults =
     safeParseStorage<StoredPredictionResult[]>('metropick-ai-prediction-results') ?? []
@@ -611,11 +668,11 @@ export function ReportPage() {
     .join(' / ')
 
   useEffect(() => {
-    saveCurrentReport()
-  }, [])
+    saveCurrentReport(reportSummary)
+  }, [reportSummary])
 
   const handleShare = async () => {
-    saveCurrentReport()
+    saveCurrentReport(reportSummary)
 
     try {
       if (navigator.clipboard) {
@@ -629,7 +686,7 @@ export function ReportPage() {
   }
 
   const handlePdfSave = () => {
-    saveCurrentReport()
+    saveCurrentReport(reportSummary)
     setMessage('PDF 저장 기능은 추후 연동 예정입니다.')
   }
 
@@ -684,16 +741,16 @@ export function ReportPage() {
             </div>
           </div>
 
-          <HeroCard />
+          <HeroCard reportSummary={reportSummary} />
 
           <div className="mb-3 grid min-w-0 grid-cols-[minmax(390px,0.9fr)_minmax(0,1.45fr)] gap-3 max-2xl:grid-cols-1">
-            <SummaryInsightCard />
+            <SummaryInsightCard reportSummary={reportSummary} />
             <MetricSection />
           </div>
 
           <div className="mb-3 grid min-w-0 grid-cols-[minmax(0,1.12fr)_minmax(0,0.86fr)_minmax(320px,0.95fr)] gap-3 max-2xl:grid-cols-1">
             <SalesTrendCard />
-            <MapSnapshotCard />
+            <MapSnapshotCard reportSummary={reportSummary} />
             <FactorSection />
           </div>
 

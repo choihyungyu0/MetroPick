@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -46,12 +46,14 @@ function renderRecommendationPage() {
 function mockRecommendationResponse({
   dataStatus,
   displayStationName,
+  duplicateDisplayStationName,
   itemCount = 1,
   stationName,
   withCoordinates = dataStatus === 'recommendation_csv',
 }: {
   dataStatus: 'recommendation_csv' | 'sample_fixture'
   displayStationName?: string
+  duplicateDisplayStationName?: string
   itemCount?: number
   stationName: string
   withCoordinates?: boolean
@@ -72,9 +74,10 @@ function mockRecommendationResponse({
             const currentStationName =
               rank === 1 ? stationName : `2호선_${200 + rank}`
             const currentDisplayStationName =
-              rank === 1
+              duplicateDisplayStationName ??
+              (rank === 1
                 ? (displayStationName ?? stationName)
-                : `테스트 ${rank} 예정역`
+                : `테스트 ${rank} 예정역`)
 
             return {
               rank,
@@ -215,6 +218,34 @@ describe('RecommendationPage', () => {
 
     expect(await screen.findByRole('heading', { name: '서남동 예정역' })).toBeInTheDocument()
     expect(screen.queryByText('2호선_215')).not.toBeInTheDocument()
+  })
+
+  it('keeps recommendation keys unique when display station names repeat', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    try {
+      mockRecommendationResponse({
+        dataStatus: 'recommendation_csv',
+        duplicateDisplayStationName: '지평동 예정역',
+        itemCount: 5,
+        stationName: '2호선_215',
+      })
+
+      renderRecommendationPage()
+
+      await waitFor(() => {
+        expect(screen.getAllByText('지평동 예정역').length).toBeGreaterThan(1)
+      })
+
+      const duplicateKeyCalls = consoleErrorSpy.mock.calls.filter((call) =>
+        call.some((part) =>
+          String(part).includes('Encountered two children with the same key'),
+        ),
+      )
+      expect(duplicateKeyCalls).toHaveLength(0)
+    } finally {
+      consoleErrorSpy.mockRestore()
+    }
   })
 
   it('renders RecommendationMap markers for Top 5 CSV coordinates', async () => {

@@ -183,6 +183,23 @@ function clampRecommendationScore(score: number): number {
   return Math.max(0, Math.min(100, Math.round(score)))
 }
 
+function buildRecommendationItemId(
+  backendItem: BackendRecommendationItem,
+  index: number,
+): string {
+  const stationIdentity =
+    backendItem.station_id.trim() ||
+    backendItem.station_name.trim() ||
+    backendItem.display_station_name.trim() ||
+    'unknown-station'
+  const businessIdentity =
+    backendItem.recommended_business_type?.trim() ||
+    backendItem.recommendation_label.trim() ||
+    'unknown-business'
+
+  return [stationIdentity, backendItem.rank || index + 1, businessIdentity].join('|')
+}
+
 function buildRecommendationItems(
   backendItems: BackendRecommendationItem[] | undefined,
 ): LocationRecommendationItem[] {
@@ -205,6 +222,7 @@ function buildRecommendationItems(
 
     return {
       ...fallbackItem,
+      id: buildRecommendationItemId(backendItem, index),
       rank: index + 1,
       station: stationName,
       score: clampRecommendationScore(backendItem.startup_suitability_score),
@@ -485,7 +503,7 @@ function RecommendationList({
           <RecommendationCard
             filters={filters}
             item={item}
-            key={item.station}
+            key={item.id}
             onSaveInterest={onSaveInterest}
             onViewReport={onViewReport}
           />
@@ -529,7 +547,7 @@ function CompareChart({ items }: { items: LocationRecommendationItem[] }) {
         {items.map((item, index) => (
           <span
             className="flex items-center gap-1.5 text-xs font-black text-slate-700"
-            key={item.station}
+            key={item.id}
           >
             <i
               className={`h-1.5 w-3 rounded-sm ${stationColorClasses[index] ?? 'bg-slate-400'}`}
@@ -558,7 +576,7 @@ function CompareChart({ items }: { items: LocationRecommendationItem[] }) {
               {items.map((item, index) => (
                 <div
                   className={`w-3.5 rounded-t ${stationColorClasses[index] ?? 'bg-slate-400'} shadow-sm`}
-                  key={`${key}-${item.station}`}
+                  key={`${key}-${item.id}`}
                   style={{ height: `${item[key]}%` }}
                 />
               ))}

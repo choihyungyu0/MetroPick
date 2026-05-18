@@ -166,6 +166,19 @@ function mockPredictionApis({
           recommendation_label: '창업 적합도 높음',
           risk_factors: [`${businessType} 동종 점포 비중을 반영했습니다.`],
           strategy_comment: `${displayStationName} ${businessType} 전략 코멘트입니다.`,
+          ai_summary_comment: `${displayStationName} ${businessType} 공공데이터 기반 시나리오 요약입니다. 잠재 유동수요가 높은 참고용 예측 결과입니다.`,
+          evidence_cards: [
+            {
+              title: '잠재 유동수요',
+              value: `${Math.round((score * 0.8) * 10) / 10}점`,
+              comment: '잠재 유동수요가 높은 편입니다.',
+            },
+            {
+              title: '경쟁 지수',
+              value: `${businessType.includes('편의') ? 68.2 : 42.1}점`,
+              comment: '경쟁 지수를 반영했습니다.',
+            },
+          ],
           confidence_metrics: [
             { label: '종합 예측 신뢰도', score: 82, level: '높음' },
             { label: '데이터 기반 신뢰도', score: 79, level: '높음' },
@@ -484,7 +497,9 @@ describe('AIPredictionPage', () => {
       business_type?: string
       predicted_score?: number
       result_payload?: {
+        ai_summary_comment?: string
         backendStartupSuitability?: { predicted_score?: number }
+        evidence_cards?: Array<{ title: string; value: string; comment: string }>
         growth_rate?: number
         predictedSalesGrowthRate?: number
         sales_change_rate?: number
@@ -505,6 +520,20 @@ describe('AIPredictionPage', () => {
       growth_rate: 43.4,
       sales_change_rate: 34.2,
       strategy_comment: '상무역 커피전문점 전략 코멘트입니다.',
+      ai_summary_comment:
+        '상무역 커피전문점 공공데이터 기반 시나리오 요약입니다. 잠재 유동수요가 높은 참고용 예측 결과입니다.',
+      evidence_cards: [
+        {
+          title: '잠재 유동수요',
+          value: '66.7점',
+          comment: '잠재 유동수요가 높은 편입니다.',
+        },
+        {
+          title: '경쟁 지수',
+          value: '42.1점',
+          comment: '경쟁 지수를 반영했습니다.',
+        },
+      ],
       backendStartupSuitability: { predicted_score: 83.4 },
       scenario: '광주 2호선 2단계 개통 - 2026년 예정',
     })
@@ -516,6 +545,11 @@ describe('AIPredictionPage', () => {
     expect(screen.getByText('창업 적합도 점수')).toBeInTheDocument()
     expect(screen.getByText('83.4점')).toBeInTheDocument()
     expect(screen.getByText('상무역 커피전문점 전략 코멘트입니다.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        '상무역 커피전문점 공공데이터 기반 시나리오 요약입니다. 잠재 유동수요가 높은 참고용 예측 결과입니다.',
+      ),
+    ).toBeInTheDocument()
     expect(screen.queryByText('백엔드 미연결 · 목업 예측 결과 표시')).not.toBeInTheDocument()
   })
 

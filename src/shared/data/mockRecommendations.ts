@@ -13,6 +13,7 @@ export type LocationRecommendationItem = {
   competition: number
   district: string
   growth: number
+  id: string
   line: string
   rank: number
   reason: string
@@ -180,6 +181,7 @@ export const mockLocationRecommendations: LocationRecommendationItem[] =
     const station = getStation(item.stationId)
 
     return {
+      id: item.id,
       rank: item.rank,
       station: station.name,
       line: station.line.replace('광주 ', ''),

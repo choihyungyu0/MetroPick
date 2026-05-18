@@ -25,6 +25,7 @@ import {
 } from 'recharts'
 
 import type {
+  BackendPredictionEvidenceCard,
   BackendPredictionMonthlySalesSeriesItem,
   BackendPredictionSimulationResponse,
   BackendStartupSuitabilityResponse,
@@ -50,10 +51,12 @@ type PredictionFilters = {
 }
 
 type PredictionResult = {
+  aiSummaryComment?: string
   backendPredictionSimulation?: BackendPredictionSimulationResponse
   backendStartupSuitability?: BackendStartupSuitabilityResponse
   businessType: string
   createdAt: string
+  evidenceCards?: BackendPredictionEvidenceCard[]
   id: string
   predictedFloatingPopulationGrowthRate: number
   predictedSalesGrowthRate: number
@@ -143,17 +146,31 @@ const confidenceMetrics: ConfidenceMetric[] = [
   { label: '유사 상권 적합도', score: 81, level: '높음', icon: Target },
 ]
 
-const evidenceItems = [
-  { title: '버스 승하차 증가', value: '+28.6%' },
-  { title: '20~30대 생활인구 비중', value: '+6.8%p' },
-  { title: '경쟁 점포 수', value: '적정 수준 예상' },
-  { title: '기존 상권 성장률', value: '평균 +3.7%' },
-] as const
+const evidenceItems: BackendPredictionEvidenceCard[] = [
+  {
+    title: '공공데이터 기반 시나리오',
+    value: '대기',
+    comment: '시뮬레이션 실행 후 예측 근거가 표시됩니다.',
+  },
+  {
+    title: '잠재 유동수요',
+    value: '대기',
+    comment: '선택한 역세권과 업종의 API 응답을 기다리고 있습니다.',
+  },
+  {
+    title: '경쟁 지수',
+    value: '대기',
+    comment: '시뮬레이션 결과에서 경쟁 수준을 확인합니다.',
+  },
+  {
+    title: '참고용 예측 결과',
+    value: '대기',
+    comment: '실제 매출을 보장하지 않는 참고용 결과입니다.',
+  },
+]
 
 const defaultRiskReasons = [
-  '반경 500m 내 경쟁 점포 증가 가능성',
-  '신규 상업시설 공급 계획 존재',
-  '주말 유동인구 변동성 높음',
+  '시뮬레이션 실행 후 공공데이터 기반 위험 요인이 표시됩니다.',
 ]
 
 function normalizeStationOptionKey(value: string): string {
@@ -290,6 +307,8 @@ function buildPredictionResultInput(result: PredictionResult) {
         simulation?.predicted_sales_change_rate ?? result.predictedSalesGrowthRate,
       risk_factors: result.riskFactors ?? [],
       strategy_comment: result.strategyComment ?? '',
+      ai_summary_comment: result.aiSummaryComment ?? '',
+      evidence_cards: result.evidenceCards ?? [],
       predictedSalesGrowthRate: result.predictedSalesGrowthRate,
       predictedSalesIncrease: result.predictedSalesIncrease,
       predictedFloatingPopulationGrowthRate:
@@ -395,6 +414,8 @@ function buildBackendPredictionResult(
     riskFactors: prediction.risk_factors,
     riskLevel: normalizeRiskLevel(prediction.risk_level),
     strategyComment: prediction.strategy_comment,
+    aiSummaryComment: prediction.ai_summary_comment,
+    evidenceCards: prediction.evidence_cards,
     top_reasons: prediction.risk_factors,
   }
 }
@@ -998,26 +1019,10 @@ function EvidenceSection({
 }: {
   simulationResult: BackendPredictionSimulationResponse | null
 }) {
-  const items = simulationResult
-    ? [
-        {
-          title: '유동 수요 지수',
-          value: `${simulationResult.floating_demand_index.toFixed(1)}점`,
-        },
-        {
-          title: '경쟁 지수',
-          value: `${simulationResult.competition_index.toFixed(1)}점`,
-        },
-        {
-          title: '상권 다양성',
-          value: `${simulationResult.business_diversity_index.toFixed(1)}점`,
-        },
-        {
-          title: '예상 성장률',
-          value: formatSignedPercent(simulationResult.predicted_growth_rate),
-        },
-      ]
-    : evidenceItems
+  const items =
+    simulationResult && simulationResult.evidence_cards.length > 0
+      ? simulationResult.evidence_cards
+      : evidenceItems
 
   return (
     <section className="rounded-xl border border-blue-100 bg-white px-6 py-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
@@ -1027,37 +1032,32 @@ function EvidenceSection({
       <div className="mt-4 grid grid-cols-4 gap-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
         {items.map((item) => (
           <div
-            className="grid min-h-[58px] place-items-center rounded-lg border border-blue-100 bg-white px-3 text-center"
+            className="grid min-h-[112px] place-items-center rounded-lg border border-blue-100 bg-white px-3 py-3 text-center"
             key={item.title}
           >
             <p className="m-0 text-xs font-black text-blue-600">{item.title}</p>
             <strong className="text-sm font-black text-slate-800">{item.value}</strong>
+            <span className="text-[11px] leading-4 font-semibold text-slate-500">
+              {item.comment}
+            </span>
           </div>
         ))}
       </div>
       <p className="mt-4 text-xs leading-relaxed font-semibold text-slate-500">
-        이 예측 근거는 주요 데이터 기반 인사이트를 요약한 것입니다.
+        이 예측 근거는 API 응답의 공공데이터 기반 시나리오를 요약한 것입니다.
       </p>
     </section>
   )
 }
 
 function CommentSection({
-  businessType,
   simulationResult,
-  stationArea,
 }: {
-  businessType: string
   simulationResult: BackendPredictionSimulationResponse | null
-  stationArea: string
 }) {
-  const comment = simulationResult
-    ? `${stationArea} 일대의 ${businessType} 시나리오는 공공 상권·교통 지표와 학습된 적합도 모델을 함께 반영했습니다. 예상 성장률은 ${formatSignedPercent(
-        simulationResult.predicted_growth_rate,
-      )}, 매출 잠재력 변화는 ${formatSignedPercent(
-        simulationResult.predicted_sales_change_rate,
-      )}로 계산되며, ${simulationResult.strategy_comment} 이 결과는 실제 매출을 보장하지 않는 참고용 시나리오입니다.`
-    : '상무역 일대는 개통 이후 유동인구 증가와 20~30대 생활인구 비중 확대가 예상되어 커피전문점의 매출 성장 잠재력이 높게 보입니다. 특히 개통 후 6개월부터 의미 있는 상승 전환이 예상되며, 24개월 뒤에는 현재 대비 약 47.6%의 매출 상승을 참고 시나리오로 볼 수 있습니다. 다만 경쟁 점포 증가와 신규 상업시설 공급 변화를 지속적으로 모니터링하는 것이 좋습니다.'
+  const comment =
+    simulationResult?.ai_summary_comment ??
+    '시뮬레이션 실행 후 API 응답의 공공데이터 기반 시나리오 요약이 표시됩니다.'
 
   return (
     <section className="rounded-xl border border-blue-100 bg-gradient-to-b from-white to-blue-50 px-6 py-4 shadow-[0_8px_22px_rgba(22,72,140,0.06)]">
@@ -1069,7 +1069,7 @@ function CommentSection({
         {comment}
       </p>
       <small className="text-xs font-semibold text-slate-500">
-        이 내용은 AI가 생성한 요약으로 실제 결과와 다를 수 있습니다.
+        공공데이터 기반 규칙으로 생성된 참고용 예측 결과이며 실제 매출을 보장하지 않습니다.
       </small>
     </section>
   )
@@ -1282,11 +1282,7 @@ export function AIPredictionPage() {
 
           <div className="mt-4 grid grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] gap-4 max-xl:grid-cols-1">
             <EvidenceSection simulationResult={simulationResult} />
-            <CommentSection
-              businessType={filters.businessType}
-              simulationResult={simulationResult}
-              stationArea={stationSummary}
-            />
+            <CommentSection simulationResult={simulationResult} />
           </div>
         </main>
       </div>

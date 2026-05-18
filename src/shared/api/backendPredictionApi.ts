@@ -44,6 +44,12 @@ export type BackendPredictionMonthlySalesSeriesItem = {
   after_opening_value: number | null
 }
 
+export type BackendPredictionEvidenceCard = {
+  title: string
+  value: string
+  comment: string
+}
+
 export type BackendPredictionSimulationInput = {
   station_id?: string
   station_name?: string
@@ -73,6 +79,8 @@ export type BackendPredictionSimulationResponse = {
   recommendation_label: string
   risk_factors: string[]
   strategy_comment: string
+  ai_summary_comment: string
+  evidence_cards: BackendPredictionEvidenceCard[]
   confidence_metrics: BackendPredictionConfidenceMetric[]
   feature_payload?: Record<string, number>
 }

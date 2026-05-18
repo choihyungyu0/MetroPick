@@ -690,6 +690,267 @@ def _strategy_comment(business_type: str) -> str:
     return profile.strategy_comment
 
 
+def _prediction_value(
+    prediction_result: dict[str, object],
+    key: str,
+    default: float,
+) -> float:
+    if key in prediction_result:
+        return _safe_float(prediction_result.get(key), default)
+
+    feature_payload = prediction_result.get("feature_payload")
+    if isinstance(feature_payload, dict):
+        return _safe_float(feature_payload.get(key), default)
+
+    return default
+
+
+def _optional_prediction_value(
+    prediction_result: dict[str, object],
+    key: str,
+) -> float | None:
+    if key in prediction_result:
+        return _safe_float(prediction_result.get(key), 0.0)
+
+    feature_payload = prediction_result.get("feature_payload")
+    if isinstance(feature_payload, dict) and key in feature_payload:
+        return _safe_float(feature_payload.get(key), 0.0)
+
+    return None
+
+
+def _format_comment_score(value: float) -> str:
+    return f"{value:.1f}점"
+
+
+def _format_comment_percent(value: float) -> str:
+    return f"{value:+.1f}%"
+
+
+def build_prediction_comment(prediction_result: dict[str, object]) -> dict[str, object]:
+    station_name = (
+        _clean_text(prediction_result.get("display_station_name"))
+        or _clean_text(prediction_result.get("station_name"))
+        or "선택 역세권"
+    )
+    business_type = _clean_text(prediction_result.get("business_type")) or "선택 업종"
+    suitability_score = _clamp_score(
+        _prediction_value(prediction_result, "startup_suitability_score", 50.0),
+    )
+    growth_rate = _clamp_score(_prediction_value(prediction_result, "predicted_growth_rate", 0.0))
+    sales_change_rate = _clamp_score(
+        _prediction_value(prediction_result, "predicted_sales_change_rate", 0.0),
+    )
+    floating_demand = _clamp_score(_prediction_value(prediction_result, "floating_demand_index", 50.0))
+    competition = _clamp_score(_prediction_value(prediction_result, "competition_index", 50.0))
+    diversity = _clamp_score(
+        _prediction_value(prediction_result, "business_diversity_index", 50.0),
+    )
+    same_business_count = _optional_prediction_value(
+        prediction_result,
+        "same_business_count_by_type",
+    )
+    total_store_count = _optional_prediction_value(prediction_result, "total_store_count")
+    nearby_bus_stop_count = _optional_prediction_value(
+        prediction_result,
+        "nearby_bus_stop_count",
+    )
+    bus_total_count = _optional_prediction_value(prediction_result, "bus_total_count")
+
+    high_growth = growth_rate >= 40.0
+    low_growth = growth_rate < 25.0
+    high_competition = competition >= 65.0
+    low_competition = competition <= 45.0
+    low_demand = floating_demand < 45.0
+    high_demand = floating_demand >= 65.0
+    high_diversity = diversity >= 70.0
+    high_same_business_count = False
+    if same_business_count is not None:
+        high_same_business_count = same_business_count >= 8.0
+        if total_store_count is not None and total_store_count > 0:
+            high_same_business_count = high_same_business_count or (
+                same_business_count / total_store_count >= 0.28
+            )
+
+    if high_growth and low_competition:
+        growth_comment = "긍정적 성장 가능성이 보이는 구간입니다."
+    elif high_growth and high_competition:
+        growth_comment = "성장 가능성은 있으나 경쟁 주의가 필요한 구간입니다."
+    elif low_growth:
+        growth_comment = "성장률이 낮아 보수적인 수요 검토가 필요한 구간입니다."
+    else:
+        growth_comment = "성장성과 경쟁 부담을 함께 확인할 필요가 있는 구간입니다."
+
+    risk_factors: list[str] = []
+    if high_growth and high_competition:
+        risk_factors.append(
+            f"{business_type} 성장 가능성은 있으나 경쟁 주의가 필요합니다."
+            f" 경쟁 지수는 {_format_comment_score(competition)}입니다.",
+        )
+    elif low_growth:
+        risk_factors.append(
+            f"예상 성장률이 {_format_comment_percent(growth_rate)}로 낮아"
+            " 초기 매출 가정을 보수적으로 잡아야 합니다.",
+        )
+
+    if low_demand:
+        risk_factors.append(
+            f"잠재 유동수요 지수가 {_format_comment_score(floating_demand)}로 낮아"
+            " 입지 보수 검토가 필요합니다.",
+        )
+    elif high_demand:
+        risk_factors.append(
+            f"잠재 유동수요가 높은 편입니다."
+            f" 다만 실제 방문 전환율은 별도 확인이 필요합니다.",
+        )
+
+    if high_competition and not (high_growth and high_competition):
+        risk_factors.append(
+            f"경쟁 지수가 {_format_comment_score(competition)}로 높아"
+            " 가격, 상품, 운영시간 차별화가 필요합니다.",
+        )
+
+    if high_same_business_count and same_business_count is not None:
+        risk_factors.append(
+            f"동종 업종 점포 수가 {same_business_count:.0f}개로 많아"
+            " 차별화 전략 필요성이 큽니다.",
+        )
+
+    if not risk_factors:
+        risk_factors.append(
+            "현재 지표상 즉시 확인되는 핵심 위험은 제한적이지만"
+            " 임대료와 실제 유입 동선은 별도 확인이 필요합니다.",
+        )
+
+    strategy_parts: list[str] = []
+    if high_growth and low_competition:
+        strategy_parts.append(
+            "공공데이터 기반 시나리오상 긍정적 성장 가능성이 있어"
+            " 초기 인지도 확보와 재방문 동선 설계를 우선 검토하세요.",
+        )
+    elif high_growth and high_competition:
+        strategy_parts.append(
+            "공공데이터 기반 시나리오상 성장 가능성은 있으나 경쟁 주의가 필요하므로"
+            " 가격, 메뉴, 운영시간을 명확히 차별화하세요.",
+        )
+    elif low_demand:
+        strategy_parts.append(
+            "잠재 유동수요가 낮게 계산되어 입지 보수 검토와 고정 고객 확보 계획이 우선입니다.",
+        )
+    else:
+        strategy_parts.append(
+            "공공데이터 기반 시나리오상 균형형 결과로 보이며"
+            " 수요 전환율과 경쟁 변화를 함께 점검하세요.",
+        )
+
+    if high_demand:
+        strategy_parts.append(
+            "잠재 유동수요가 높아 출퇴근, 환승, 생활 동선의 피크 시간대 대응이 중요합니다.",
+        )
+    if high_diversity:
+        strategy_parts.append(
+            "상권 다양성이 높아 복합 상권 장점을 활용한 제휴와 묶음 상품 전략을 검토할 수 있습니다.",
+        )
+    if high_same_business_count:
+        strategy_parts.append("동종 업종이 많은 만큼 차별화 전략 필요성을 먼저 검토하세요.")
+    if nearby_bus_stop_count is not None or bus_total_count is not None:
+        bus_parts: list[str] = []
+        if nearby_bus_stop_count is not None:
+            bus_parts.append(f"인근 버스정류장 {nearby_bus_stop_count:.0f}개")
+        if bus_total_count is not None:
+            bus_parts.append(f"버스 승하차 {bus_total_count:.0f}건")
+        strategy_parts.append(f"{'·'.join(bus_parts)} 지표를 보조 교통 수요로 참고하세요.")
+    strategy_parts.append("참고용 예측 결과이며 실제 매출을 보장하지 않습니다.")
+    strategy_comment = " ".join(strategy_parts)
+
+    ai_summary_comment = (
+        f"{station_name} {business_type}은 공공데이터 기반 시나리오에서"
+        f" 창업 적합도 {_format_comment_score(suitability_score)},"
+        f" 예상 성장률 {_format_comment_percent(growth_rate)},"
+        f" 예상 매출 변화율 {_format_comment_percent(sales_change_rate)}로 계산되었습니다."
+        f" 잠재 유동수요는 {_format_comment_score(floating_demand)},"
+        f" 경쟁 지수는 {_format_comment_score(competition)}이며 {growth_comment}"
+        " 이 내용은 참고용 예측 결과이며 실제 매출을 보장하지 않습니다."
+    )
+
+    evidence_cards: list[dict[str, str]] = [
+        {
+            "title": "창업 적합도",
+            "value": _format_comment_score(suitability_score),
+            "comment": "현재 ML 예측 응답의 창업 적합도 점수입니다.",
+        },
+        {
+            "title": "예상 성장률",
+            "value": _format_comment_percent(growth_rate),
+            "comment": growth_comment,
+        },
+        {
+            "title": "잠재 유동수요",
+            "value": _format_comment_score(floating_demand),
+            "comment": (
+                "잠재 유동수요가 높아 수요 전환 기회가 있습니다."
+                if high_demand
+                else "잠재 유동수요가 낮아 입지 보수 검토가 필요합니다."
+                if low_demand
+                else "잠재 유동수요는 중간 구간으로 실제 피크 시간대 확인이 필요합니다."
+            ),
+        },
+        {
+            "title": "경쟁 지수",
+            "value": _format_comment_score(competition),
+            "comment": (
+                "경쟁 주의가 필요한 수준입니다."
+                if high_competition
+                else "경쟁 부담은 상대적으로 낮은 편입니다."
+                if low_competition
+                else "경쟁 지수는 중간 구간입니다."
+            ),
+        },
+        {
+            "title": "상권 다양성",
+            "value": _format_comment_score(diversity),
+            "comment": (
+                "복합 상권 장점을 활용할 수 있는 수준입니다."
+                if high_diversity
+                else "상권 다양성 보완 여부를 함께 확인하세요."
+            ),
+        },
+    ]
+    if same_business_count is not None:
+        evidence_cards.append(
+            {
+                "title": "동종 업종 수",
+                "value": f"{same_business_count:.0f}개",
+                "comment": (
+                    "차별화 전략 필요성이 큰 수준입니다."
+                    if high_same_business_count
+                    else "동종 업종 수는 과밀 신호로만 보기는 어렵습니다."
+                ),
+            },
+        )
+    if nearby_bus_stop_count is not None or bus_total_count is not None:
+        if nearby_bus_stop_count is not None and bus_total_count is not None:
+            transport_value = f"{nearby_bus_stop_count:.0f}개 / {bus_total_count:.0f}건"
+        elif nearby_bus_stop_count is not None:
+            transport_value = f"{nearby_bus_stop_count:.0f}개"
+        else:
+            transport_value = f"{bus_total_count or 0.0:.0f}건"
+        evidence_cards.append(
+            {
+                "title": "버스 접근성",
+                "value": transport_value,
+                "comment": "인근 버스 정류장과 승하차 지표를 보조 수요로 반영했습니다.",
+            },
+        )
+
+    return {
+        "risk_factors": risk_factors[:4],
+        "strategy_comment": strategy_comment,
+        "ai_summary_comment": ai_summary_comment,
+        "evidence_cards": evidence_cards,
+    }
+
+
 def get_startup_suitability_prediction(input_features: dict[str, object]) -> dict[str, object]:
     return predict_startup_suitability(input_features)
 
@@ -721,7 +982,7 @@ def simulate_prediction(
         and config.STARTUP_SUITABILITY_FEATURES_PATH.exists()
         else "model_missing"
     )
-    return {
+    result: dict[str, object] = {
         "data_status": data_status,
         "station_id": match.station_id,
         "station_name": match.station_name,
@@ -745,8 +1006,8 @@ def simulate_prediction(
         "business_diversity_index": _clamp_score(_safe_float(payload.get("business_diversity_index"), 50.0)),
         "risk_level": prediction.get("risk_level", "보통"),
         "recommendation_label": prediction.get("recommendation_label", "추가 검토 권장"),
-        "risk_factors": _risk_factors(payload, business_type, business_pressure),
-        "strategy_comment": _strategy_comment(business_type),
         "confidence_metrics": _confidence_metrics(payload, predicted_score),
         "feature_payload": payload,
     }
+    result.update(build_prediction_comment(result))
+    return result

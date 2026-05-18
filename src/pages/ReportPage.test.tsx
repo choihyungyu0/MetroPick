@@ -50,6 +50,40 @@ describe('ReportPage', () => {
     })
   })
 
+  it('renders the selected recommendation report context', () => {
+    window.localStorage.setItem(
+      'metropick-selected-recommendation',
+      JSON.stringify({
+        businessType: '카페/디저트',
+        score: 100,
+        station: '상무2동 예정역',
+      }),
+    )
+
+    renderReportPage()
+
+    expect(screen.getAllByText('상무2동 예정역 500m 상권').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('카페/디저트').length).toBeGreaterThan(0)
+    expect(
+      screen.getByAltText('상무2동 예정역 개통 예정 상권 대표 이미지'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByAltText('상무2동 예정역 500m 상권 지도 스냅샷'),
+    ).toBeInTheDocument()
+
+    const raw = window.localStorage.getItem('metropick-current-report')
+    const report = JSON.parse(raw ?? '{}') as {
+      businessType?: string
+      stationArea?: string
+      title?: string
+    }
+    expect(report).toMatchObject({
+      businessType: '카페/디저트',
+      stationArea: '상무2동 예정역 500m 상권',
+      title: '상무2동 예정역 500m 상권 미래 매출 예측 리포트',
+    })
+  })
+
   it('shows feedback for share and PDF actions', async () => {
     const user = userEvent.setup()
     renderReportPage()
