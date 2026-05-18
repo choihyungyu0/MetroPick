@@ -487,42 +487,6 @@ function normalizeInterestLocations(): InterestLocation[] {
   return normalized.length ? normalized : defaultInterestLocations
 }
 
-function normalizeCommercialReports(): SavedReport[] {
-  const stored = safeParseStorage<StoredCommercialReport[]>(
-    COMMERCIAL_REPORTS_STORAGE_KEY,
-  )
-
-  return (stored ?? []).flatMap((item, index): SavedReport[] => {
-    const stationArea =
-      item.stationArea ?? item.selectedStations?.join(', ') ?? '상권 분석'
-    const businessType =
-      item.businessType ?? item.selectedBusinessTypes?.[0] ?? '카페'
-
-    if (!item.title && !stationArea) {
-      return []
-    }
-
-    return [
-      {
-        id: item.id ?? `stored-commercial-${index}`,
-        title: item.title ?? `${stationArea} 상권 분석 리포트`,
-        category: '상권 분석',
-        businessType,
-        description: readString(item.description),
-        stationArea,
-        savedAt: item.savedAt ?? item.createdAt ?? new Date().toISOString(),
-        source: 'local-report',
-        tags: readTags(item.tags),
-        thumbnailSrc: myPageAssets.commercialMap,
-      },
-    ]
-  })
-}
-
-function buildSavedReports(): SavedReport[] {
-  return mergeSavedReports(normalizeCommercialReports())
-}
-
 function mergeSavedReports(reports: SavedReport[]): SavedReport[] {
   const byKey = new Map<string, SavedReport>()
 
@@ -1846,7 +1810,7 @@ export function MyPage() {
   const [hiddenBackendInterestLocationIds, setHiddenBackendInterestLocationIds] =
     useState<string[]>([])
   const [hiddenBackendReportIds, setHiddenBackendReportIds] = useState<string[]>([])
-  const [, setReportStorageRevision] = useState(0)
+  const [reportStorageRevision, setReportStorageRevision] = useState(0)
   const requestedTab = searchParams.get('tab')
   const activeTab: MyPageTab = isMyPageTab(requestedTab) ? requestedTab : 'reports'
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>('all')
@@ -1918,7 +1882,6 @@ export function MyPage() {
         (location) => !hiddenBackendInterestLocationIds.includes(location.id),
       )
     : interestLocations
-  const localSavedReports = buildSavedReports()
   const backendSavedReportsQuery = useBackendSavedReports()
   const updateBackendSavedReportMutation = useUpdateBackendSavedReport()
   const deleteBackendSavedReportMutation = useDeleteBackendSavedReport()
@@ -1932,9 +1895,16 @@ export function MyPage() {
         )
       : []
   }, [backendSavedReportsQuery.data, hiddenBackendReportIds])
-  const savedReports = isBackendSavedReportsConnected
-    ? backendSavedReports
-    : localSavedReports
+  const savedReports = useMemo(
+    () => {
+      void reportStorageRevision
+
+      return isBackendSavedReportsConnected
+        ? mergeSavedReports(backendSavedReports)
+        : []
+    },
+    [backendSavedReports, isBackendSavedReportsConnected, reportStorageRevision],
+  )
   const reportFilterCounts = useMemo(
     () => countReportsByFilter(savedReports),
     [savedReports],

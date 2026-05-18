@@ -199,26 +199,26 @@ describe('MyPage', () => {
     expect(window.localStorage.getItem('metropick-user')).toBeNull()
   })
 
-  it('renders the profile and saved reports', () => {
-    window.localStorage.setItem(
-      'metropick-saved-commercial-analysis-reports',
-      JSON.stringify([
-        {
-          id: 'local-commercial-report',
-          title: '로컬 저장 상권 리포트',
-          createdAt: '2026-05-15T09:30:00+09:00',
-          selectedStations: ['금남로4가역'],
-          selectedBusinessTypes: ['베이커리'],
-        },
-      ]),
-    )
+  it('renders the profile and backend saved reports', async () => {
+    mockBackendSavedReports([
+      {
+        id: 'backend-commercial-report',
+        report_type: 'commercial_analysis',
+        title: '충장로 카페 상권 리포트',
+        station_area: '충장로역',
+        business_type: '카페',
+        payload: { score: 82 },
+        created_at: '2026-05-15T00:00:00+00:00',
+      },
+    ])
 
     renderMyPage()
 
     expect(screen.getByRole('heading', { name: '마이페이지' })).toBeInTheDocument()
     expect(screen.getByText('저장한 리포트')).toBeInTheDocument()
     expect(screen.getByText('홍길동')).toBeInTheDocument()
-    expect(screen.getByText('로컬 저장 상권 리포트')).toBeInTheDocument()
+    expect(await screen.findByText('충장로 카페 상권 리포트')).toBeInTheDocument()
+    expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
     expect(screen.queryByText('상무역 상권 분석 리포트')).not.toBeInTheDocument()
     expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
@@ -325,7 +325,7 @@ describe('MyPage', () => {
     })
   })
 
-  it('falls back to localStorage reports when backend loading fails', () => {
+  it('does not show localStorage reports when backend loading fails', () => {
     window.localStorage.setItem(
       'metropick-saved-commercial-analysis-reports',
       JSON.stringify([
@@ -341,11 +341,12 @@ describe('MyPage', () => {
 
     renderMyPage()
 
-    expect(screen.getByText('로컬 저장 상권 리포트')).toBeInTheDocument()
+    expect(screen.getByText('검색 조건에 맞는 리포트가 없습니다.')).toBeInTheDocument()
+    expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
     expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
 
-  it('keeps local fallback when backend returns supabase_missing', async () => {
+  it('does not show localStorage reports when backend returns supabase_missing', async () => {
     window.localStorage.setItem(
       'metropick-saved-commercial-analysis-reports',
       JSON.stringify([
@@ -362,12 +363,15 @@ describe('MyPage', () => {
 
     renderMyPage()
 
-    expect(await screen.findByText('로컬 저장 상권 리포트')).toBeInTheDocument()
+    expect(
+      await screen.findByText('검색 조건에 맞는 리포트가 없습니다.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
     expect(screen.queryByText('상무역 상권 분석 리포트')).not.toBeInTheDocument()
     expect(screen.queryByText(/백엔드 미연결/)).not.toBeInTheDocument()
   })
 
-  it('shows an empty report state when backend reports are connected but empty', async () => {
+  it('hides localStorage reports when backend reports are connected but empty', async () => {
     window.localStorage.setItem(
       'metropick-saved-commercial-analysis-reports',
       JSON.stringify([
@@ -488,8 +492,7 @@ describe('MyPage', () => {
     })
   })
 
-  it('edits fallback saved report metadata in localStorage', async () => {
-    const user = userEvent.setup()
+  it('does not expose localStorage saved report edit controls', () => {
     window.localStorage.setItem(
       'metropick-saved-commercial-analysis-reports',
       JSON.stringify([
@@ -505,30 +508,11 @@ describe('MyPage', () => {
 
     renderMyPage()
 
-    await user.type(
-      screen.getByPlaceholderText('리포트 제목, 역세권, 업종 검색'),
-      '로컬',
-    )
-    await user.click(
-      screen.getByRole('button', { name: '로컬 저장 상권 리포트 편집' }),
-    )
-    await user.type(screen.getByLabelText('설명'), '로컬 수정 설명입니다.')
-    await user.type(screen.getByLabelText('태그'), '테스트태그, 로컬')
-    await user.click(screen.getByRole('button', { name: '수정 저장' }))
-
+    expect(screen.getByText('검색 조건에 맞는 리포트가 없습니다.')).toBeInTheDocument()
+    expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
     expect(
-      await screen.findByText('리포트 수정 내용을 저장했어요.'),
-    ).toBeInTheDocument()
-    expect(screen.getByText('로컬 수정 설명입니다.')).toBeInTheDocument()
-    expect(screen.getByText('#테스트태그')).toBeInTheDocument()
-
-    const edits = JSON.parse(
-      window.localStorage.getItem('metropick-saved-report-edits') ?? '{}',
-    ) as Record<string, { description?: string; tags?: string[] }>
-    expect(edits['local-commercial-report']).toMatchObject({
-      description: '로컬 수정 설명입니다.',
-      tags: ['테스트태그', '로컬'],
-    })
+      screen.queryByRole('button', { name: '로컬 저장 상권 리포트 편집' }),
+    ).not.toBeInTheDocument()
   })
 
   it('deletes backend saved reports through the backend API', async () => {
@@ -593,9 +577,7 @@ describe('MyPage', () => {
     ).toBe(true)
   })
 
-  it('deletes fallback saved reports from localStorage', async () => {
-    const user = userEvent.setup()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('does not expose localStorage saved report delete controls', () => {
     window.localStorage.setItem(
       'metropick-saved-commercial-analysis-reports',
       JSON.stringify([
@@ -611,47 +593,31 @@ describe('MyPage', () => {
 
     renderMyPage()
 
-    await user.type(
-      screen.getByPlaceholderText('리포트 제목, 역세권, 업종 검색'),
-      '로컬',
-    )
-    await user.click(
-      screen.getByRole('button', { name: '로컬 저장 상권 리포트 삭제' }),
-    )
-
-    expect(await screen.findByText('리포트를 삭제했어요.')).toBeInTheDocument()
     expect(screen.queryByText('로컬 저장 상권 리포트')).not.toBeInTheDocument()
-
-    const reports = JSON.parse(
-      window.localStorage.getItem('metropick-saved-commercial-analysis-reports') ??
-        '[]',
-    ) as Array<{ id?: string }>
-    expect(reports).toHaveLength(0)
+    expect(
+      screen.queryByRole('button', { name: '로컬 저장 상권 리포트 삭제' }),
+    ).not.toBeInTheDocument()
   })
 
   it('searches edited report descriptions and tags', async () => {
     const user = userEvent.setup()
-    window.localStorage.setItem(
-      'metropick-saved-commercial-analysis-reports',
-      JSON.stringify([
-        {
-          id: 'local-commercial-report',
-          title: '로컬 저장 상권 리포트',
-          createdAt: '2026-05-15T09:30:00+09:00',
-          selectedStations: ['금남로4가역'],
-          selectedBusinessTypes: ['베이커리'],
-        },
-      ]),
-    )
+    mockBackendSavedReports([
+      {
+        id: 'backend-commercial-report',
+        report_type: 'commercial_analysis',
+        title: '충장로 카페 상권 리포트',
+        station_area: '충장로역',
+        business_type: '카페',
+        payload: {},
+        created_at: '2026-05-15T00:00:00+00:00',
+      },
+    ])
 
     renderMyPage()
 
-    await user.type(
-      screen.getByPlaceholderText('리포트 제목, 역세권, 업종 검색'),
-      '로컬',
-    )
+    expect(await screen.findByText('충장로 카페 상권 리포트')).toBeInTheDocument()
     await user.click(
-      screen.getByRole('button', { name: '로컬 저장 상권 리포트 편집' }),
+      screen.getByRole('button', { name: '충장로 카페 상권 리포트 편집' }),
     )
     await user.type(screen.getByLabelText('설명'), '강변 수요가 늘고 있습니다.')
     await user.type(screen.getByLabelText('태그'), '강변특화')
@@ -662,7 +628,7 @@ describe('MyPage', () => {
       '강변특화',
     )
 
-    expect(screen.getByText('로컬 저장 상권 리포트')).toBeInTheDocument()
+    expect(screen.getByText('충장로 카페 상권 리포트')).toBeInTheDocument()
     expect(screen.getByText('#강변특화')).toBeInTheDocument()
   })
 
@@ -1037,27 +1003,29 @@ describe('MyPage', () => {
 
   it('filters the saved report list by search query', async () => {
     const user = userEvent.setup()
-    window.localStorage.setItem(
-      'metropick-saved-commercial-analysis-reports',
-      JSON.stringify([
-        {
-          id: 'local-commercial-report',
-          title: '상무역 상권 분석 리포트',
-          createdAt: '2026-05-15T09:30:00+09:00',
-          selectedStations: ['상무역'],
-          selectedBusinessTypes: ['카페'],
-        },
-        {
-          id: 'local-ai-report',
-          title: '쌍촌역 매출 예측 리포트',
-          createdAt: '2026-05-16T09:30:00+09:00',
-          selectedStations: ['쌍촌역'],
-          selectedBusinessTypes: ['편의점'],
-        },
-      ]),
-    )
+    mockBackendSavedReports([
+      {
+        id: 'backend-commercial-report',
+        report_type: 'commercial_analysis',
+        title: '상무역 상권 분석 리포트',
+        station_area: '상무역',
+        business_type: '카페',
+        payload: {},
+        created_at: '2026-05-15T00:00:00+00:00',
+      },
+      {
+        id: 'backend-ai-report',
+        report_type: 'ai_prediction',
+        title: '쌍촌역 매출 예측 리포트',
+        station_area: '쌍촌역',
+        business_type: '편의점',
+        payload: {},
+        created_at: '2026-05-16T00:00:00+00:00',
+      },
+    ])
     renderMyPage()
 
+    expect(await screen.findByText('상무역 상권 분석 리포트')).toBeInTheDocument()
     await user.type(
       screen.getByPlaceholderText('리포트 제목, 역세권, 업종 검색'),
       '쌍촌',
@@ -1109,20 +1077,20 @@ describe('MyPage', () => {
 
   it('shows copy feedback when sharing a report', async () => {
     const user = userEvent.setup()
-    window.localStorage.setItem(
-      'metropick-saved-commercial-analysis-reports',
-      JSON.stringify([
-        {
-          id: 'local-commercial-report',
-          title: '로컬 저장 상권 리포트',
-          createdAt: '2026-05-15T09:30:00+09:00',
-          selectedStations: ['금남로4가역'],
-          selectedBusinessTypes: ['베이커리'],
-        },
-      ]),
-    )
+    mockBackendSavedReports([
+      {
+        id: 'backend-commercial-report',
+        report_type: 'commercial_analysis',
+        title: '충장로 카페 상권 리포트',
+        station_area: '충장로역',
+        business_type: '카페',
+        payload: {},
+        created_at: '2026-05-15T00:00:00+00:00',
+      },
+    ])
     renderMyPage()
 
+    expect(await screen.findByText('충장로 카페 상권 리포트')).toBeInTheDocument()
     const [shareButton] = screen.getAllByRole('button', { name: '공유' })
     expect(shareButton).toBeDefined()
     await user.click(shareButton!)
