@@ -16,6 +16,7 @@ PUBLIC_STORE_RAW_DIR = RAW_DATA_DIR / "public_store_data"
 PUBLIC_STORE_PROCESSED_DIR = PROCESSED_DATA_DIR / "public_store_data"
 PUBLIC_STORE_SUMMARY_PATH = PUBLIC_STORE_PROCESSED_DIR / "station_area_store_summary.csv"
 PUBLIC_STORE_TEMPLATE_FILENAME = "example_public_store_template.csv"
+LINE2_STATION_COORDINATES_PATH = RAW_DATA_DIR / "transport" / "광주2호선_예정역좌표.csv"
 
 STATION_AREA_FEATURES_PATH = PROCESSED_DATA_DIR / "station_area_features.csv"
 RECOMMENDATION_TOP5_PATH = PROCESSED_DATA_DIR / "recommendation_top5.csv"

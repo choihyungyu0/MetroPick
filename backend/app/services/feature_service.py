@@ -140,6 +140,7 @@ RECOMMENDATION_REQUIRED_COLUMNS = {
     "risk_reason",
     "strategy_comment",
 }
+INTERNAL_LINE2_STATION_PATTERN = re.compile(r"^2호선_(\d+)$")
 
 
 def _is_missing(value: object) -> bool:
@@ -211,6 +212,52 @@ def _feature_string(feature: pd.Series | None, column: str) -> str:
     return _clean_string(feature[column])
 
 
+def _load_line2_station_display_names() -> dict[str, str]:
+    if not config.LINE2_STATION_COORDINATES_PATH.exists():
+        return {}
+
+    try:
+        coordinates = pd.read_csv(config.LINE2_STATION_COORDINATES_PATH)
+    except (OSError, pd.errors.ParserError, UnicodeDecodeError):
+        return {}
+
+    if coordinates.empty or not {"역번호", "행정동"}.issubset(coordinates.columns):
+        return {}
+
+    display_names: dict[str, str] = {}
+    for _, row in coordinates.iterrows():
+        station_number = _clean_string(row.get("역번호"))
+        district = _clean_string(row.get("행정동"))
+        if not station_number or not district:
+            continue
+
+        display_name = f"{district} 예정역"
+        display_names[station_number] = display_name
+        display_names[f"2호선_{station_number}"] = display_name
+
+    return display_names
+
+
+def _display_station_name(
+    station_name: str,
+    station_id: str,
+    district: str,
+    line2_display_names: dict[str, str],
+) -> str | None:
+    for candidate in [station_name, station_id]:
+        if candidate in line2_display_names:
+            return line2_display_names[candidate]
+
+        match = INTERNAL_LINE2_STATION_PATTERN.match(candidate)
+        if match is not None and match.group(1) in line2_display_names:
+            return line2_display_names[match.group(1)]
+
+    if INTERNAL_LINE2_STATION_PATTERN.match(station_name) is not None and district:
+        return f"{district} 예정역"
+
+    return None
+
+
 def _competition_index_from_risk(risk_level: str) -> float:
     if "높" in risk_level:
         return 82.5
@@ -237,6 +284,7 @@ def _recommendation_from_csv_row(
     fallback_rank: int,
     feature_by_station_id: dict[str, pd.Series],
     feature_by_station_name: dict[str, pd.Series],
+    line2_display_names: dict[str, str],
 ) -> dict[str, object] | None:
     station_name = _clean_string(row.get("station_name"))
     score = _safe_float(row.get("startup_suitability_score"))
@@ -273,12 +321,13 @@ def _recommendation_from_csv_row(
     if floating_demand_index is None:
         floating_demand_index = 50.0
     rounded_score = _round_score(score)
+    district = _clean_string(row.get("district"))
 
-    return {
+    recommendation: dict[str, object] = {
         "rank": rank,
         "station_id": station_id,
         "station_name": station_name,
-        "district": _clean_string(row.get("district")),
+        "district": district,
         "recommended_business_type": _clean_string(row.get("recommended_business_type")),
         "startup_suitability_score": rounded_score,
         "growth_score": _round_score(growth_score if growth_score is not None else floating_demand_index),
@@ -292,6 +341,16 @@ def _recommendation_from_csv_row(
         "business_diversity_index": _round_score(business_diversity_index),
         "data_status": "recommendation_csv",
     }
+    display_station_name = _display_station_name(
+        station_name=station_name,
+        station_id=station_id,
+        district=district,
+        line2_display_names=line2_display_names,
+    )
+    if display_station_name is not None and display_station_name != station_name:
+        recommendation["display_station_name"] = display_station_name
+
+    return recommendation
 
 
 def _load_csv_recommendations() -> list[dict[str, object]]:
@@ -310,6 +369,7 @@ def _load_csv_recommendations() -> list[dict[str, object]]:
 
     features = _load_or_build_features()
     feature_by_station_id, feature_by_station_name = _feature_lookups(features)
+    line2_display_names = _load_line2_station_display_names()
     recommendations: list[dict[str, object]] = []
 
     for index, row in recommendations_csv.iterrows():
@@ -318,6 +378,7 @@ def _load_csv_recommendations() -> list[dict[str, object]]:
             fallback_rank=index + 1,
             feature_by_station_id=feature_by_station_id,
             feature_by_station_name=feature_by_station_name,
+            line2_display_names=line2_display_names,
         )
         if recommendation is not None:
             recommendations.append(recommendation)

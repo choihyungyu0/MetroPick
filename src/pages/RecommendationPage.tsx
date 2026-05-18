@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
+import type { BackendRecommendationItem } from '@/shared/api/backendRecommendationApi'
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import { useCreateBackendSavedLocation } from '@/shared/api/hooks/useBackendSavedLocations'
 import { useBackendRecommendations } from '@/shared/api/hooks/useBackendRecommendations'
@@ -181,16 +182,7 @@ function clampRecommendationScore(score: number): number {
 }
 
 function buildRecommendationItems(
-  backendItems:
-    | {
-        station_name: string
-        recommendation_label: string
-        startup_suitability_score: number
-        floating_demand_index: number
-        competition_index: number
-        business_diversity_index: number
-      }[]
-    | undefined,
+  backendItems: BackendRecommendationItem[] | undefined,
 ): LocationRecommendationItem[] {
   if (!backendItems?.length) {
     return mockLocationRecommendations
@@ -198,6 +190,12 @@ function buildRecommendationItems(
 
   const mergedItems = backendItems.slice(0, 5).map((backendItem, index) => {
     const fallbackItem = mockLocationRecommendations[index] ?? mockLocationRecommendations[0]
+    const stationName =
+      backendItem.display_station_name?.trim() || backendItem.station_name
+    const dataSourceLabel =
+      backendItem.data_status === 'recommendation_csv'
+        ? 'FastAPI 추천 CSV 기준입니다.'
+        : 'FastAPI 샘플 추천 기준입니다.'
 
     if (!fallbackItem) {
       return null
@@ -206,12 +204,12 @@ function buildRecommendationItems(
     return {
       ...fallbackItem,
       rank: index + 1,
-      station: backendItem.station_name,
+      station: stationName,
       score: clampRecommendationScore(backendItem.startup_suitability_score),
       growth: clampRecommendationScore(backendItem.floating_demand_index),
       stability: clampRecommendationScore(backendItem.business_diversity_index),
       competition: clampRecommendationScore(backendItem.competition_index),
-      reason: `${backendItem.recommendation_label} · FastAPI 샘플 추천 기준입니다.`,
+      reason: `${backendItem.recommendation_label} · ${dataSourceLabel}`,
     } satisfies LocationRecommendationItem
   })
 
@@ -219,10 +217,12 @@ function buildRecommendationItems(
 }
 
 function getBackendStatus({
+  dataStatus,
   isError,
   isLoading,
   isSuccess,
 }: {
+  dataStatus?: string
   isError: boolean
   isLoading: boolean
   isSuccess: boolean
@@ -231,11 +231,19 @@ function getBackendStatus({
     return 'loading'
   }
 
-  if (isSuccess && !isError) {
+  if (isSuccess && !isError && dataStatus === 'recommendation_csv') {
     return 'connected'
   }
 
   return 'fallback'
+}
+
+function getRecommendationFallbackLabel(dataStatus?: string): string {
+  if (dataStatus === 'sample_fixture') {
+    return 'FastAPI 샘플 추천 연결됨'
+  }
+
+  return '백엔드 미연결 · 목업 추천 표시'
 }
 
 function TopControls() {
@@ -578,11 +586,16 @@ export function RecommendationPage() {
       ? backendRecommendationsQuery.data.items
       : undefined,
   )
+  const backendDataStatus = backendRecommendationsQuery.isSuccess
+    ? backendRecommendationsQuery.data.data_status
+    : undefined
   const backendStatus = getBackendStatus({
+    dataStatus: backendDataStatus,
     isError: backendRecommendationsQuery.isError,
     isLoading: backendRecommendationsQuery.isLoading,
     isSuccess: backendRecommendationsQuery.isSuccess,
   })
+  const backendFallbackLabel = getRecommendationFallbackLabel(backendDataStatus)
 
   const firstStationName = useMemo(
     () => mockLocationRecommendations[0]?.station ?? '상무역',
@@ -645,8 +658,8 @@ export function RecommendationPage() {
                 창업 유망 지점 추천
               </h1>
               <BackendStatusBadge
-                connectedLabel="FastAPI 샘플 추천 연결됨"
-                fallbackLabel="백엔드 미연결 · 목업 추천 표시"
+                connectedLabel="FastAPI 추천 CSV 연결됨"
+                fallbackLabel={backendFallbackLabel}
                 loadingLabel="FastAPI 추천 확인 중"
                 status={backendStatus}
               />

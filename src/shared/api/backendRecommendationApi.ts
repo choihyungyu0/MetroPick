@@ -3,6 +3,7 @@ import { fetchBackendJson } from '@/shared/api/backendClient'
 export type BackendRecommendationItem = {
   station_id: string
   station_name: string
+  display_station_name?: string
   recommendation_label: string
   startup_suitability_score: number
   floating_demand_index: number

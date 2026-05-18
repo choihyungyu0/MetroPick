@@ -39,6 +39,18 @@ def _write_recommendation_csv(path: Path, rows: list[str]) -> None:
     )
 
 
+def _write_line2_coordinates_csv(path: Path) -> None:
+    path.write_text(
+        "\n".join(
+            [
+                "역번호,위도,경도,행정동",
+                "215,35.144429,126.926185,서남동",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_recommendations_use_csv_when_available(monkeypatch, tmp_path) -> None:
     recommendations_path = tmp_path / "recommendation_top5.csv"
     features_path = tmp_path / "station_area_features.csv"
@@ -80,6 +92,35 @@ def test_recommendations_use_csv_when_available(monkeypatch, tmp_path) -> None:
         "business_diversity_index": 64.75,
         "data_status": "recommendation_csv",
     }
+
+
+def test_recommendations_csv_adds_display_station_name(monkeypatch, tmp_path) -> None:
+    recommendations_path = tmp_path / "recommendation_top5.csv"
+    features_path = tmp_path / "station_area_features.csv"
+    coordinates_path = tmp_path / "line2_coordinates.csv"
+    _write_features_csv(features_path)
+    _write_line2_coordinates_csv(coordinates_path)
+    _write_recommendation_csv(
+        recommendations_path,
+        [
+            (
+                "1,2호선_215,서남동,음식점,72.78,79.15,보통,"
+                "상권 다양성 지수 0.76로 성장 여지가 있습니다.,"
+                "상권 규모가 있는 편입니다.,점심 수요 중심 전략이 적합합니다."
+            ),
+        ],
+    )
+    monkeypatch.setattr(config, "RECOMMENDATION_TOP5_PATH", recommendations_path)
+    monkeypatch.setattr(config, "STATION_AREA_FEATURES_PATH", features_path)
+    monkeypatch.setattr(config, "LINE2_STATION_COORDINATES_PATH", coordinates_path)
+
+    response = TestClient(app).get("/api/recommendations?limit=5")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data_status"] == "recommendation_csv"
+    assert body["items"][0]["station_name"] == "2호선_215"
+    assert body["items"][0]["display_station_name"] == "서남동 예정역"
 
 
 def test_recommendations_fall_back_when_csv_is_missing(monkeypatch, tmp_path) -> None:

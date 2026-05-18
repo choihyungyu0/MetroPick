@@ -20,6 +20,49 @@ function renderRecommendationPage() {
   )
 }
 
+function mockRecommendationResponse({
+  dataStatus,
+  displayStationName,
+  stationName,
+}: {
+  dataStatus: 'recommendation_csv' | 'sample_fixture'
+  displayStationName?: string
+  stationName: string
+}) {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input)
+    if (url.includes('/api/recommendations')) {
+      return {
+        ok: true,
+        json: async () => ({
+          data_status: dataStatus,
+          message:
+            dataStatus === 'recommendation_csv'
+              ? '로컬 추천 Top 5 CSV 기반 결과입니다.'
+              : '현재 추천은 샘플 데이터와 규칙 기반 점수로 제공됩니다.',
+          items: [
+            {
+              station_id: stationName,
+              station_name: stationName,
+              display_station_name: displayStationName,
+              recommendation_label: '추가 검토',
+              startup_suitability_score: 72.78,
+              floating_demand_index: 79.15,
+              competition_index: 50,
+              business_diversity_index: 76,
+              data_status: dataStatus,
+            },
+          ],
+        }),
+      } satisfies Pick<Response, 'json' | 'ok'>
+    }
+
+    throw new Error('offline')
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+
 function mockSavedLocationCreate() {
   const fetchMock = vi.fn(
     async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -79,6 +122,43 @@ describe('RecommendationPage', () => {
         .getAllByText('입지 추천')
         .some((item) => item.getAttribute('aria-current') === 'page'),
     ).toBe(true)
+  })
+
+  it('shows the CSV-connected badge when recommendations use CSV data', async () => {
+    mockRecommendationResponse({
+      dataStatus: 'recommendation_csv',
+      displayStationName: '서남동 예정역',
+      stationName: '2호선_215',
+    })
+
+    renderRecommendationPage()
+
+    expect(await screen.findByText('FastAPI 추천 CSV 연결됨')).toBeInTheDocument()
+    expect(screen.queryByText('FastAPI 샘플 추천 연결됨')).not.toBeInTheDocument()
+  })
+
+  it('shows the sample badge when recommendations fall back to sample fixtures', async () => {
+    mockRecommendationResponse({
+      dataStatus: 'sample_fixture',
+      stationName: '상무역',
+    })
+
+    renderRecommendationPage()
+
+    expect(await screen.findByText('FastAPI 샘플 추천 연결됨')).toBeInTheDocument()
+  })
+
+  it('uses display station names instead of internal station codes', async () => {
+    mockRecommendationResponse({
+      dataStatus: 'recommendation_csv',
+      displayStationName: '서남동 예정역',
+      stationName: '2호선_215',
+    })
+
+    renderRecommendationPage()
+
+    expect(await screen.findByRole('heading', { name: '서남동 예정역' })).toBeInTheDocument()
+    expect(screen.queryByText('2호선_215')).not.toBeInTheDocument()
   })
 
   it('saves an interest location through the backend and syncs localStorage', async () => {
