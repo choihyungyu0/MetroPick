@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -5,6 +6,28 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { RecommendationPage } from './RecommendationPage'
+
+vi.mock('react-leaflet', async () => {
+  const React = await import('react')
+
+  const Layer = ({ children }: { children?: ReactNode }) =>
+    React.createElement('div', null, children)
+
+  return {
+    MapContainer: ({ children }: { children?: ReactNode }) =>
+      React.createElement('div', { 'data-testid': 'recommendation-leaflet-map' }, children),
+    Marker: ({ children }: { children?: ReactNode }) =>
+      React.createElement('div', { 'data-testid': 'recommendation-map-marker' }, children),
+    Polyline: () => React.createElement('div', { 'data-testid': 'recommendation-route' }),
+    Popup: Layer,
+    TileLayer: () => React.createElement('div', { 'data-testid': 'osm-tile-layer' }),
+    Tooltip: Layer,
+    useMap: () => ({
+      fitBounds: () => undefined,
+      setView: () => undefined,
+    }),
+  }
+})
 
 function renderRecommendationPage() {
   const queryClient = new QueryClient({
@@ -23,11 +46,15 @@ function renderRecommendationPage() {
 function mockRecommendationResponse({
   dataStatus,
   displayStationName,
+  itemCount = 1,
   stationName,
+  withCoordinates = dataStatus === 'recommendation_csv',
 }: {
   dataStatus: 'recommendation_csv' | 'sample_fixture'
   displayStationName?: string
+  itemCount?: number
   stationName: string
+  withCoordinates?: boolean
 }) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input)
@@ -40,19 +67,42 @@ function mockRecommendationResponse({
             dataStatus === 'recommendation_csv'
               ? '로컬 추천 Top 5 CSV 기반 결과입니다.'
               : '현재 추천은 샘플 데이터와 규칙 기반 점수로 제공됩니다.',
-          items: [
-            {
-              station_id: stationName,
-              station_name: stationName,
-              display_station_name: displayStationName,
+          items: Array.from({ length: itemCount }, (_, index) => {
+            const rank = index + 1
+            const currentStationName =
+              rank === 1 ? stationName : `2호선_${200 + rank}`
+            const currentDisplayStationName =
+              rank === 1
+                ? (displayStationName ?? stationName)
+                : `테스트 ${rank} 예정역`
+
+            return {
+              rank,
+              station_id: currentStationName,
+              station_name: currentStationName,
+              display_station_name: currentDisplayStationName,
+              line: '2호선',
+              lat: withCoordinates ? 35.14 + index * 0.01 : null,
+              lng: withCoordinates ? 126.84 + index * 0.01 : null,
+              recommended_business_type: rank % 2 === 0 ? '음식점' : '카페/디저트',
               recommendation_label: '추가 검토',
-              startup_suitability_score: 72.78,
+              startup_suitability_score: 72.78 + index,
+              growth_score: 79.15,
+              risk_level: rank % 2 === 0 ? '보통' : '낮음',
               floating_demand_index: 79.15,
               competition_index: 50,
               business_diversity_index: 76,
               data_status: dataStatus,
-            },
-          ],
+            }
+          }),
+          map: {
+            center: [35.14, 126.84],
+            zoom: 13,
+            route: [
+              [35.13, 126.83],
+              [35.14, 126.84],
+            ],
+          },
         }),
       } satisfies Pick<Response, 'json' | 'ok'>
     }
@@ -108,13 +158,19 @@ describe('RecommendationPage', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
   })
 
-  it('renders the location recommendation layout with the map image', () => {
+  it('renders the location recommendation layout with the interactive map', () => {
     renderRecommendationPage()
 
     expect(
       screen.getByRole('heading', { name: '창업 유망 지점 추천' }),
     ).toBeInTheDocument()
-    expect(screen.getByAltText('광주 2호선 창업 유망 지점 추천 지도')).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: '추천 지역 인터랙티브 지도' }),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('osm-tile-layer')).toBeInTheDocument()
+    expect(
+      screen.queryByAltText('광주 2호선 창업 유망 지점 추천 지도'),
+    ).not.toBeInTheDocument()
     expect(screen.getByText('AI 추천 Top 5')).toBeInTheDocument()
     expect(screen.getAllByText('상무역').length).toBeGreaterThan(0)
     expect(
@@ -159,6 +215,38 @@ describe('RecommendationPage', () => {
 
     expect(await screen.findByRole('heading', { name: '서남동 예정역' })).toBeInTheDocument()
     expect(screen.queryByText('2호선_215')).not.toBeInTheDocument()
+  })
+
+  it('renders RecommendationMap markers for Top 5 CSV coordinates', async () => {
+    mockRecommendationResponse({
+      dataStatus: 'recommendation_csv',
+      displayStationName: '서남동 예정역',
+      itemCount: 5,
+      stationName: '2호선_215',
+    })
+
+    renderRecommendationPage()
+
+    expect(await screen.findByText('추천 1 · 서남동 예정역')).toBeInTheDocument()
+    expect(screen.getByText('추천 5 · 테스트 5 예정역')).toBeInTheDocument()
+    expect(screen.getAllByTestId('recommendation-map-marker')).toHaveLength(5)
+    expect(screen.getByTestId('recommendation-route')).toBeInTheDocument()
+  })
+
+  it('shows a safe map fallback when recommendation coordinates are missing', async () => {
+    mockRecommendationResponse({
+      dataStatus: 'recommendation_csv',
+      displayStationName: '좌표없는 예정역',
+      stationName: '좌표없는역',
+      withCoordinates: false,
+    })
+
+    renderRecommendationPage()
+
+    expect(
+      await screen.findByText('추천 지역 좌표를 불러오지 못했습니다.'),
+    ).toBeInTheDocument()
+    expect(screen.queryAllByTestId('recommendation-map-marker')).toHaveLength(0)
   })
 
   it('saves an interest location through the backend and syncs localStorage', async () => {

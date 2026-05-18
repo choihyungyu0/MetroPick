@@ -24,6 +24,22 @@ def normalize_station_key(value: object) -> str:
     return cleaned.replace(" ", "")
 
 
+def _clean_station_number(value: object) -> str:
+    station_number = clean_station_text(value)
+    if station_number.endswith(".0"):
+        return station_number[:-2]
+    return station_number
+
+
+def _safe_float(value: object) -> float | None:
+    try:
+        if value is None or pd.isna(value):
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def load_line2_station_display_names(path: Path | None = None) -> dict[str, str]:
     coordinates_path = path or config.LINE2_STATION_COORDINATES_PATH
     if not coordinates_path.exists():
@@ -39,7 +55,7 @@ def load_line2_station_display_names(path: Path | None = None) -> dict[str, str]
 
     display_names: dict[str, str] = {}
     for _, row in coordinates.iterrows():
-        station_number = clean_station_text(row.get("역번호"))
+        station_number = _clean_station_number(row.get("역번호"))
         district = clean_station_text(row.get("행정동"))
         if not station_number or not district:
             continue
@@ -49,6 +65,52 @@ def load_line2_station_display_names(path: Path | None = None) -> dict[str, str]
         display_names[f"2호선_{station_number}"] = display_name
 
     return display_names
+
+
+def load_line2_station_coordinate_records(path: Path | None = None) -> list[dict[str, object]]:
+    coordinates_path = path or config.LINE2_STATION_COORDINATES_PATH
+    if not coordinates_path.exists():
+        return []
+
+    try:
+        coordinates = pd.read_csv(coordinates_path)
+    except (OSError, pd.errors.ParserError, UnicodeDecodeError):
+        return []
+
+    required_columns = {"역번호", "위도", "경도", "행정동"}
+    if coordinates.empty or not required_columns.issubset(coordinates.columns):
+        return []
+
+    records: list[dict[str, object]] = []
+    for order, (_, row) in enumerate(coordinates.iterrows(), start=1):
+        station_number = _clean_station_number(row.get("역번호"))
+        lat = _safe_float(row.get("위도"))
+        lng = _safe_float(row.get("경도"))
+        district = clean_station_text(row.get("행정동"))
+        if (
+            not station_number
+            or lat is None
+            or lng is None
+            or not 33.0 <= lat <= 38.5
+            or not 124.0 <= lng <= 132.0
+        ):
+            continue
+
+        records.append(
+            {
+                "station_number": station_number,
+                "station_id": f"2호선_{station_number}",
+                "station_name": f"2호선_{station_number}",
+                "display_station_name": f"{district} 예정역",
+                "line": "2호선",
+                "lat": lat,
+                "lng": lng,
+                "district": district,
+                "route_order": order,
+            },
+        )
+
+    return records
 
 
 def display_station_name_for(

@@ -21,7 +21,10 @@ from ml.station_area_store_summary import build_station_area_store_summary
 from backend.app.services.station_identity import (
     INTERNAL_LINE2_STATION_PATTERN,
     display_station_name_for,
+    line2_identifier_to_internal_name,
+    load_line2_station_coordinate_records,
     load_line2_station_display_names,
+    normalize_station_key,
 )
 
 
@@ -303,6 +306,85 @@ def _load_line2_station_display_names() -> dict[str, str]:
     return load_line2_station_display_names()
 
 
+def _add_coordinate_alias(
+    lookup: dict[str, dict[str, object]],
+    alias: object,
+    coordinate: dict[str, object],
+) -> None:
+    cleaned = _clean_string(alias)
+    if not cleaned:
+        return
+
+    lookup.setdefault(cleaned, coordinate)
+    normalized = normalize_station_key(cleaned)
+    if normalized:
+        lookup.setdefault(normalized, coordinate)
+
+
+def _line2_recommendation_coordinate_data() -> tuple[dict[str, dict[str, object]], list[list[float]]]:
+    lookup: dict[str, dict[str, object]] = {}
+    route: list[list[float]] = []
+
+    for record in load_line2_station_coordinate_records():
+        lat = float(record["lat"])
+        lng = float(record["lng"])
+        route.append([round(lat, 6), round(lng, 6)])
+
+        coordinate = {
+            "station_id": record["station_id"],
+            "station_name": record["station_name"],
+            "display_station_name": record["display_station_name"],
+            "line": record["line"],
+            "lat": lat,
+            "lng": lng,
+            "route_order": record["route_order"],
+        }
+        station_number = _clean_string(record.get("station_number"))
+        for alias in [
+            station_number,
+            record.get("station_id"),
+            record.get("station_name"),
+            record.get("display_station_name"),
+            f"L2_{station_number}" if station_number else "",
+        ]:
+            _add_coordinate_alias(lookup, alias, coordinate)
+
+    return lookup, route
+
+
+def _line2_coordinate_for_recommendation(
+    station_id: str,
+    station_name: str,
+    display_station_name: str,
+    line2_display_names: dict[str, str],
+    coordinate_lookup: dict[str, dict[str, object]],
+) -> dict[str, object] | None:
+    candidates: list[str] = []
+
+    def add_candidate(value: object) -> None:
+        cleaned = _clean_string(value)
+        if cleaned and cleaned not in candidates:
+            candidates.append(cleaned)
+
+        normalized = normalize_station_key(cleaned)
+        if normalized and normalized not in candidates:
+            candidates.append(normalized)
+
+        resolved = line2_identifier_to_internal_name(cleaned, line2_display_names)
+        if resolved and resolved not in candidates:
+            candidates.append(resolved)
+
+    for value in [station_id, station_name, display_station_name]:
+        add_candidate(value)
+
+    for candidate in candidates:
+        coordinate = coordinate_lookup.get(candidate)
+        if coordinate is not None:
+            return coordinate
+
+    return None
+
+
 def _display_station_name(
     station_name: str,
     station_id: str,
@@ -344,6 +426,7 @@ def _recommendation_from_csv_row(
     feature_by_station_id: dict[str, pd.Series],
     feature_by_station_name: dict[str, pd.Series],
     line2_display_names: dict[str, str],
+    line2_coordinate_lookup: dict[str, dict[str, object]],
 ) -> dict[str, object] | None:
     station_name = _clean_string(row.get("station_name"))
     score = _safe_float(row.get("startup_suitability_score"))
@@ -381,12 +464,50 @@ def _recommendation_from_csv_row(
         floating_demand_index = 50.0
     rounded_score = _round_score(score)
     district = _clean_string(row.get("district"))
+    display_station_name = (
+        _display_station_name(
+            station_name=station_name,
+            station_id=station_id,
+            district=district,
+            line2_display_names=line2_display_names,
+        )
+        or station_name
+    )
+    coordinate = _line2_coordinate_for_recommendation(
+        station_id=station_id,
+        station_name=station_name,
+        display_station_name=display_station_name,
+        line2_display_names=line2_display_names,
+        coordinate_lookup=line2_coordinate_lookup,
+    )
+
+    lat: float | None = None
+    lng: float | None = None
+    line = _clean_string(row.get("line")) or _feature_string(feature, "line")
+    if coordinate is not None:
+        lat = float(coordinate["lat"])
+        lng = float(coordinate["lng"])
+        line = _clean_string(coordinate.get("line")) or line
+        station_id = _clean_string(coordinate.get("station_id")) or station_id
+        display_station_name = (
+            _clean_string(coordinate.get("display_station_name"))
+            or display_station_name
+        )
+    elif not line and (
+        INTERNAL_LINE2_STATION_PATTERN.match(station_id)
+        or INTERNAL_LINE2_STATION_PATTERN.match(station_name)
+    ):
+        line = "2호선"
 
     recommendation: dict[str, object] = {
         "rank": rank,
         "station_id": station_id,
         "station_name": station_name,
+        "display_station_name": display_station_name,
         "district": district,
+        "line": line,
+        "lat": lat,
+        "lng": lng,
         "recommended_business_type": _clean_string(row.get("recommended_business_type")),
         "startup_suitability_score": rounded_score,
         "growth_score": _round_score(growth_score if growth_score is not None else floating_demand_index),
@@ -400,14 +521,6 @@ def _recommendation_from_csv_row(
         "business_diversity_index": _round_score(business_diversity_index),
         "data_status": "recommendation_csv",
     }
-    display_station_name = _display_station_name(
-        station_name=station_name,
-        station_id=station_id,
-        district=district,
-        line2_display_names=line2_display_names,
-    )
-    if display_station_name is not None and display_station_name != station_name:
-        recommendation["display_station_name"] = display_station_name
 
     return recommendation
 
@@ -429,6 +542,7 @@ def _load_csv_recommendations() -> list[dict[str, object]]:
     features = _load_or_build_features()
     feature_by_station_id, feature_by_station_name = _feature_lookups(features)
     line2_display_names = _load_line2_station_display_names()
+    line2_coordinate_lookup, _ = _line2_recommendation_coordinate_data()
     recommendations: list[dict[str, object]] = []
 
     for index, row in recommendations_csv.iterrows():
@@ -438,6 +552,7 @@ def _load_csv_recommendations() -> list[dict[str, object]]:
             feature_by_station_id=feature_by_station_id,
             feature_by_station_name=feature_by_station_name,
             line2_display_names=line2_display_names,
+            line2_coordinate_lookup=line2_coordinate_lookup,
         )
         if recommendation is not None:
             recommendations.append(recommendation)
@@ -1568,18 +1683,53 @@ def get_commercial_analysis_map_data(
     }
 
 
+def _recommendation_map_metadata(items: list[dict[str, object]]) -> dict[str, object]:
+    _, route = _line2_recommendation_coordinate_data()
+    marker_points = [
+        [float(item["lat"]), float(item["lng"])]
+        for item in items
+        if isinstance(item.get("lat"), (int, float))
+        and isinstance(item.get("lng"), (int, float))
+    ]
+
+    if marker_points:
+        center = [
+            round(sum(point[0] for point in marker_points) / len(marker_points), 6),
+            round(sum(point[1] for point in marker_points) / len(marker_points), 6),
+        ]
+        zoom = 13
+    else:
+        center = [GWANGJU_CENTER["lat"], GWANGJU_CENTER["lng"]]
+        zoom = 12
+
+    return {
+        "center": center,
+        "zoom": zoom,
+        "route": route,
+    }
+
+
 def _sample_station_recommendations(limit: int = 5) -> list[dict[str, object]]:
     features = _load_or_build_features()
     if features.empty:
         return []
 
     recommendations: list[dict[str, object]] = []
-    for _, row in features.sort_values("startup_suitability_score", ascending=False).head(limit).iterrows():
+    for index, (_, row) in enumerate(
+        features.sort_values("startup_suitability_score", ascending=False).head(limit).iterrows(),
+        start=1,
+    ):
         score = round(float(row["startup_suitability_score"]), 2)
+        station_name = str(row["station_name"])
         recommendations.append(
             {
+                "rank": index,
                 "station_id": str(row["station_id"]),
-                "station_name": str(row["station_name"]),
+                "station_name": station_name,
+                "display_station_name": station_name,
+                "line": _clean_string(row.get("line")),
+                "lat": None,
+                "lng": None,
                 "recommendation_label": _recommendation_label(score),
                 "startup_suitability_score": score,
                 "floating_demand_index": round(float(row["floating_demand_index"]), 2),
@@ -1594,16 +1744,20 @@ def _sample_station_recommendations(limit: int = 5) -> list[dict[str, object]]:
 def get_station_recommendations_payload(limit: int = 5) -> dict[str, object]:
     csv_recommendations = _load_csv_recommendations()
     if csv_recommendations:
+        items = csv_recommendations[:limit]
         return {
-            "items": csv_recommendations[:limit],
+            "items": items,
             "data_status": "recommendation_csv",
             "message": _recommendation_data_source_message("recommendation_csv"),
+            "map": _recommendation_map_metadata(items),
         }
 
+    items = _sample_station_recommendations(limit=limit)
     return {
-        "items": _sample_station_recommendations(limit=limit),
+        "items": items,
         "data_status": "sample_fixture",
         "message": _recommendation_data_source_message("sample_fixture"),
+        "map": _recommendation_map_metadata(items),
     }
 
 

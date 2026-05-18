@@ -13,17 +13,19 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-import type { BackendRecommendationItem } from '@/shared/api/backendRecommendationApi'
+import type {
+  BackendRecommendationItem,
+  BackendRecommendationMap,
+} from '@/shared/api/backendRecommendationApi'
 import type { BackendSavedLocation } from '@/shared/api/backendSavedLocationsApi'
 import { useCreateBackendSavedLocation } from '@/shared/api/hooks/useBackendSavedLocations'
 import { useBackendRecommendations } from '@/shared/api/hooks/useBackendRecommendations'
+import { RecommendationMap } from '@/components/recommendation/RecommendationMap'
 import { AppFooter } from '@/shared/components/AppFooter'
 import { AppSidebar } from '@/shared/components/AppSidebar'
 import { BackendStatusBadge } from '@/shared/components/BackendStatusBadge'
-import { ImageWithFallback } from '@/shared/components/ImageWithFallback'
 import { SimulationDisclaimer } from '@/shared/components/SimulationDisclaimer'
 import { TopNavigation } from '@/shared/components/TopNavigation'
-import { recommendationAssets } from '@/shared/assets/recommendationAssets'
 import {
   mockLocationRecommendations,
   type LocationRecommendationItem,
@@ -498,7 +500,13 @@ function RecommendationList({
   )
 }
 
-function MapCard() {
+function MapCard({
+  items,
+  map,
+}: {
+  items: BackendRecommendationItem[]
+  map?: BackendRecommendationMap
+}) {
   return (
     <section className="rounded-xl border border-blue-100 bg-white p-4 shadow-[0_10px_24px_rgba(18,65,120,0.06)]">
       <div className="mb-3 flex items-center justify-between">
@@ -506,13 +514,7 @@ function MapCard() {
       </div>
 
       <div className="h-[390px] overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <ImageWithFallback
-          alt="광주 2호선 창업 유망 지점 추천 지도"
-          className="h-full w-full object-cover"
-          draggable={false}
-          fallbackText="추천 지역 지도를 불러올 수 없습니다."
-          src={recommendationAssets.recommendedLocationsMap}
-        />
+        <RecommendationMap items={items} map={map} />
       </div>
     </section>
   )
@@ -686,7 +688,10 @@ export function RecommendationPage() {
             </div>
 
             <div className="grid gap-4 max-[1600px]:grid-cols-2 max-lg:grid-cols-1">
-              <MapCard />
+              <MapCard
+                items={backendRecommendationsQuery.data?.items ?? []}
+                map={backendRecommendationsQuery.data?.map}
+              />
               <CompareChart items={recommendationItems} />
             </div>
           </div>
