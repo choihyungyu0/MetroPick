@@ -16,7 +16,8 @@ from backend.app.services.station_identity import (
     normalize_station_key,
 )
 from ml import config
-from ml.data_loader import load_processed_station_area_features
+from ml.data_loader import load_processed_station_area_features, load_sample_raw_data
+from ml.feature_engineering import build_station_area_features
 from ml.predict import predict_startup_suitability
 
 
@@ -143,10 +144,31 @@ def _safe_float(value: object, default: float = 0.0) -> float:
 
 def _load_station_features() -> pd.DataFrame:
     if not config.STATION_AREA_FEATURES_PATH.exists():
-        return pd.DataFrame()
+        return _build_sample_station_features()
     try:
-        return load_processed_station_area_features()
-    except (OSError, pd.errors.ParserError, UnicodeDecodeError):
+        processed_features = load_processed_station_area_features(validate_required_columns=True)
+    except (OSError, ValueError, pd.errors.ParserError, UnicodeDecodeError):
+        return _build_sample_station_features()
+
+    sample_features = _build_sample_station_features()
+    if sample_features.empty:
+        return processed_features
+    if processed_features.empty:
+        return sample_features
+    return pd.concat([processed_features, sample_features], ignore_index=True, sort=False)
+
+
+def _build_sample_station_features() -> pd.DataFrame:
+    try:
+        raw_data = load_sample_raw_data()
+        return build_station_area_features(
+            raw_data.stores,
+            raw_data.bus,
+            raw_data.subway,
+            raw_data.stations,
+            radius_m=config.DEFAULT_RADIUS_M,
+        )
+    except (OSError, ValueError, pd.errors.ParserError, UnicodeDecodeError):
         return pd.DataFrame()
 
 

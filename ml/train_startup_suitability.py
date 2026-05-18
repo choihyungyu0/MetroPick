@@ -15,7 +15,11 @@ from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
 from ml import config
-from ml.data_loader import load_processed_station_area_features, load_sample_raw_data
+from ml.data_loader import (
+    STATION_AREA_SCHEMA_NORMALIZATION_ATTR,
+    load_processed_station_area_features,
+    load_sample_raw_data,
+)
 from ml.evaluate import regression_metrics
 from ml.feature_engineering import build_station_area_features
 
@@ -88,6 +92,7 @@ def train_startup_suitability_model() -> dict[str, object]:
         "model_version": config.MODEL_VERSION,
         "best_model": best_model_name,
         "feature_source": feature_source,
+        "schema_normalization": features.attrs.get(STATION_AREA_SCHEMA_NORMALIZATION_ATTR, {}),
         "metrics": results,
         "feature_columns": feature_columns,
         "processed_features_path": str(config.STATION_AREA_FEATURES_PATH),
