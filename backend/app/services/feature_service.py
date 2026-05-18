@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from ml import config
-from ml.data_loader import load_sample_raw_data
+from ml.data_loader import load_processed_station_area_features, load_sample_raw_data
 from ml.feature_engineering import build_station_area_features
 from ml.public_store_ingestion import (
     filter_gwangju_stores,
@@ -27,7 +27,7 @@ from backend.app.services.station_identity import (
 
 def _load_or_build_features() -> pd.DataFrame:
     if config.STATION_AREA_FEATURES_PATH.exists():
-        return pd.read_csv(config.STATION_AREA_FEATURES_PATH)
+        return load_processed_station_area_features()
 
     raw_data = load_sample_raw_data()
     return build_station_area_features(
@@ -1188,7 +1188,21 @@ def _business_distribution(stores: pd.DataFrame) -> list[dict[str, object]]:
             },
         )
 
-    return sorted(distribution, key=lambda item: int(item["count"]), reverse=True)[:6]
+    ranked_distribution = sorted(
+        distribution,
+        key=lambda item: int(item["count"]),
+        reverse=True,
+    )
+    named_distribution = [
+        item for item in ranked_distribution if str(item["key"]) != "etc"
+    ]
+    if len(named_distribution) >= 5:
+        return named_distribution[:5]
+
+    etc_distribution = [
+        item for item in ranked_distribution if str(item["key"]) == "etc"
+    ]
+    return (named_distribution + etc_distribution)[:5]
 
 
 def _summary_cards(
@@ -1317,7 +1331,7 @@ def _insight_summaries(
     if distribution:
         top_business = distribution[0]
         insights.append(
-            f"{business_label} 필터 기준 업종 분포 1순위는 {top_business['name']}({top_business['percent']}%)입니다.",
+            f"선택 범위 전체 업종 분포 1순위는 {top_business['name']}({top_business['percent']}%)입니다.",
         )
     if data_status == "public_store_csv":
         insights.append("공공 상가 CSV와 역 좌표 CSV를 연결해 지도 레이어를 갱신했습니다.")
@@ -1405,8 +1419,15 @@ def _sample_map_data(
         selected_markers=matched_selected_markers,
         radius_m=radius_m,
     )
+    stores_for_distribution = _filter_stores(
+        raw_data.stores,
+        business_key=None,
+        region=region,
+        selected_markers=matched_selected_markers,
+        radius_m=radius_m,
+    )
     business_label = _business_label_for_key(business_key) if business_key else "전체 업종"
-    distribution = _business_distribution(stores)
+    distribution = _business_distribution(stores_for_distribution)
     return {
         "data_status": "sample_fixture",
         "filters": _filters_payload(region, line, station_ids, radius_m, business_type, layers),
@@ -1488,8 +1509,15 @@ def get_commercial_analysis_map_data(
         selected_markers=matched_selected_markers,
         radius_m=safe_radius_m,
     )
+    stores_for_distribution = _filter_stores(
+        stores,
+        business_key=None,
+        region=region,
+        selected_markers=matched_selected_markers,
+        radius_m=safe_radius_m,
+    )
     business_label = _business_label_for_key(business_key) if business_key else "전체 업종"
-    distribution = _business_distribution(stores_for_map)
+    distribution = _business_distribution(stores_for_distribution)
     selected_circles = (
         _selected_station_circles(matched_selected_markers, safe_radius_m)
         if matched_selected_markers

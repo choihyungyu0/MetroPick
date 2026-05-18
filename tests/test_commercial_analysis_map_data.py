@@ -46,6 +46,21 @@ def test_map_data_business_type_filters_density_points() -> None:
     }
 
 
+def test_map_data_business_type_keeps_area_distribution_top_five() -> None:
+    response = TestClient(app).get(
+        "/api/commercial-analysis/map-data?station_ids=L1_상무&business_type=카페/디저트",
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["filters"]["business_type_key"] == "cafe"
+    assert {point["business_type_key"] for point in body["density_points"]} == {"cafe"}
+    assert 1 < len(body["business_distribution"]) <= 5
+    assert {item["key"] for item in body["business_distribution"]} != {"cafe"}
+    assert all(item["key"] != "etc" for item in body["business_distribution"])
+    assert body["summary_cards"][1]["change"] == "카페/디저트"
+
+
 def test_map_data_ignores_unmatched_station_filter_instead_of_emptying_table() -> None:
     response = TestClient(app).get(
         (

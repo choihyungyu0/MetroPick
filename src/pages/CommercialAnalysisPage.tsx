@@ -295,6 +295,24 @@ function isStationSelected(
   return selectedStations.some((token) => stationMatchesToken(station, token))
 }
 
+function buildDistributionDonutBackground(
+  items: BackendCommercialBusinessDistributionItem[],
+): string {
+  const totalCount = items.reduce((sum, item) => sum + item.count, 0)
+  if (totalCount <= 0) {
+    return 'radial-gradient(circle,#fff 0 37%,transparent 38%),conic-gradient(#e2e8f0 0 100%)'
+  }
+
+  let cursor = 0
+  const segments = items.map((item) => {
+    const start = cursor
+    cursor += (item.count / totalCount) * 100
+    return `${item.color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`
+  })
+
+  return `radial-gradient(circle,#fff 0 37%,transparent 38%),conic-gradient(${segments.join(',')})`
+}
+
 function SelectControl({
   icon: Icon,
   label,
@@ -564,6 +582,9 @@ function SummaryPanel({
 }) {
   const cards = mapData?.summary_cards ?? fallbackSummaryCards
   const distribution = mapData?.business_distribution ?? fallbackDistribution
+  const topDistribution = distribution.slice(0, 5)
+  const distributionDonutBackground =
+    buildDistributionDonutBackground(topDistribution)
   const insights = mapData?.insight_summaries ?? fallbackInsights
   const stationCount = mapData?.station_markers.length ?? 8
 
@@ -609,23 +630,28 @@ function SummaryPanel({
         <h4 className="mb-3 text-sm font-black">
           업종 분포 <span className="text-slate-500">(상위 5개)</span>
         </h4>
-        <div className="mb-5 grid grid-cols-[104px_1fr] items-center gap-4 max-md:grid-cols-1 max-md:justify-items-center">
-          <div className="h-24 w-24 rounded-full bg-[radial-gradient(circle,#fff_0_37%,transparent_38%),conic-gradient(#2563eb_0_36%,#14b8a6_36%_54%,#8b5cf6_54%_69%,#ef4444_69%_81%,#fbbf24_81%_90%,#94a3b8_90%_100%)]" />
+        <div className="mb-5 grid grid-cols-1 justify-items-center gap-3">
+          <div
+            className="h-24 w-24 rounded-full"
+            style={{ background: distributionDonutBackground }}
+          />
           <div className="grid w-full gap-2">
-            {distribution.slice(0, 6).map((item) => (
+            {topDistribution.map((item) => (
               <div
-                className="grid grid-cols-[10px_minmax(0,1fr)_48px_56px] items-center gap-1.5 text-xs font-extrabold text-slate-600"
+                className="grid grid-cols-[10px_minmax(96px,1fr)_auto_auto] items-center gap-2 text-xs font-extrabold text-slate-600"
                 key={item.key}
               >
                 <i
                   className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
-                <span className="truncate">{item.name}</span>
-                <b className="text-right text-slate-700">
+                <span className="min-w-0 whitespace-nowrap">{item.name}</span>
+                <b className="whitespace-nowrap text-right text-slate-700">
                   {item.percent.toFixed(1)}%
                 </b>
-                <small className="text-slate-500">({item.count.toLocaleString()})</small>
+                <small className="whitespace-nowrap text-slate-500">
+                  ({item.count.toLocaleString()})
+                </small>
               </div>
             ))}
           </div>

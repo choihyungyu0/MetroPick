@@ -34,35 +34,47 @@ function mapDataResponse(input: RequestInfo | URL) {
   const radius = Number(url.searchParams.get('radius_m') ?? '500')
   const businessType = url.searchParams.get('business_type') ?? ''
   const selectedStationIds = url.searchParams.get('station_ids') ?? ''
+  const businessDistribution = [
+    {
+      color: '#ef4444',
+      count: 42,
+      key: 'restaurant',
+      name: '음식점',
+      percent: 42,
+    },
+    {
+      color: '#2563eb',
+      count: businessType ? 17 : 28,
+      key: 'cafe',
+      name: '카페/디저트',
+      percent: businessType ? 17 : 28,
+    },
+    {
+      color: '#8b5cf6',
+      count: 12,
+      key: 'retail',
+      name: '소매',
+      percent: 12,
+    },
+    {
+      color: '#f97316',
+      count: 9,
+      key: 'beauty',
+      name: '미용',
+      percent: 9,
+    },
+    {
+      color: '#fbbf24',
+      count: 7,
+      key: 'academy',
+      name: '학원',
+      percent: 7,
+    },
+  ]
 
   return {
     available_layers: ['line_1', 'line_2', 'stations', 'density'],
-    business_distribution: businessType
-      ? [
-          {
-            color: '#2563eb',
-            count: 17,
-            key: 'cafe',
-            name: businessType,
-            percent: 100,
-          },
-        ]
-      : [
-          {
-            color: '#ef4444',
-            count: 42,
-            key: 'restaurant',
-            name: '음식점',
-            percent: 60,
-          },
-          {
-            color: '#2563eb',
-            count: 28,
-            key: 'cafe',
-            name: '카페/디저트',
-            percent: 40,
-          },
-        ],
+    business_distribution: businessDistribution,
     bus_stop_markers: [],
     comparison_rows: [
       {
